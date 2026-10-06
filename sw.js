@@ -1,6 +1,6 @@
 /* Service Worker کارن‌سافت · کش آفلاین برنامه و فایل‌های استاتیک */
 'use strict';
-const CACHE_VERSION = 'taxi-v1.0.0';
+const CACHE_VERSION = 'taxi-v1.1.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const LOGO_CACHE = 'taxi-logo-v1';
