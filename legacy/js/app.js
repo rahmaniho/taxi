@@ -119,9 +119,11 @@ async function boot() {
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         _deferredInstall = e;
+        showInstallBanner();
     });
     window.addEventListener('appinstalled', () => {
         _deferredInstall = null;
+        document.getElementById('pwa-install-banner')?.remove();
         Toast.success('برنامه با موفقیت نصب شد');
     });
     registerServiceWorker();
@@ -559,6 +561,50 @@ async function printShiftReport(shift) {
         console.error('shift report', err);
         Toast.warning('گزارش شیفت ساخته نشد');
     }
+}
+
+/* ============================ بنر نصب برنامه (PWA) ============================ */
+
+const PWA_DISMISS_KEY = 'taxi_pwa_dismissed_at';
+const PWA_DISMISS_DAYS = 14;
+
+/** نمایش بنر نصب، اگر کاربر آن را رد نکرده باشد */
+function showInstallBanner() {
+    if (document.getElementById('pwa-install-banner')) return;
+    const dismissedAt = Number(localStorage.getItem(PWA_DISMISS_KEY) || 0);
+    if (dismissedAt && (Date.now() - dismissedAt) < PWA_DISMISS_DAYS * 86400000) return;
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+    const el = document.createElement('div');
+    el.id = 'pwa-install-banner';
+    el.innerHTML = `
+      <div class="pwa-info">
+        <img src="./icons/icon-192.png" alt="آیکون برنامه" width="40" height="40">
+        <div>
+          <strong>نصب برنامهٔ تاکسی تلفنی</strong>
+          <span>دسترسی سریع از صفحهٔ اصلی، کارکرد آفلاین و تمام‌صفحه</span>
+        </div>
+      </div>
+      <div class="pwa-actions">
+        <button class="btn btn-gold" type="button" id="pwaBannerInstall">${icon('download')} نصب</button>
+        <button class="btn btn-outline" type="button" id="pwaBannerLater">بعداً</button>
+        <button class="btn-close-banner" type="button" id="pwaBannerClose" aria-label="بستن بنر">${icon('x')}</button>
+      </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+
+    const dismiss = () => {
+        localStorage.setItem(PWA_DISMISS_KEY, String(Date.now()));
+        el.classList.remove('show');
+        setTimeout(() => el.remove(), 300);
+    };
+    el.querySelector('#pwaBannerLater').addEventListener('click', dismiss);
+    el.querySelector('#pwaBannerClose').addEventListener('click', dismiss);
+    el.querySelector('#pwaBannerInstall').addEventListener('click', async () => {
+        el.classList.remove('show');
+        setTimeout(() => el.remove(), 300);
+        await App.installPWA();
+    });
 }
 
 /* ============================== Service Worker ============================== */

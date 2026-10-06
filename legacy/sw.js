@@ -12,7 +12,7 @@
  *   • همهٔ مسیرها نسبی‌اند تا برنامه هم در ریشه و هم در زیرپوشه (legacy/) کار کند.
  * ========================================================================== */
 
-const CACHE_VERSION = 'taxi-v5.0.0';
+const CACHE_VERSION = 'taxi-v5.0.1';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const FONT_CACHE = `${CACHE_VERSION}-fonts`;

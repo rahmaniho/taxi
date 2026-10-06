@@ -30,6 +30,7 @@ try {
 }
 
 const { DB, SCHEMA_VERSION } = await import('../js/db.js');
+const Prints = await import('../js/prints.js');
 const { Auth } = await import('../js/auth.js');
 const { Drivers, Trips, Subscribers, Payments, Reports, Alerts, fareFor } = await import('../js/domain.js');
 const U = await import('../js/utils.js');
@@ -256,7 +257,111 @@ ok(debtors.buckets && 'b0_30' in debtors.buckets && 'b60' in debtors.buckets, '�
 const activity = Drivers.activity(30);
 ok(activity.every((a) => typeof a.tripCount === 'number' && typeof a.share === 'number'), 'گزارش عملکرد رانندگان خروجی عددی دارد');
 
-/* ------------------------------- ۸) هشدارها ------------------------------- */
+/* ------------------------- ۷٫۵) یکپارچگی تاریخ‌ها ------------------------- */
+group('یکپارچگی تاریخ و ساعت در پایگاه داده (رگرسیون)');
+const allTrips = Trips.all();
+const badTime = allTrips.filter((t) => {
+    const d = new Date(t.pickupTime);
+    return Number.isNaN(d.getTime()) || d.getFullYear() < 2000 || d.getFullYear() > 2100;
+});
+eq(badTime.length, 0, 'همهٔ زمان‌های سفر ISO میلادی معتبر هستند',
+    badTime.slice(0, 2).map((t) => t.pickupTime).join(' , '));
+const badKey = allTrips.filter((t) => {
+    const k = U.isoToJalaliKey(t.pickupTime);
+    return !/^1[34]\d{2}-\d{2}-\d{2}$/.test(k);
+});
+eq(badKey.length, 0, 'کلید شمسی حاصل از هر زمان سفر معتبر است',
+    badKey.slice(0, 2).map((t) => `${t.pickupTime} → ${U.isoToJalaliKey(t.pickupTime)}`).join(' , '));
+const wrongDay = allTrips.filter((t) => U.diffJalaliDays(U.isoToJalaliKey(t.pickupTime), today) > 60);
+eq(wrongDay.length, 0, 'هیچ سفر نمونه‌ای با تاریخ دور از امروز ثبت نشده است');
+const todayKey = U.todayJalali();
+const created = Trips.create({
+    subscriberName: 'آزمون تاریخ', subscriberPhone: '09120000009',
+    pickupAddress: 'الف', dropoffAddress: 'ب', distance: 3, fare: 50000,
+    tripDate: todayKey, pickupTime: U.jalaliDateWithTime(todayKey, '13:45'),
+    paymentMethod: 'cash'
+});
+eq(U.isoToJalaliKey(created.pickupTime), todayKey, 'قاعدهٔ کلیدی: تاریخ شمسی ذخیره‌شده با کلید ISO هم‌خوان است');
+eq(U.formatTime(created.pickupTime), U.toFa('13:45'), 'ساعت انتخابی کاربر در زمان ISO حفظ می‌شود');
+const series = Reports.dailySeries(7);
+ok(series.trips.reduce((a, b) => a + b, 0) > 0, 'سری روزانه سفرهای امروز را می‌شمارد', JSON.stringify(series.trips));
+ok(series.revenue.reduce((a, b) => a + b, 0) > 0, 'درآمد امروز در سری روزانه دیده می‌شود');
+const monthTrips = allTrips.filter((t) => U.isoToJalaliKey(t.pickupTime) >= todayKey.slice(0, 8) + '01');
+ok(monthTrips.length > 0, 'فیلتر «ماه جاری» لیست سفرها رکورد دارد', `${monthTrips.length} سفر`);
+
+/* ------------------- ۷٫۶) قالب فیلدهای تاریخ در همهٔ موجودیت‌ها ------------------- */
+group('قالب تاریخ در همهٔ موجودیت‌ها (کلید شمسی یا ISO)');
+const KEY_FIELDS = {
+    drivers: ['joinDate'],
+    vehicles: ['insuranceExpiry', 'technicalExpiry'],
+    subscribers: ['subscriptionStart', 'subscriptionEnd'],
+    expenses: ['date'],
+    subscriberPayments: ['date'],
+    driverPayments: ['date'],
+    transactions: ['date'],
+    shifts: ['date']
+};
+const ISO_FIELDS = {
+    auditLog: ['timestamp'],
+    trips: ['pickupTime', 'dropoffTime', 'createdAt'],
+    subscriberPayments: ['createdAt'],
+    shifts: ['startTime', 'endTime']
+};
+Object.entries(KEY_FIELDS).forEach(([coll, fields]) => {
+    const rows = DB.list(coll);
+    const bad = rows.filter((r) => fields.some((f) => r[f] && !isJalaliKey(r[f])));
+    ok(bad.length === 0, `فیلدهای تاریخ «${coll}» قالب کلید شمسی دارند`, bad.length ? JSON.stringify(bad[0]) : '');
+});
+Object.entries(ISO_FIELDS).forEach(([coll, fields]) => {
+    const rows = DB.listAll(coll);
+    const bad = rows.filter((r) => fields.some((f) => {
+        if (!r[f]) return false;
+        const d = new Date(r[f]);
+        return Number.isNaN(d.getTime()) || d.getFullYear() < 2000;
+    }));
+    ok(bad.length === 0, `فیلدهای زمان «${coll}» قالب ISO معتبر دارند`, bad.length ? JSON.stringify(bad[0]) : '');
+});
+function isJalaliKey(v) { return /^1[34]\d{2}-\d{2}-\d{2}$/.test(String(v).replace(/\//g, '-')); }
+
+/* ---------------------------- ۸) اسناد چاپی ---------------------------- */
+function escapeForTest(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+group('اسناد چاپی (فاکتور، رسید، گزارش‌ها)');
+function docChecks(html, label) {
+    ok(typeof html === 'string' && html.length > 400, `${label}: سند تولید شد`);
+    ok(/class="print-doc"/.test(html), `${label}: قالب استاندارد چاپ دارد`);
+    ok(/doc-head/.test(html) && /doc-foot|doc-watermark/.test(html), `${label}: سربرگ و پاصفحه دارد`);
+    ok(/[\u0600-\u06FF]/.test(html), `${label}: متن فارسی دارد`);
+    ok(!/undefined|NaN|\[object Object\]/.test(html), `${label}: مقدار نامعتبر (undefined/NaN) ندارد`);
+    ok(/[۰-۹]/.test(html), `${label}: اعداد با ارقام فارسی نمایش داده می‌شوند`);
+}
+const subStatement = Subscribers.statement(testSub.id);
+docChecks(Prints.invoiceHTML(subStatement), 'فاکتور مشترک');
+const drvStatement = Drivers.statement(driver.id);
+docChecks(Prints.driverReceiptHTML(drvStatement), 'رسید راننده');
+docChecks(Prints.financialReportHTML(Reports.financial('', ''), { from: '', to: '', chartData: Reports.dailySeries(7) }), 'گزارش مالی');
+const shiftFixture = {
+    id: 'shift-smoke', code: 'SH-9999', operatorId: 'op-smoke', operatorName: 'مدیر آزمون',
+    date: today, startTime: new Date(Date.now() - 3 * 3600000).toISOString(), endTime: new Date().toISOString(),
+    openingCash: 500000, closingCash: 700000, status: 'closed', notes: 'آزمون'
+};
+docChecks(Prints.shiftReportHTML(shiftFixture, Auth.shiftStats(shiftFixture), { operator: 'مدیر آزمون', trips: Trips.all().slice(0, 3) }), 'گزارش شیفت');
+docChecks(Prints.analysisReportHTML({
+    title: 'گزارش آزمون',
+    subtitle: 'بازهٔ آزمون',
+    kpis: [{ label: 'تعداد', value: U.toFa(3) }],
+    tables: [{ title: 'جدول آزمون', headers: ['الف', 'ب'], rows: [['یک', 'دو']] }]
+}), 'گزارش تحلیلی');
+ok(/شرکت آزمون/.test(Prints.invoiceHTML(subStatement)), 'فاکتور مشترک شامل نام مشترک است');
+const receiptDriver = DB.list('drivers')[0];
+const receiptDriverStmt = Drivers.statement(receiptDriver.id);
+const receiptHTML = Prints.driverReceiptHTML(receiptDriverStmt);
+ok(receiptHTML.includes(escapeForTest(receiptDriver.fullName)), 'رسید راننده شامل نام همان راننده است');
+ok(/شرکت آزمون/.test(Prints.invoiceHTML(Subscribers.statement(testSub.id))), 'فاکتور مشترک شامل نام همان مشترک است');
+ok((Prints.invoiceHTML(subStatement).match(/\u062a\u0648\u0645\u0627\u0646/g) || []).length > 0, 'مبالغ با واحد تومان در سند درج می‌شوند');
+
+/* ------------------------------- ۹) هشدارها ------------------------------- */
 group('هشدارهای داشبورد');
 const alerts = Alerts.all ? Alerts.all() : [];
 ok(Array.isArray(alerts), 'فهرست هشدارها آرایه است');
@@ -264,7 +369,7 @@ ok(Array.isArray(Alerts.expiringDocs(30)), 'هشدار مدارک منقضی‌�
 ok(Array.isArray(Alerts.overdueQueue(30)), 'هشدار صف معوق کار می‌کند');
 ok(Array.isArray(Alerts.heavyDebts(1000000)), 'هشدار بدهی سنگین کار می‌کند');
 
-/* ----------------------------- ۹) ورود کاربران ----------------------------- */
+/* ----------------------------- ۱۰) ورود کاربران ----------------------------- */
 group('احراز هویت و نقش‌ها');
 await Auth.init();
 let loginFailed = false;
@@ -280,7 +385,7 @@ eq(Auth.role(), 'operator', 'ورود اپراتور انجام شد');
 ok(Auth.canAccess('queue') && !Auth.canAccess('settings'), 'دسترسی اپراتور محدود است');
 ok(Auth.can('trip.assign'), 'توانایی تخصیص سفر برای اپراتور فعال است');
 
-/* -------------------------------- ۱۰) شیفت -------------------------------- */
+/* -------------------------------- ۱۱) شیفت -------------------------------- */
 group('شیفت‌ها');
 const shift = Auth.openShift({ openingCash: 500000, notes: 'آزمون' });
 ok(shift.id && shift.code.startsWith('SH-'), 'شیفت با کد یکتا باز شد');
@@ -294,7 +399,7 @@ const closed = Auth.closeShift({ closingCash: 600000, notes: 'تحویل' });
 eq(closed.status, 'closed', 'بستن شیفت انجام شد');
 ok(!Auth.currentShift(), 'پس از بستن، شیفت جاری وجود ندارد');
 
-/* --------------------------- ۱۱) پشتیبان‌گیری --------------------------- */
+/* --------------------------- ۱۲) پشتیبان‌گیری --------------------------- */
 group('پشتیبان‌گیری و بازیابی');
 const dump = DB.exportObject();
 ok(dump && dump.drivers && dump.trips, 'خروجی پشتیبان شامل موجودیت‌هاست');

@@ -12,7 +12,7 @@
 
 import {
     uid, clone, todayJalali, nowISO, isoToJalaliKey, toFa, addJalaliDays,
-    currentJalaliMonth, jalaliKey, sortBy
+    currentJalaliMonth, jalaliKey, sortBy, jalaliDateWithTime
 } from './utils.js';
 
 export const SCHEMA_VERSION = 5;
@@ -677,7 +677,9 @@ export function seedSampleDB() {
             const passenger = passengers[rnd(passengers.length)];
             const distance = 4 + rnd(18);
             const hour = 7 + rnd(14);
-            const iso = `${dayKey}T${String(hour).padStart(2, '0')}:${String(rnd(60)).padStart(2, '0')}:00`;
+            /* زمان سفر باید ISO میلادی باشد؛ رشتهٔ «تاریخ شمسی + ساعت» باعث خطای محاسبات تاریخ می‌شود */
+            const timeStr = `${String(hour).padStart(2, '0')}:${String(rnd(60)).padStart(2, '0')}`;
+            const iso = jalaliDateWithTime(dayKey, timeStr);
             const driver = db.drivers.find((d) => d.id === dId);
             const commissionRate = driver.commissionRate;
             const base = 15000 + distance * 5000;

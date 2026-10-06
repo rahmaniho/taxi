@@ -62,6 +62,9 @@ window.matchMedia = window.matchMedia || ((q) => ({
 }));
 window.scrollTo = () => {};
 window.HTMLElement.prototype.scrollTo = function () {};
+/* window.print در jsdom پیاده‌سازی نشده است؛ برای آزمون مسیر چاپ، آن را ثبت می‌کنیم */
+let printCalls = 0;
+window.print = () => { printCalls += 1; };
 Object.defineProperty(window.navigator, 'onLine', { value: true, configurable: true });
 
 const GLOBALS = [
@@ -257,6 +260,68 @@ if (sortTh) {
 const pager = document.querySelector('#view [data-pg-size]');
 const rowCount = document.querySelectorAll('#view tbody tr').length;
 ok(!!pager || rowCount <= 10, 'صفحه‌بندی (۱۰/۲۵/۵۰/۱۰۰) با بیش از ۱۰ رکورد نمایش داده می‌شود', `سطرها: ${rowCount}`);
+
+/* --------------------------- فرم سادهٔ سفر و استپر وضعیت --------------------------- */
+group('فرم ساده سفر و استپر تغییر وضعیت');
+App.navigate('trips-new', {}, { fromHash: true });
+await sleep(60);
+const quickForm = document.querySelector('#view #quickTripForm');
+ok(!!quickForm, 'فرم ثبت سفر ساخته شد');
+const essential = ['subscriberName', 'subscriberPhone', 'pickupAddress', 'dropoffAddress']
+    .filter((n) => quickForm?.querySelector(`[name="${n}"]`));
+ok(essential.length === 4, 'چهار فیلد ضروری سفر در فرم اصلی هستند', essential.join(', '));
+const advanced = quickForm?.querySelector('details');
+ok(!!advanced, 'سایر گزینه‌ها زیر بخش «تنظیمات پیشرفته» قرار دارند');
+ok(/پیشرفته/.test(advanced?.querySelector('summary')?.textContent || ''), 'عنوان بخش پیشرفته فارسی و روشن است');
+const advFields = advanced?.querySelectorAll('[name]').length || 0;
+ok(advFields >= 8, 'فیلدهای پیشرفته (راننده، کرایه، پرداخت، زمان‌ها) وجود دارند', `تعداد: ${advFields}`);
+
+App.navigate('trips-list', {}, { fromHash: true });
+await sleep(60);
+const statusBtn = document.querySelector('#view [data-trip-status]');
+ok(!!statusBtn, 'دکمهٔ تغییر وضعیت سفر در فهرست سفرها هست');
+if (statusBtn) {
+    statusBtn.click();
+    await sleep(80);
+    const content = document.getElementById('modalContent');
+    ok(fa(content.textContent), 'پنجرهٔ تغییر وضعیت فارسی است');
+    ok(!!content.querySelector('.stepper'), 'استپر مراحل سفر (در انتظار ← در حال انجام ← پایان) نمایش داده می‌شود');
+    const steps = content.querySelectorAll('.stepper .step').length;
+    ok(steps >= 3, 'استپر حداقل سه گام دارد', `تعداد گام: ${steps}`);
+    content.querySelector('[data-modal-close]')?.click();
+    await sleep(80);
+}
+
+/* --------------------------- پیش‌نمایش و چاپ سند --------------------------- */
+group('پیش‌نمایش چاپ و خروجی PDF');
+App.navigate('acc-subscribers', {}, { fromHash: true });
+await sleep(60);
+const subSelect = document.querySelector('#view #accSubSelect');
+ok(!!subSelect && subSelect.options.length > 1, 'فهرست انتخاب مشترک در حسابداری مشترکین هست');
+if (subSelect) {
+    subSelect.value = [...subSelect.options].map((o) => o.value).filter(Boolean)[0];
+    subSelect.dispatchEvent(new window.Event('change', { bubbles: true }));
+    await sleep(60);
+    const printBtn = document.querySelector('#view #accSubPrint');
+    ok(!!printBtn, 'دکمهٔ چاپ فاکتور فعال می‌شود');
+    if (printBtn) {
+        printBtn.click();
+        await sleep(120);
+        const frame = document.querySelector('#modalOverlay .print-preview-frame');
+        ok(!!frame, 'پیش‌نمایش سند در پنجرهٔ مودال باز می‌شود');
+        ok(!!frame?.querySelector('.print-doc'), 'سند با قالب چاپی (.print-doc) ساخته شده است');
+        ok(fa(frame?.textContent), 'محتوای سند پیش‌نمایش فارسی است');
+        ok(/[۰-۹]/.test(frame?.textContent || ''), 'مبالغ سند با ارقام فارسی نمایش داده می‌شوند');
+        const doPrint = document.querySelector('#modalOverlay [data-do-print]');
+        ok(!!doPrint, 'دکمهٔ «چاپ / ذخیره PDF» وجود دارد');
+        printCalls = 0;
+        doPrint?.click();
+        await sleep(500);
+        const printRoot = document.getElementById('print-root');
+        ok(printCalls >= 1, 'window.print() برای خروجی PDF فراخوانی شد');
+        ok(!!printRoot.querySelector('.print-doc'), 'سند نهایی در #print-root قرار گرفت (چاپ فقط همین بخش)');
+    }
+}
 
 /* --------------------------- دسترسی نقش‌ها --------------------------- */
 group('محدودیت دسترسی نقش‌ها');
