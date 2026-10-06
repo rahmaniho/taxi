@@ -1,0 +1,50 @@
+name: انتشار آنلاین (GitHub Pages)
+
+# هدف: بالا آمدن نسخهٔ آنلاین سامانه روی نشانی
+#   https://rahmaniho.github.io/taxi/
+# این گردش‌کار کل مخزن را منتشر می‌کند؛ صفحهٔ ریشه (index.html) به‌طور خودکار
+# کاربر را به برنامه (legacy/taxi.html) می‌برد.
+#
+# نکته: گام «configure-pages» با enablement: true تلاش می‌کند در صورت غیرفعال بودن،
+# GitHub Pages را خودکار فعال کند. اگر این گام با خطای دسترسی متوقف شد، کافی است
+# یک‌بار در مخزن مسیر Settings → Pages → Source: «GitHub Actions» را انتخاب کنید
+# و سپس همین گردش‌کار را از تب Actions دوباره اجرا کنید (Run workflow).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: انتشار نسخهٔ آنلاین
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: دریافت مخزن
+        uses: actions/checkout@v4
+
+      - name: پیکربندی GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: بسته‌بندی کل مخزن برای انتشار
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: انتشار روی GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
