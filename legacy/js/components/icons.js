@@ -22,6 +22,7 @@ export const ICONS = {
     'chevron-right': '<path d="m9 6 6 6-6 6"/>',
     'chevron-left': '<path d="m15 6-6 6 6 6"/>',
     'arrow-left': '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+    archive: '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/>',
     'arrow-right': '<path d="M5 12h14M12 5l7 7-7 7"/>',
     'more-vertical': '<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',

@@ -6,13 +6,13 @@
  *   • تنظیمات اتصال به سرویس ابری (PocketBase / Supabase) برای فازهای بعدی
  * ========================================================================== */
 
-import { DB, getApiConfig, setApiConfig } from '../db.js';
+import { DB, getApiConfig, setApiConfig, validateDBStructure } from '../db.js';
 import { Toast, toastError } from '../components/toast.js';
 import { Modal } from '../components/modal.js';
 import { icon } from '../components/icons.js';
 import { pageHeader } from '../components/ui.js';
 import { renderTable } from '../components/table.js';
-import { todayJalali, formatJalali, formatNumber, escapeHTML, toFa, readFileAsText } from '../utils.js';
+import { todayJalali, formatJalali, formatNumber, escapeHTML, toFa, readFileAsText, isoToJalaliKey } from '../utils.js';
 
 export default {
     id: 'backup',
@@ -86,8 +86,10 @@ export default {
           <div class="card">
             <div class="card-header"><div class="card-title" style="color:var(--red)">${icon('alert-triangle')} منطقهٔ خطر</div></div>
             <div class="flex gap-8" style="flex-wrap:wrap">
+              <button class="btn btn-outline" type="button" id="bkSample" style="border-color:var(--blue); color:var(--blue)">${icon('database')} بارگذاری داده نمونه</button>
               <button class="btn btn-outline" type="button" id="bkPurge" style="border-color:var(--yellow); color:var(--yellow)">${icon('trash')} حذف داده‌های نمونه</button>
               <button class="btn btn-outline" type="button" id="bkReset" style="border-color:var(--red); color:var(--red)">${icon('refresh')} بازنشانی کامل و شروع از صفر</button>
+              ${DB.hasPreImportSnapshot() ? `<button class="btn btn-outline" type="button" id="bkUndo">${icon('arrow-right')} بازگرداندن داده‌های پیش از آخرین بازیابی</button>` : ''}
             </div>
             <div class="soft-box mt-12">${icon('info')} پیش از بازنشانی حتماً پشتیبان بگیرید؛ این عملیات قابل بازگشت نیست.</div>
           </div>
@@ -137,14 +139,25 @@ export default {
                 if (!file) return;
                 try {
                     const text = await readFileAsText(file);
-                    const obj = JSON.parse(text);
-                    if (!obj || typeof obj !== 'object' || !obj.drivers) throw new Error('ساختار فایل پشتیبان معتبر نیست');
+                    let obj;
+                    try { obj = JSON.parse(text); } catch (_) { throw new Error('فایل انتخاب‌شده JSON معتبر نیست.'); }
+                    /* باگ ۲٫۵: اعتبارسنجی ساختار پیش از هر تغییری در داده */
+                    const check = validateDBStructure(obj);
+                    if (!check.ok) {
+                        await Modal.alert({
+                            title: 'فایل پشتیبان معتبر نیست',
+                            type: 'error',
+                            body: `<p class="mb-8">این فایل بازیابی نشد. مشکلات یافت‌شده:</p>
+                                   <ul style="padding-inline-start:18px">${check.errors.map((x) => `<li class="text-red">${escapeHTML(x)}</li>`).join('')}</ul>`
+                        });
+                        return;
+                    }
                     const ok = await Modal.confirm({
                         title: mode === 'merge' ? 'بازیابی و ادغام' : 'جایگزینی کامل داده',
                         message: mode === 'merge'
                             ? 'رکوردهای فایل پشتیبان با داده‌های فعلی ادغام شوند؟'
-                            : 'کل داده‌های فعلی حذف و با فایل پشتیبان جایگزین شوند. این عملیات قابل بازگشت نیست.',
-                        hint: `فایل: ${file.name}`,
+                            : 'کل داده‌های فعلی حذف و با فایل پشتیبان جایگزین شوند.',
+                        hint: `فایل: ${file.name}${check.warnings.length ? ` — ${toFa(check.warnings.length)} هشدار جزئی` : ''} — پیش از بازیابی یک نسخه از دادهٔ فعلی نگه داشته می‌شود و با دکمهٔ «بازگرداندن داده‌های پیش از آخرین بازیابی» قابل برگشت است.`,
                         danger: mode !== 'merge',
                         okText: mode === 'merge' ? 'ادغام کن' : 'جایگزین کن'
                     });
@@ -179,7 +192,7 @@ export default {
         root.querySelector('#bkReset').addEventListener('click', async () => {
             const ok = await Modal.confirm({
                 title: 'بازنشانی کامل سامانه',
-                message: 'همهٔ داده‌ها پاک و سامانه با تنظیمات پیش‌فرض و دادهٔ نمونه راه‌اندازی مجدد می‌شود. مطمئن هستید؟',
+                message: 'همهٔ داده‌ها پاک می‌شوند و سامانه با یک پایگاه دادهٔ کاملاً خالی (بدون دادهٔ نمونه) شروع می‌کند. مطمئن هستید؟',
                 hint: 'این عملیات قابل بازگشت نیست. ابتدا پشتیبان بگیرید.',
                 danger: true, okText: 'بله، همه چیز را پاک کن'
             });
@@ -193,6 +206,39 @@ export default {
             try {
                 await DB.factoryReset();
                 Toast.success('سامانه بازنشانی شد');
+                setTimeout(() => window.location.reload(), 800);
+            } catch (err) { toastError(err); }
+        });
+
+        /* --- بارگذاری دادهٔ نمونه (باگ ۲٫۶: نمونه فقط به‌درخواست کاربر) --- */
+        root.querySelector('#bkSample').addEventListener('click', async () => {
+            const ok = await Modal.confirm({
+                title: 'بارگذاری داده نمونه',
+                message: 'داده‌های فعلی با یک مجموعهٔ نمونه (راننده، مشترک، سفر، هزینه) جایگزین شوند؟',
+                hint: 'مناسب برای دمو و آموزش. پیش از این کار پشتیبان بگیرید.',
+                danger: true, okText: 'بارگذاری کن'
+            });
+            if (!ok) return;
+            try {
+                await DB.loadSampleData();
+                Toast.success('داده نمونه بارگذاری شد — در حال بازخوانی…');
+                setTimeout(() => window.location.reload(), 800);
+            } catch (err) { toastError(err); }
+        });
+
+        /* --- بازگرداندن داده‌های پیش از آخرین بازیابی (Undo — باگ ۲٫۵) --- */
+        root.querySelector('#bkUndo')?.addEventListener('click', async () => {
+            const info = DB.preImportInfo();
+            const ok = await Modal.confirm({
+                title: 'بازگرداندن داده‌های پیش از بازیابی',
+                message: 'داده‌ها به وضعیت پیش از آخرین بازیابی فایل پشتیبان برگردانده شوند؟',
+                hint: info?.savedAt ? `نسخهٔ نگهداری‌شده: ${formatJalali(isoToJalaliKey(info.savedAt))}` : '',
+                okText: 'برگردان'
+            });
+            if (!ok) return;
+            try {
+                await DB.undoImport();
+                Toast.success('داده‌ها برگردانده شدند — در حال بازخوانی…');
                 setTimeout(() => window.location.reload(), 800);
             } catch (err) { toastError(err); }
         });

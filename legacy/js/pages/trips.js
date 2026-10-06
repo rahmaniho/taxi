@@ -10,7 +10,7 @@ import { Modal } from '../components/modal.js';
 import { openForm } from '../components/form.js';
 import { renderTable } from '../components/table.js';
 import { icon } from '../components/icons.js';
-import { card, statusBadge, tripStepper, priorityBadge, paymentBadge, pageHeader } from '../components/ui.js';
+import { card, statusBadge, tripStepper, priorityBadge, paymentBadge, pageHeader, tripTimeRange } from '../components/ui.js';
 import { JalaliDatepicker, read as readJalali } from '../jalali.js';
 import {
     todayJalali, formatJalali, formatDateTime, formatNumber, formatMoney, escapeHTML, toFa, toEn, parseNumber,
@@ -129,8 +129,11 @@ export const tripsNew = {
                     <div class="form-row mb-10">
                       <div class="form-group">
                         <label class="form-label">کرایه (تومان)</label>
-                        <input class="form-input" type="number" min="0" step="1000" name="fare" placeholder="خودکار محاسبه می‌شود">
-                        <div class="hint" data-fare-hint></div>
+                        <div class="flex gap-8" style="align-items:center">
+                          <input class="form-input" type="number" min="0" step="1000" name="fare" placeholder="خودکار محاسبه می‌شود">
+                          <button class="btn btn-outline btn-sm" type="button" id="fareAuto" title="بازگشت به محاسبهٔ خودکار">${icon('calculator')} محاسبه خودکار</button>
+                        </div>
+                        <div class="hint" data-fare-hint><span class="chip" id="fareModeChip">محاسبهٔ خودکار</span></div>
                       </div>
                       <div class="form-group">
                         <label class="form-label">زمان پایان سفر (اختیاری)</label>
@@ -222,6 +225,38 @@ export const tripsNew = {
         driverSelect.addEventListener('change', refreshVehicles);
         refreshVehicles();
 
+        /**
+         * به‌روزرسانی فهرست پیشنهاد مبدأ (باگ ۲٫۴).
+         * آدرس ثبت‌شدهٔ مشترک «آدرس منزل» است و لزوماً محل سوار شدن نیست؛
+         * بنابراین فقط پیشنهاد می‌شود و خودکار در فیلد نمی‌نشیند.
+         */
+        function refreshPickupOptions(sub) {
+            const sel = root.querySelector('[data-addr="pickup"]');
+            if (!sel) return;
+            const common = addresses.map((a) => ({ label: `${a.title} - ${a.address}`, value: a.address }));
+            let recent = [];
+            if (sub) {
+                const seen = new Set();
+                recent = Trips.all()
+                    .filter((t) => t.subscriberId === sub.id && t.pickupAddress)
+                    .sort((a, b) => new Date(b.createdAt || b.pickupTime) - new Date(a.createdAt || a.pickupTime))
+                    .map((t) => t.pickupAddress)
+                    .concat(sub.address ? [sub.address] : [])
+                    .filter((addr) => {
+                        const k = String(addr).trim();
+                        if (!k || seen.has(k)) return false;
+                        seen.add(k);
+                        return true;
+                    })
+                    .slice(0, 6)
+                    .map((addr) => ({ label: addr === sub.address ? `${addr} (آدرس ثبت‌شده)` : addr, value: addr }));
+            }
+            const opts = (list) => list.map((o) => `<option value="${escapeHTML(o.value)}">${escapeHTML(o.label)}</option>`).join('');
+            sel.innerHTML = `<option value="">— انتخاب از آدرس‌های پیشنهادی —</option>`
+                + (recent.length ? `<optgroup label="آدرس‌های اخیر مشترک">${opts(recent)}</optgroup>` : '')
+                + `<optgroup label="آدرس‌های پرکاربرد">${opts(common)}</optgroup>`;
+        }
+
         root.querySelectorAll('[data-addr]').forEach((sel) => {
             sel.addEventListener('change', () => {
                 if (!sel.value) return;
@@ -232,10 +267,11 @@ export const tripsNew = {
         form.querySelector('[name="subscriberId"]').addEventListener('change', (e) => {
             const opt = e.target.selectedOptions[0];
             const sub = opt?.value ? DB.get('subscribers', opt.value) : null;
+            /* باگ ۲٫۴: مبدأ دیگر خودکار پر نمی‌شود؛ فقط فهرست پیشنهاد به‌روز می‌شود */
+            refreshPickupOptions(sub);
             if (sub) {
                 form.querySelector('[name="subscriberName"]').value = sub.fullName;
                 form.querySelector('[name="subscriberPhone"]').value = sub.phone;
-                if (sub.address) form.querySelector('[name="pickupAddress"]').value = sub.address;
                 if (sub.type === 'corporate') {
                     form.querySelector('[name="billedTo"]').value = 'company';
                     form.querySelector('[name="companyId"]').value = sub.companyName || sub.fullName;
@@ -247,12 +283,24 @@ export const tripsNew = {
 
         const distanceInput = form.querySelector('[name="distance"]');
         const fareInput = form.querySelector('[name="fare"]');
+        /* باگ ۲٫۳: وضعیت «محاسبهٔ دستی/خودکار» همیشه برای کاربر دیده می‌شود */
         let manualFare = false;
-        fareInput.addEventListener('input', () => { manualFare = true; });
-        distanceInput.addEventListener('input', () => {
-            manualFare = false;
+        const fareChip = root.querySelector('#fareModeChip');
+        function setFareMode(manual) {
+            manualFare = manual;
+            if (!fareChip) return;
+            fareChip.textContent = manual ? 'محاسبه دستی' : 'محاسبهٔ خودکار';
+            fareChip.className = manual ? 'chip chip-gold' : 'chip';
+            root.querySelector('#fareAuto').disabled = !manual;
+        }
+        fareInput.addEventListener('input', () => setFareMode(true));
+        distanceInput.addEventListener('input', () => updateFarePreview());
+        root.querySelector('#fareAuto').addEventListener('click', () => {
+            setFareMode(false);
             updateFarePreview();
+            Toast.info('کرایه دوباره خودکار محاسبه شد');
         });
+        setFareMode(false);
 
         function updateFarePreview() {
             const distance = parseNumber(distanceInput.value);
@@ -295,7 +343,8 @@ export const tripsNew = {
                 form.querySelector('[name="tripDate"]').value = formatJalali(today);
                 form.querySelector('[name="tripDate"]').dataset.key = today;
                 form.querySelector('[name="isPaid"]').checked = true;
-                manualFare = false;
+                setFareMode(false);
+                refreshPickupOptions(null);
                 refreshVehicles();
                 renderTodayTrips(root, true);
                 updateFarePreview();
@@ -311,7 +360,8 @@ export const tripsNew = {
                 form.querySelector('[name="tripDate"]').value = formatJalali(today);
                 form.querySelector('[name="isPaid"]').checked = true;
                 clearErrors(form);
-                manualFare = false;
+                setFareMode(false);
+                refreshPickupOptions(null);
                 updateFarePreview();
                 refreshVehicles();
             }, 10);
@@ -393,7 +443,7 @@ function renderTodayTrips(root, force = false) {
             <thead><tr><th>کد</th><th>مسافر</th><th>کرایه</th><th>وضعیت</th></tr></thead>
             <tbody>${list.map((t) => `<tr>
               <td>${escapeHTML(t.code || '—')}</td>
-              <td>${escapeHTML(t.subscriberName)}<span class="cell-sub">${formatTime(t.pickupTime)}</span></td>
+              <td>${escapeHTML(t.subscriberName)}<span class="cell-sub">${tripTimeRange(t)}</span></td>
               <td class="num">${formatNumber(t.fare)}</td>
               <td>${statusBadge(t.status)}</td>
             </tr>`).join('')}</tbody></table></div>`
@@ -496,7 +546,7 @@ export const tripsList = {
             key: 'trips-table',
             columns: [
                 { key: 'code', label: 'کد', sortable: true, render: (r) => `<span class="text-bold">${escapeHTML(r.code || '—')}</span>` },
-                { key: 'pickupTime', label: 'تاریخ و ساعت', sortable: true, render: (r) => `${formatJalali(r.pickupTime)}<span class="cell-sub">${formatTime(r.pickupTime)} → ${r.dropoffTime ? formatTime(r.dropoffTime) : '—'}</span>` },
+                { key: 'pickupTime', label: 'تاریخ و زمان سفر', sortable: true, render: (r) => `${formatJalali(r.pickupTime)}<span class="cell-sub">${tripTimeRange(r)}</span>` },
                 { key: 'driverId', label: 'راننده', sortable: true, render: (r) => escapeHTML(DB.get('drivers', r.driverId)?.fullName || '—') },
                 { key: 'subscriberName', label: 'مسافر', sortable: true, render: (r) => `${escapeHTML(r.subscriberName)}<span class="cell-sub">${toFa(r.subscriberPhone || '')}</span>` },
                 { key: 'pickupAddress', label: 'مسیر', sortable: false, render: (r) => `<span class="text-sm">${escapeHTML(r.pickupAddress || '—')} ← ${escapeHTML(r.dropoffAddress || '—')}</span>` },
@@ -728,7 +778,6 @@ export function openTripDetails(tripId) {
     const vehicle = DB.get('vehicles', t.vehicleId);
     const sub = DB.get('subscribers', t.subscriberId);
     const wait = t.assignedAt ? minutesBetween(t.createdAt || t.pickupTime, t.assignedAt) : null;
-    const duration = t.dropoffTime ? minutesBetween(t.pickupTime, t.dropoffTime) : null;
     Modal.open({
         title: `جزئیات سفر ${escapeHTML(t.code || '')}`,
         size: 'modal-lg',
@@ -748,7 +797,7 @@ export function openTripDetails(tripId) {
             ${kv('زمان سوار شدن', formatDateTime(t.pickupTime))}
             ${kv('زمان پایان', t.dropoffTime ? formatDateTime(t.dropoffTime) : '—')}
             ${kv('زمان انتظار تخصیص', wait !== null ? toFa(wait) + ' دقیقه' : '—')}
-            ${kv('مدت سفر', duration !== null ? toFa(duration) + ' دقیقه' : '—')}
+            ${kv('زمان سفر', tripTimeRange(t))}
             ${kv('اولویت', t.priority === 'urgent' ? 'فوری' : 'رزرو')}
             ${kv('کرایه', formatMoney(t.fare, false))}
             ${kv('کمیسیون (' + toFa(t.commissionRate || 0) + '٪)', formatMoney(t.commission, false))}

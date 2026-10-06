@@ -296,6 +296,63 @@ if (statusBtn) {
     await sleep(80);
 }
 
+/* ------------- کرایهٔ دستی/خودکار، آدرس‌های اخیر مشترک و زمان سفر ------------- */
+group('کرایهٔ دستی/خودکار، آدرس پیشنهادی و نمایش مدت سفر');
+App.navigate('trips-new', {}, { fromHash: true });
+await sleep(60);
+{
+    const view = document.getElementById('view');
+    const chip = view.querySelector('#fareModeChip');
+    const autoBtn = view.querySelector('#fareAuto');
+    ok(!!chip && /خودکار/.test(chip.textContent), 'نشانگر حالت کرایه در آغاز «خودکار» است');
+    ok(!!autoBtn && autoBtn.disabled, 'دکمهٔ «محاسبه خودکار» تا پیش از ویرایش دستی غیرفعال است');
+    const fare = view.querySelector('[name="fare"]');
+    fare.value = '123000';
+    fare.dispatchEvent(new window.Event('input', { bubbles: true }));
+    await sleep(30);
+    ok(/محاسبه دستی/.test(chip.textContent), 'با ویرایش دستی کرایه، نشانگر «محاسبه دستی» نمایش داده می‌شود');
+    ok(!autoBtn.disabled, 'دکمهٔ بازگشت به محاسبهٔ خودکار فعال می‌شود');
+    autoBtn.click();
+    await sleep(40);
+    ok(/خودکار/.test(chip.textContent), 'دکمهٔ «محاسبه خودکار» فلگ دستی را ریست می‌کند');
+
+    /* باگ ۲٫۴: مبدأ خودکار پر نمی‌شود و آدرس‌های اخیر فقط پیشنهاد می‌شوند */
+    const subSelect = view.querySelector('[name="subscriberId"]');
+    const firstSub = [...subSelect.options].find((o) => o.value);
+    if (firstSub) {
+        view.querySelector('[name="pickupAddress"]').value = '';
+        subSelect.value = firstSub.value;
+        subSelect.dispatchEvent(new window.Event('change', { bubbles: true }));
+        await sleep(50);
+        ok(view.querySelector('[name="pickupAddress"]').value === '', 'آدرس مشترک خودکار در مبدأ نوشته نمی‌شود');
+        ok(!!view.querySelector('[name="subscriberName"]').value, 'نام مشترک خودکار پر می‌شود');
+        const pickupSelect = view.querySelector('[data-addr="pickup"]');
+        ok(!!pickupSelect.querySelector('optgroup[label="آدرس‌های اخیر مشترک"]'), 'فهرست «آدرس‌های اخیر مشترک» ساخته می‌شود');
+    }
+}
+App.navigate('trips-list', {}, { fromHash: true });
+await sleep(60);
+ok(/تا/.test(document.getElementById('view').textContent), 'بازهٔ زمانی سفر («۱۴:۳۰ تا ۱۵:۱۵») در جدول سفرها نمایش داده می‌شود');
+
+/* ------------------- آرشیو رکوردهای حذف‌شده در تنظیمات ------------------- */
+group('آرشیو رکوردهای حذف‌شده (Soft Delete)');
+App.navigate('settings', {}, { fromHash: true });
+await sleep(80);
+{
+    const dataTab = [...document.querySelectorAll('#view [data-tab]')].find((b) => /داده|پایگاه/.test(b.textContent));
+    if (dataTab) { dataTab.click(); await sleep(60); }
+    const archiveBtn = document.getElementById('openArchive');
+    ok(!!archiveBtn, 'دکمهٔ «مشاهده آرشیو» در تنظیمات هست');
+    if (archiveBtn) {
+        archiveBtn.click();
+        await sleep(80);
+        const content = document.getElementById('modalContent');
+        ok(/آرشیو/.test(content.textContent), 'پنجرهٔ آرشیو باز می‌شود');
+        content.querySelector('[data-modal-close]')?.click();
+        await sleep(60);
+    }
+}
+
 /* --------------------------- پیش‌نمایش و چاپ سند --------------------------- */
 group('پیش‌نمایش چاپ و خروجی PDF');
 App.navigate('acc-subscribers', {}, { fromHash: true });
@@ -478,6 +535,30 @@ if (invBtn) {
 }
 /* پاک‌سازی: حذف لوگو تا آزمون‌های بعدی تمیز بمانند */
 Agency.setLogo(DEFAULT_AGENCY_ID, '');
+
+/* ------------- صفحهٔ پشتیبان‌گیری: دادهٔ نمونه، بازگشت، اعتبارسنجی ------------- */
+group('پشتیبان‌گیری: دادهٔ نمونه و بازگشت بازیابی');
+App.navigate('backup', {}, { fromHash: true });
+await sleep(60);
+{
+    const view = document.getElementById('view');
+    ok(!!view.querySelector('#bkSample'), 'دکمهٔ «بارگذاری داده نمونه» در صفحهٔ پشتیبان‌گیری هست');
+    ok(!/دادهٔ نمونه راه‌اندازی مجدد/.test(view.textContent), 'متن بازنشانی، بازگشت دادهٔ نمونه را وعده نمی‌دهد');
+    const dbModule = await import(pathToFileURL(path.join(root, 'js/db.js')).href);
+    const { DB, validateDBStructure } = dbModule;
+    ok(validateDBStructure(DB.exportObject()).ok, 'سند جاری از اعتبارسنجی پشتیبان عبور می‌کند');
+    const before = DB.list('drivers').length;
+    const snapshot = JSON.parse(JSON.stringify(DB.exportObject()));
+    const trimmed = JSON.parse(JSON.stringify(snapshot));
+    trimmed.drivers = [];
+    await DB.importObject(trimmed, { merge: false });
+    ok(DB.hasPreImportSnapshot(), 'عکس فوری پیش از بازیابی در رابط کاربری هم ساخته می‌شود');
+    App.navigate('backup', {}, { fromHash: true });
+    await sleep(60);
+    ok(!!document.getElementById('view').querySelector('#bkUndo'), 'دکمهٔ بازگرداندن پس از بازیابی ظاهر می‌شود');
+    await DB.undoImport();
+    ok(DB.list('drivers').length === before, 'بازگرداندن داده‌های پیش از بازیابی در رابط کاربری کار می‌کند');
+}
 
 /* --------------------------- دسترسی نقش‌ها --------------------------- */
 group('محدودیت دسترسی نقش‌ها');

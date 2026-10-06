@@ -536,9 +536,25 @@ export function slugify(str) {
 
 /* ===================== ۶) شناسه و مجموعه‌ها ===================== */
 
+/**
+ * تولید شناسهٔ یکتا (باگ ۴٫۱).
+ * اولویت با `crypto.randomUUID()` و سپس `crypto.getRandomValues` است؛ در
+ * مرورگرهای قدیمی به روش قبلی (زمان + Math.random) برمی‌گردد. شناسه‌ها کوتاه
+ * و خوانا نگه داشته می‌شوند تا در آدرس‌ها و گزارش‌ها قابل استفاده باشند.
+ */
 export function uid(prefix = '') {
     const t = Date.now().toString(36);
-    const r = Math.random().toString(36).slice(2, 7);
+    let r;
+    const c = typeof crypto !== 'undefined' ? crypto : null;
+    if (c && typeof c.randomUUID === 'function') {
+        r = c.randomUUID().replace(/-/g, '').slice(0, 8);
+    } else if (c && typeof c.getRandomValues === 'function') {
+        const buf = new Uint8Array(4);
+        c.getRandomValues(buf);
+        r = Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('');
+    } else {
+        r = Math.random().toString(36).slice(2, 7);
+    }
     return prefix ? `${prefix}_${t}${r}` : `${t}${r}`;
 }
 

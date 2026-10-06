@@ -26,6 +26,11 @@ export const DEFAULT_AGENCY_ID = 'ag1';
 export const SCOPE_EXEMPT = ['agencies'];
 export const API_CONFIG_KEY = 'taxi_api_config';
 
+/** کلید نگهداری نسخهٔ خراب‌شدهٔ داده (باگ ۲٫۲) — هرگز بازنویسی نمی‌شود مگر با خرابی تازه */
+export const CORRUPT_KEY = DB_KEY + '_corrupted';
+/** کلید نگهداری عکس فوری پیش از بازیابی فایل پشتیبان (باگ ۲٫۵ — امکان بازگشت) */
+export const PRE_IMPORT_KEY = DB_KEY + '_preimport';
+
 /* ترتیب مجموعه‌ها (برای خروجی/ورودی و پیمایش) */
 export const COLLECTIONS = [
     'agencies',
@@ -199,10 +204,26 @@ export const LocalStorageAdapter = {
     available: () => {
         try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return true; } catch (_) { return false; }
     },
+    /**
+     * خواندن سند از حافظهٔ محلی.
+     * اگر JSON خراب باشد، نسخهٔ خام در کلید جداگانه نگه داشته می‌شود و خطای
+     * نشان‌دار (code = CORRUPT_DB) پرتاب می‌شود تا هرگز دادهٔ نمونه جای دادهٔ
+     * واقعی کاربر را نگیرد (باگ ۲٫۲).
+     */
     async load() {
         const raw = localStorage.getItem(DB_KEY);
         if (!raw) return null;
-        return JSON.parse(raw);
+        try {
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') throw new Error('ساختار سند نامعتبر است');
+            return parsed;
+        } catch (e) {
+            try { localStorage.setItem(CORRUPT_KEY, raw); } catch (_) { /* فضای ذخیره‌سازی پر است */ }
+            const err = new Error('داده‌های ذخیره‌شده خراب شده‌اند');
+            err.code = 'CORRUPT_DB';
+            err.cause = e;
+            throw err;
+        }
     },
     async save(db) {
         localStorage.setItem(DB_KEY, JSON.stringify(db));
@@ -266,6 +287,7 @@ let _actor = { id: '', name: 'سیستم' };
 let _scope = null;              // شناسهٔ آژانس فعال (null = بدون فیلتر؛ قبل از ورود)
 let _saveTimer = null;
 let _ready = false;
+let _corrupted = false;          // دادهٔ محلی خراب است و منتظر تصمیم کاربر است (باگ ۲٫۲)
 
 /** شناسهٔ آژانس مؤثر یک رکورد (رکوردهای قدیمی بدون شناسه متعلق به آژانس پیش‌فرض‌اند) */
 export function agencyOf(rec) {
@@ -289,17 +311,56 @@ export const DB = {
         const chosen = adapter || (RestAdapter.available() ? 'rest' : 'local');
         _adapter = chosen === 'rest' ? RestAdapter : LocalStorageAdapter;
 
+        _corrupted = false;
         try {
             let data = await _adapter.load();
             if (!data) data = await migrateOrSeed();
             _db = normalizeDB(data);
         } catch (e) {
+            if (e?.code === 'CORRUPT_DB') {
+                /* باگ ۲٫۲: دادهٔ خراب را با دادهٔ نمونه جایگزین نمی‌کنیم.
+                   سند موقتِ خالی در حافظه ساخته می‌شود اما تا تصمیم کاربر
+                   (بازیابی پشتیبان یا شروع از صفر) چیزی روی دیسک نوشته نمی‌شود. */
+                console.error('DB corrupted', e);
+                _corrupted = true;
+                _db = emptyDB();
+                _ready = true;
+                notify({ action: 'corrupted', entity: 'db' });
+                return _db;
+            }
             console.error('DB init failed', e);
             _db = migrateSeedSync();
         }
         _ready = true;
         DB.persist(true);
         return _db;
+    },
+
+    /* ---------- محافظت از دادهٔ خراب (باگ ۲٫۲) ---------- */
+
+    /** آیا آخرین راه‌اندازی با دادهٔ خراب مواجه شد؟ (حالت «فقط خواندنی تا تصمیم کاربر») */
+    isCorrupted: () => _corrupted,
+
+    /** نسخهٔ خام دادهٔ خراب‌شده (برای دانلود و تلاش دستی بازیابی) */
+    corruptedRaw() {
+        try { return localStorage.getItem(CORRUPT_KEY) || ''; } catch (_) { return ''; }
+    },
+
+    /**
+     * شروع از صفر پس از خرابی: سند خالی (بدون دادهٔ نمونه) ساخته و ذخیره می‌شود.
+     * نسخهٔ خراب برای بررسی بعدی در `CORRUPT_KEY` باقی می‌ماند.
+     */
+    async startFresh() {
+        _db = emptyDB();
+        _corrupted = false;
+        await DB.persist(true);
+        notify({ action: 'reset', entity: 'db' });
+        return _db;
+    },
+
+    /** حذف نسخهٔ خام خراب‌شده پس از اطمینان کاربر */
+    discardCorruptedCopy() {
+        try { localStorage.removeItem(CORRUPT_KEY); } catch (_) { /* ignore */ }
     },
 
     isReady: () => _ready,
@@ -594,8 +655,25 @@ export const DB = {
         return clone(_db);
     },
 
+    /**
+     * بازیابی سند پشتیبان.
+     * پیش از هر کاری ساختار اعتبارسنجی می‌شود (باگ ۲٫۵) و یک عکس فوری از دادهٔ
+     * فعلی در `PRE_IMPORT_KEY` ذخیره می‌شود تا کاربر بتواند بازیابی را لغو کند.
+     */
     async importObject(obj, { merge = false } = {}) {
-        if (!obj || typeof obj !== 'object') throw new Error('فایل پشتیبان نامعتبر است');
+        const check = validateDBStructure(obj);
+        if (!check.ok) {
+            const err = new Error('فایل پشتیبان معتبر نیست:\n• ' + check.errors.join('\n• '));
+            err.code = 'INVALID_BACKUP';
+            err.errors = check.errors;
+            throw err;
+        }
+        /* عکس فوری برای بازگشت (Undo) */
+        try {
+            localStorage.setItem(PRE_IMPORT_KEY, JSON.stringify({
+                savedAt: nowISO(), db: _db
+            }));
+        } catch (_) { /* اگر فضای ذخیره‌سازی پر بود، بازیابی متوقف نمی‌شود */ }
         if (!merge) {
             _db = normalizeDB(obj);
         } else {
@@ -612,6 +690,41 @@ export const DB = {
         await DB.persist(true);
         notify({ action: 'import', entity: 'db' });
         return true;
+    },
+
+    /** آیا نسخهٔ پیش از آخرین بازیابی موجود است؟ */
+    hasPreImportSnapshot() {
+        try { return !!localStorage.getItem(PRE_IMPORT_KEY); } catch (_) { return false; }
+    },
+
+    /** اطلاعات عکس فوری پیش از بازیابی (زمان ثبت) */
+    preImportInfo() {
+        try {
+            const snap = JSON.parse(localStorage.getItem(PRE_IMPORT_KEY) || 'null');
+            return snap?.db ? { savedAt: snap.savedAt || '' } : null;
+        } catch (_) { return null; }
+    },
+
+    /** بازگرداندن داده به وضعیت پیش از آخرین بازیابی (Undo) */
+    async undoImport() {
+        const raw = localStorage.getItem(PRE_IMPORT_KEY);
+        if (!raw) throw new Error('نسخهٔ پیش از بازیابی موجود نیست');
+        const snap = JSON.parse(raw);
+        if (!snap?.db) throw new Error('نسخهٔ پیش از بازیابی خوانا نیست');
+        _db = normalizeDB(snap.db);
+        await DB.persist(true);
+        localStorage.removeItem(PRE_IMPORT_KEY);
+        notify({ action: 'undo-import', entity: 'db' });
+        return true;
+    },
+
+    /** بارگذاری دادهٔ نمونه به‌درخواست کاربر (دمو/آموزش) — باگ ۲٫۶ */
+    async loadSampleData() {
+        _db = normalizeDB(seedSampleDB());
+        _corrupted = false;
+        await DB.persist(true);
+        notify({ action: 'seed-sample', entity: 'db' });
+        return _db;
     },
 
     async factoryReset() {
@@ -674,6 +787,69 @@ function normalizeDB(data) {
     ensureAgencyTags(db, DEFAULT_AGENCY_ID);
     db.meta.version = SCHEMA_VERSION;
     return db;
+}
+
+/* ===================== اعتبارسنجی سند پشتیبان (باگ ۲٫۵) ===================== */
+
+/** مجموعه‌های اجباری یک سند پشتیبان معتبر */
+export const REQUIRED_COLLECTIONS = ['drivers', 'vehicles', 'trips'];
+
+/**
+ * بررسی ساختار یک سند پیش از جایگزینی داده‌ها.
+ * خروجی: { ok, errors[], warnings[] } با پیام‌های دقیق فارسی دربارهٔ فیلد ناقص.
+ * @param {any} data سند خوانده‌شده از فایل JSON
+ */
+export function validateDBStructure(data) {
+    const errors = [];
+    const warnings = [];
+
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return { ok: false, errors: ['فایل یک سند JSON معتبر نیست (شیء انتظار می‌رفت).'], warnings };
+    }
+
+    REQUIRED_COLLECTIONS.forEach((c) => {
+        if (!(c in data)) errors.push(`فیلد اجباری «${COLLECTION_LABELS[c] || c}» (${c}) در فایل وجود ندارد.`);
+        else if (!Array.isArray(data[c])) errors.push(`فیلد «${COLLECTION_LABELS[c] || c}» (${c}) باید آرایه باشد.`);
+    });
+
+    if (!('settings' in data)) errors.push('فیلد اجباری «تنظیمات» (settings) در فایل وجود ندارد.');
+    else if (typeof data.settings !== 'object' || data.settings === null || Array.isArray(data.settings)) {
+        errors.push('فیلد «تنظیمات» (settings) باید یک شیء باشد.');
+    }
+
+    /* مجموعه‌های اختیاری: اگر باشند باید آرایه باشند */
+    COLLECTIONS.forEach((c) => {
+        if (REQUIRED_COLLECTIONS.includes(c)) return;
+        if (c in data && !Array.isArray(data[c])) {
+            errors.push(`فیلد «${COLLECTION_LABELS[c] || c}» (${c}) باید آرایه باشد.`);
+        }
+        if (!(c in data)) warnings.push(`مجموعهٔ «${COLLECTION_LABELS[c] || c}» در فایل نیست و خالی ساخته می‌شود.`);
+    });
+
+    /* یکتایی شناسه‌ها و وجود id در رکوردها */
+    COLLECTIONS.forEach((c) => {
+        if (!Array.isArray(data[c])) return;
+        const seen = new Set();
+        let noId = 0;
+        let dup = 0;
+        data[c].forEach((r) => {
+            if (!r || typeof r !== 'object') { noId++; return; }
+            if (!r.id) { noId++; return; }
+            if (seen.has(r.id)) dup++;
+            seen.add(r.id);
+        });
+        if (noId) warnings.push(`${toFa(noId)} رکورد بدون شناسه در «${COLLECTION_LABELS[c] || c}» یافت شد.`);
+        if (dup) errors.push(`${toFa(dup)} شناسهٔ تکراری در «${COLLECTION_LABELS[c] || c}» (${c}) وجود دارد.`);
+    });
+
+    /* ارجاع‌های شکسته فقط هشدارند (Soft Delete ممکن است رکورد را پنهان کرده باشد) */
+    if (Array.isArray(data.trips) && Array.isArray(data.drivers)) {
+        const ids = new Set(data.drivers.map((d) => d?.id));
+        const orphan = data.trips.filter((t) => t?.driverId && !ids.has(t.driverId)).length;
+        if (orphan) warnings.push(`${toFa(orphan)} سفر به رانندهٔ ناموجود ارجاع می‌دهد.`);
+    }
+
+    return { ok: errors.length === 0, errors, warnings };
 }
 
 /** تلاش برای مهاجرت از نسخه‌های قبلی و در غیر این صورت داده نمونه */

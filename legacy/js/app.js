@@ -128,6 +128,12 @@ async function boot() {
         Toast.error('راه‌اندازی پایگاه داده با خطا مواجه شد؛ برنامه با دادهٔ پیش‌فرض ادامه می‌دهد');
     }
 
+    /* باگ ۲٫۲: دادهٔ محلی خراب است — هیچ چیزی بازنویسی نمی‌شود تا کاربر تصمیم بگیرد */
+    if (DB.isCorrupted()) {
+        showRecoveryScreen();
+        return;
+    }
+
     try {
         await Auth.init();
     } catch (err) {
@@ -161,6 +167,94 @@ async function boot() {
     } else {
         showLogin();
     }
+}
+
+/* ===================== صفحهٔ بازیابی دادهٔ خراب (باگ ۲٫۲) ===================== */
+
+/**
+ * وقتی JSON ذخیره‌شده قابل خواندن نیست، به‌جای جایگزینی خاموش با دادهٔ نمونه،
+ * این صفحه نمایش داده می‌شود: بارگذاری فایل پشتیبان، دانلود نسخهٔ خراب برای
+ * بررسی، یا شروع از صفر (سند خالی، بدون دادهٔ نمونه).
+ */
+function showRecoveryScreen() {
+    const screen = document.getElementById('auth-screen');
+    const shell = document.getElementById('app-shell');
+    shell?.setAttribute('hidden', '');
+    screen.hidden = false;
+    const rawSize = DB.corruptedRaw().length;
+    screen.innerHTML = `
+      <div class="auth-card" style="max-width:560px">
+        <div class="auth-brand">
+          <div class="text-red" style="font-size:2.4rem">${icon('alert-triangle', 'icon-xl')}</div>
+          <h1>داده‌ها خراب شده‌اند</h1>
+          <p>اطلاعات ذخیره‌شده در این مرورگر قابل خواندن نیست.</p>
+        </div>
+        <div class="soft-box mb-12" style="line-height:2">
+          ${icon('info')} برای جلوگیری از پاک شدن اطلاعات، <b>هیچ داده‌ای بازنویسی نشد</b>.
+          نسخهٔ خام خراب (${toFa(Math.max(1, Math.round(rawSize / 1024)))} کیلوبایت) نگهداری شده است.
+          لطفاً آخرین فایل پشتیبان را بارگذاری کنید یا از صفر شروع کنید.
+        </div>
+        <div id="recError" class="field-error mb-10" style="display:none"></div>
+        <input type="file" id="recFile" accept=".json,application/json" hidden>
+        <div class="flex gap-8" style="flex-direction:column">
+          <button class="btn btn-gold w-100" type="button" id="recRestore">${icon('upload')} بارگذاری بکاپ</button>
+          <button class="btn btn-outline w-100" type="button" id="recDownload">${icon('download')} دانلود نسخهٔ خراب (برای بررسی)</button>
+          <button class="btn btn-outline w-100" type="button" id="recFresh" style="border-color:var(--red); color:var(--red)">${icon('refresh')} شروع از صفر (داده خالی)</button>
+        </div>
+      </div>`;
+
+    const errBox = screen.querySelector('#recError');
+    const showErr = (msg) => { errBox.style.display = 'block'; errBox.textContent = msg; };
+
+    screen.querySelector('#recDownload').addEventListener('click', () => {
+        try {
+            const blob = new Blob([DB.corruptedRaw()], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `taxi-corrupted-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 3000);
+            Toast.success('نسخهٔ خراب دانلود شد');
+        } catch (e) { showErr('دانلود نسخهٔ خراب ممکن نشد'); }
+    });
+
+    screen.querySelector('#recRestore').addEventListener('click', () => {
+        const input = screen.querySelector('#recFile');
+        input.value = '';
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+                const obj = JSON.parse(await readFileAsText(file));
+                await DB.importObject(obj, { merge: false });
+                DB.discardCorruptedCopy();
+                Toast.success('داده‌ها از فایل پشتیبان بازیابی شدند — در حال بازخوانی…');
+                setTimeout(() => window.location.reload(), 800);
+            } catch (err) {
+                showErr(err?.message || 'فایل پشتیبان قابل خواندن نیست');
+            }
+        };
+        input.click();
+    });
+
+    screen.querySelector('#recFresh').addEventListener('click', async () => {
+        const ok = await Modal.confirm({
+            title: 'شروع از صفر',
+            message: 'یک پایگاه دادهٔ خالی ساخته شود؟ هیچ دادهٔ نمونه‌ای اضافه نمی‌شود.',
+            hint: 'نسخهٔ خراب برای بررسی بعدی نگه داشته می‌شود.',
+            danger: true,
+            okText: 'بله، شروع از صفر'
+        });
+        if (!ok) return;
+        try {
+            await DB.startFresh();
+            Toast.success('پایگاه دادهٔ خالی ساخته شد — در حال بازخوانی…');
+            setTimeout(() => window.location.reload(), 700);
+        } catch (err) { toastError(err); }
+    });
 }
 
 /* =============================== صفحهٔ ورود =============================== */
