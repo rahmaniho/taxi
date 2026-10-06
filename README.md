@@ -3,6 +3,8 @@
 سامانهٔ کامل و فارسی مدیریت تاکسی تلفنی: صف انتظار، تخصیص راننده، مشترکین و بدهی، حسابداری دوطرفه، گزارش‌ها و چاپ صورت‌حساب/رسید — کاملاً در مرورگر و بدون نیاز به سرور.
 
 * **برنامهٔ آنلاین:** https://rahmaniho.github.io/taxi/ (انتقال خودکار به برنامه)
+  * برای فعال‌سازی یک‌بارهٔ این نشانی: **Settings → Pages → Source: GitHub Actions → Save**، سپس در تب **Actions** گردش‌کار «انتشار آنلاین» را با **Run workflow** اجرا کنید. (گردش‌کار آماده است و هر push به `main` هم انتشار را به‌روز می‌کند.)
+  * گزینهٔ دوم: مخزن `karen-soft` شما از قبل GitHub Pages فعال دارد؛ با اجرای `bash publish-to-karen-soft.sh` برنامه روی `https://rahmaniho.github.io/karen-soft/legacy/taxi.html` منتشر می‌شود.
 * **فایل اصلی برنامه:** [`legacy/taxi.html`](./legacy/taxi.html)
 * **ورود پیش‌فرض مدیر سامانه:** `admin` / `admin`
 * **مستندات:** [راهنمای اجرا و نصب](./legacy/README.md) · [تاریخچهٔ تغییرات](./legacy/CHANGELOG.md)
