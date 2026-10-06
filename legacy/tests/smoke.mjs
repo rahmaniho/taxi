@@ -564,6 +564,31 @@ Journals.remove(openingJournal.id);
 ok(!DB.get('journals', openingJournal.id), 'حذف نرم سند حسابداری کار می‌کند');
 ok(Journals.trialBalance(wide).balanced, 'تراز پس از حذف سند متوازن می‌ماند');
 
+/* ------------------- ۸٫۸) مهاجرت داده‌های نسخهٔ ۵ به ۶ ------------------- */
+group('مهاجرت داده از نسخهٔ ۵ (نصب‌های قبلی)');
+const { migrateFromV5, DEFAULT_AGENCY_ID: DEF_AG } = await import('../js/db.js');
+const legacyDoc = {
+    meta: { version: 5, sampleData: false },
+    settings: { ...DB.settings(), companyName: 'آژانس قدیمی من' },
+    sequences: { trip: 12, subscriber: 4 },
+    drivers: [{ id: 'old-d1', fullName: 'رانندهٔ قدیمی', phone: '09120000000', commissionRate: 15, status: 'active' }],
+    trips: [{ id: 'old-t1', driverId: 'old-d1', fare: 100000, commission: 15000, status: 'completed', billedTo: 'driver', pickupTime: new Date().toISOString(), createdAt: new Date().toISOString() }],
+    subscribers: [{ id: 'old-s1', fullName: 'مشترک قدیمی', debt: 0, type: 'individual' }],
+    operators: [{ id: 'old-op1', fullName: 'کاربر قدیمی', username: 'olduser', role: 'operator', status: 'active', passwordHash: 'x', salt: 'y' }],
+    expenses: [{ id: 'old-e1', date: U.todayJalali(), category: 'برق', amount: 1000 }],
+    auditLog: []
+};
+const migrated = migrateFromV5(legacyDoc);
+eq(migrated.meta.version, 6, 'نسخهٔ سند پس از مهاجرت به ۶ ارتقا می‌یابد');
+eq(migrated.meta.migratedFrom, 'v5', 'منبع مهاجرت ثبت می‌شود');
+eq(migrated.agencies.length, 1, 'آژانس پیش‌فرض برای دادهٔ قدیمی ساخته می‌شود');
+eq(migrated.agencies[0].name, 'آژانس قدیمی من', 'نام آژانس از تنظیمات قبلی برداشته می‌شود');
+ok(migrated.accounts.length >= 20, 'کدینگ حساب‌ها برای دادهٔ قدیمی ساخته می‌شود');
+ok(migrated.drivers.every((d) => d.agencyId === DEF_AG), 'رانندگان قدیمی به آژانس پیش‌فرض مهر می‌شوند');
+ok(migrated.trips.every((t) => t.agencyId === DEF_AG) && migrated.operators.every((o) => o.agencyId === DEF_AG),
+    'سفرها و کاربران قدیمی هم مهر آژانس می‌گیرند');
+eq(migrated.trips.length, 1, 'داده‌های قدیمی حفظ می‌شوند (هیچ رکوردی گم نمی‌شود)');
+
 /* ------------------------------- ۹) هشدارها ------------------------------- */
 group('هشدارهای داشبورد');
 const alerts = Alerts.all ? Alerts.all() : [];
