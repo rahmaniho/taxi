@@ -29,7 +29,7 @@ try {
     globalThis.navigator = { userAgent: 'node-smoke-test', onLine: true };
 }
 
-const { DB, SCHEMA_VERSION } = await import('../js/db.js');
+const { DB, SCHEMA_VERSION, DB_KEY, CORRUPT_KEY, PRE_IMPORT_KEY, validateDBStructure } = await import('../js/db.js');
 const Prints = await import('../js/prints.js');
 const { Auth } = await import('../js/auth.js');
 const { Drivers, Trips, Subscribers, Payments, Reports, Alerts, fareFor } = await import('../js/domain.js');
@@ -636,6 +636,58 @@ await DB.importObject(clone1, { merge: false });
 eq(DB.list('trips').length, clone1.trips.filter((t) => !t.deletedAt).length, 'بازیابی کامل داده‌ها انجام شد');
 const stats2 = DB.stats();
 ok(Object.keys(stats2).length >= 10, 'آمار موجودیت‌ها گزارش می‌شود');
+
+/* ---------------- ۱۳) اعتبارسنجی پشتیبان و محافظت از دادهٔ خراب ---------------- */
+group('اعتبارسنجی پشتیبان و محافظت از دادهٔ خراب');
+
+/* باگ ۲٫۵ — ساختار معتبر/نامعتبر */
+ok(validateDBStructure(DB.exportObject()).ok, 'سند سالم، اعتبارسنجی را رد می‌کند');
+const badDoc = validateDBStructure({ drivers: [], settings: {} });
+ok(!badDoc.ok, 'نبودِ فیلد اجباری تشخیص داده می‌شود');
+ok(badDoc.errors.some((e) => e.includes('trips')), 'نام فیلد ناقص در پیام خطا می‌آید');
+ok(!validateDBStructure({ drivers: {}, vehicles: [], trips: [], settings: {} }).ok, 'نوع نادرست مجموعه رد می‌شود');
+ok(!validateDBStructure(null).ok, 'سند تهی رد می‌شود');
+const dupDoc = validateDBStructure({
+    drivers: [{ id: 'd1' }, { id: 'd1' }], vehicles: [], trips: [], settings: {}
+});
+ok(!dupDoc.ok && dupDoc.errors.some((e) => e.includes('تکراری')), 'شناسهٔ تکراری خطا می‌دهد');
+
+let badImportRejected = false;
+try { await DB.importObject({ foo: 1 }); } catch (e) { badImportRejected = e.code === 'INVALID_BACKUP'; }
+ok(badImportRejected, 'importObject فایل نامعتبر را پیش از ذخیره رد می‌کند');
+
+/* باگ ۲٫۵ — امکان بازگشت پس از بازیابی */
+const driverCountBefore = DB.list('drivers').length;
+const shrunk = JSON.parse(JSON.stringify(DB.exportObject()));
+shrunk.drivers = shrunk.drivers.slice(0, 1);
+await DB.importObject(shrunk, { merge: false });
+ok(DB.hasPreImportSnapshot(), 'پیش از بازیابی، عکس فوری ذخیره می‌شود');
+await DB.undoImport();
+eq(DB.list('drivers').length, driverCountBefore, 'بازگرداندن داده‌های پیش از بازیابی کار می‌کند');
+ok(!DB.hasPreImportSnapshot(), 'پس از بازگشت، عکس فوری پاک می‌شود');
+
+/* باگ ۲٫۲ — دادهٔ خراب هرگز با دادهٔ نمونه جایگزین نمی‌شود */
+localStorage.setItem(DB_KEY, '{این JSON نیست');
+await DB.init();
+ok(DB.isCorrupted(), 'خرابی داده تشخیص داده می‌شود');
+eq(DB.list('drivers').length, 0, 'هنگام خرابی، دادهٔ نمونه جایگزین نمی‌شود');
+eq(localStorage.getItem(DB_KEY), '{این JSON نیست', 'دادهٔ خراب کاربر روی دیسک بازنویسی نمی‌شود');
+ok((DB.corruptedRaw() || '').includes('JSON'), 'نسخهٔ خام خراب برای بازیابی نگه داشته می‌شود');
+await DB.startFresh();
+ok(!DB.isCorrupted(), 'پس از «شروع از صفر» حالت خرابی پاک می‌شود');
+eq(DB.list('trips').length, 0, 'شروع از صفر، پایگاه دادهٔ خالی می‌سازد');
+ok(!!localStorage.getItem(CORRUPT_KEY), 'نسخهٔ خراب تا حذف دستی باقی می‌ماند');
+DB.discardCorruptedCopy();
+ok(!localStorage.getItem(CORRUPT_KEY), 'نسخهٔ خراب قابل حذف است');
+
+/* باگ ۲٫۶ — دادهٔ نمونه فقط به‌درخواست کاربر */
+await DB.loadSampleData();
+ok(DB.list('drivers').length > 0, 'بارگذاری دستی دادهٔ نمونه کار می‌کند');
+
+/* باگ ۴٫۱ — یکتایی شناسه‌ها */
+const ids = new Set(Array.from({ length: 2000 }, () => U.uid('x')));
+eq(ids.size, 2000, 'شناسه‌های تولیدشده یکتا هستند');
+ok(/^x_[0-9a-z]+$/.test(U.uid('x')), 'قالب شناسه معتبر است');
 
 /* --------------------------------- پایان --------------------------------- */
 console.log('\n' + '─'.repeat(60));

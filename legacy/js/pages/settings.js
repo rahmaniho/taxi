@@ -13,7 +13,7 @@ import { pageHeader } from '../components/ui.js';
 import { JalaliDatepicker } from '../jalali.js';
 import {
     calculateFare, isHolidayKey, todayJalali, formatJalali, formatNumber, formatMoney, escapeHTML, toFa,
-    parseNumber, imageFileToDataURL, formatFileSize
+    parseNumber, imageFileToDataURL, formatFileSize, isoToJalaliKey
 } from '../utils.js';
 
 export default {
@@ -347,9 +347,13 @@ export default {
                   <div class="flex gap-8" style="flex-wrap:wrap">
                     <button class="btn btn-outline btn-sm" type="button" data-go-backup>${icon('download')} پشتیبان‌گیری و بازیابی</button>
                     <button class="btn btn-outline btn-sm" type="button" id="purgeSample">${icon('trash')} حذف داده‌های نمونه</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="openArchive">${icon('archive')} مشاهده آرشیو (رکوردهای حذف‌شده)</button>
                   </div>
                   <div class="soft-box mt-16">${icon('info')} لایه داده به‌صورت Adapter نوشته شده است؛ برای اتصال به PocketBase یا Supabase کافی است آدرس سرویس را در تنظیمات API وارد کنید (بدون تغییر در رابط کاربری).</div>
                 </div>`;
+                /* باگ ۱٫۸: آرشیو رکوردهای حذف‌شدهٔ نرم با امکان بازگردانی */
+                root.querySelector('#openArchive').addEventListener('click', () => openArchiveModal());
+
                 root.querySelector('#purgeSample').addEventListener('click', async () => {
                     const ok = await Modal.confirm({
                         title: 'حذف داده‌های نمونه',
@@ -479,4 +483,66 @@ function labelOfCollection(key) {
         transactions: 'تراکنش‌ها', expenses: 'هزینه‌ها', operators: 'کاربران', shifts: 'شیفت‌ها', auditLog: 'گزارش تغییرات'
     };
     return labels[key] || key;
+}
+
+
+/* ======================= آرشیو رکوردهای حذف‌شده (باگ ۱٫۸) ======================= */
+
+/** برچسب خوانا برای هر رکورد آرشیو، بسته به نوع مجموعه */
+function archiveLabel(collection, rec) {
+    if (collection === 'trips') return `${rec.code || ''} — ${rec.subscriberName || ''}`;
+    if (collection === 'drivers' || collection === 'subscribers' || collection === 'operators') {
+        return rec.fullName || rec.username || rec.id;
+    }
+    if (collection === 'vehicles') return `${rec.plateNumber || ''} ${rec.brand || ''}`;
+    return rec.title || rec.name || rec.code || rec.id;
+}
+
+/**
+ * نمایش رکوردهای حذف‌شدهٔ نرم و بازگرداندن آن‌ها.
+ * حذف در این سامانه «نرم» است (فیلد deletedAt)، پس هیچ سفری یتیم نمی‌شود و
+ * رکورد اشتباه حذف‌شده قابل بازیابی است.
+ */
+export function openArchiveModal() {
+    const collections = ['drivers', 'vehicles', 'subscribers', 'trips', 'addresses', 'expenses', 'operators'];
+    const render = () => {
+        const groups = collections
+            .map((c) => ({ c, rows: DB.listDeleted(c) }))
+            .filter((g) => g.rows.length);
+        if (!groups.length) {
+            return `<div class="empty-state">${icon('archive', 'icon-xl')}<p>آرشیو خالی است؛ رکورد حذف‌شده‌ای وجود ندارد.</p></div>`;
+        }
+        return groups.map((g) => `
+          <div class="card mb-12">
+            <div class="card-header"><div class="card-title">${icon('database')} ${escapeHTML(labelOfCollection(g.c))}</div>
+              <span class="chip">${formatNumber(g.rows.length)} رکورد</span></div>
+            <div class="table-wrapper"><table class="mini-table">
+              <thead><tr><th>عنوان</th><th>تاریخ حذف</th><th>بازگردانی</th></tr></thead>
+              <tbody>${g.rows.slice(0, 50).map((r) => `<tr>
+                <td>${escapeHTML(archiveLabel(g.c, r))}</td>
+                <td>${r.deletedAt ? formatJalali(isoToJalaliKey(r.deletedAt)) : '—'}</td>
+                <td><button class="btn btn-outline btn-sm" type="button" data-restore="${escapeHTML(g.c)}" data-id="${escapeHTML(r.id)}">${icon('refresh')} بازگردانی</button></td>
+              </tr>`).join('')}</tbody>
+            </table></div>
+          </div>`).join('');
+    };
+
+    Modal.open({
+        title: 'آرشیو رکوردهای حذف‌شده',
+        size: 'modal-lg',
+        body: `<div id="archiveBody">${render()}</div>
+               <div class="soft-box mt-8">${icon('info')} حذف در این سامانه نرم است: رکورد از فهرست‌ها پنهان می‌شود ولی سفرها و اسناد مرتبط سالم می‌مانند.</div>`,
+        onMount: (node) => {
+            node.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-restore]');
+                if (!btn) return;
+                try {
+                    DB.restore(btn.dataset.restore, btn.dataset.id);
+                    Toast.success('رکورد از آرشیو بازگردانده شد');
+                    node.querySelector('#archiveBody').innerHTML = render();
+                    window.App.notifyDataChanged();
+                } catch (err) { toastError(err, 'بازگردانی ممکن نشد'); }
+            });
+        }
+    });
 }

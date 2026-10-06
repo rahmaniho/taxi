@@ -7,7 +7,7 @@ import { pageHeader } from '../components/ui.js';
 import { DB, SCHEMA_VERSION } from '../db.js';
 import { escapeHTML, toFa, formatJalali, todayJalali } from '../utils.js';
 
-export const APP_VERSION = '5.1.0';
+export const APP_VERSION = '5.2.0';
 export const APP_BUILD = '1405-07';
 
 const FEATURES = [

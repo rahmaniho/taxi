@@ -12,7 +12,7 @@ import { Toast, toastError } from '../components/toast.js';
 import { Modal } from '../components/modal.js';
 import { openForm } from '../components/form.js';
 import { icon } from '../components/icons.js';
-import { availabilityBadge, card, kpi, tripStepper, statusBadge } from '../components/ui.js';
+import { availabilityBadge, card, kpi, tripStepper, statusBadge, tripTimeRange } from '../components/ui.js';
 import { todayJalali, formatNumber, escapeHTML, toFa, minutesBetween, nowISO, formatDateTime, formatJalali, humanizeMinutes } from '../utils.js';
 
 function waitLabel(t) {
@@ -209,6 +209,7 @@ function openTripDetails(tripId) {
             <div>${row('زمان ثبت', formatDateTime(t.createdAt))}</div>
             <div>${row('زمان سوار شدن', formatDateTime(t.pickupTime))}</div>
             <div>${row('زمان پایان', t.dropoffTime ? formatDateTime(t.dropoffTime) : '—')}</div>
+            <div>${row('مدت سفر', tripTimeRange(t))}</div>
             <div>${row('راننده', driver ? escapeHTML(driver.fullName) : '—')}</div>
             <div>${row('خودرو', vehicle ? escapeHTML(vehicle.plateNumber + ' - ' + vehicle.brand) : '—')}</div>
             <div>${row('مسافت', t.distance ? formatNumber(t.distance) + ' کیلومتر' : '—')}</div>

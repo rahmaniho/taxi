@@ -3,7 +3,10 @@
  * ========================================================================== */
 
 import { icon, brandSVG } from './icons.js';
-import { escapeHTML, formatJalali, formatDateTime, toFa, formatNumber, todayJalali } from '../utils.js';
+import {
+    escapeHTML, formatJalali, formatDateTime, toFa, formatNumber, todayJalali,
+    formatTime, minutesBetween, humanizeMinutes
+} from '../utils.js';
 import { S } from '../strings.js';
 import { DB } from '../db.js';
 import { Agency } from '../agency.js';
@@ -51,6 +54,30 @@ export function availabilityBadge(driver, { clickable = true } = {}) {
     const label = AVAIL_LABEL[a] || 'آفلاین';
     const attrs = clickable ? `class="avail-badge ${cls}" data-avail-toggle="${escapeHTML(driver.id)}" title="تغییر وضعیت"` : `class="avail-badge ${cls}"`;
     return `<span ${clickable ? 'role="button" tabindex="0"' : ''} ${attrs}><i class="avail-dot"></i>${label}</span>`;
+}
+
+/**
+ * بازهٔ زمانی سفر به‌صورت «۱۴:۳۰ تا ۱۵:۱۵ (۴۵ دقیقه)» — باگ ۱٫۴
+ * اگر زمان پایان هنوز ثبت نشده باشد: «۱۴:۳۰ تا — (در حال انجام)».
+ * @param {{pickupTime?:string, dropoffTime?:string, status?:string}} trip
+ */
+export function tripTimeRange(trip, { withDuration = true } = {}) {
+    if (!trip?.pickupTime) return '—';
+    const start = formatTime(trip.pickupTime);
+    if (!trip.dropoffTime) {
+        const note = trip.status === 'cancelled' ? 'لغو شده' : trip.status === 'completed' ? 'بدون زمان پایان' : 'در حال انجام';
+        return `${start} تا —${withDuration ? ` (${note})` : ''}`;
+    }
+    const end = formatTime(trip.dropoffTime);
+    if (!withDuration) return `${start} تا ${end}`;
+    const mins = minutesBetween(trip.pickupTime, trip.dropoffTime);
+    return `${start} تا ${end} (${mins > 0 ? humanizeMinutes(mins) : '۰ دقیقه'})`;
+}
+
+/** مدت سفر برحسب دقیقه (۰ اگر زمان پایان ثبت نشده باشد) */
+export function tripDurationMinutes(trip) {
+    if (!trip?.pickupTime || !trip?.dropoffTime) return 0;
+    return Math.max(0, minutesBetween(trip.pickupTime, trip.dropoffTime));
 }
 
 export function availabilityLabel(a) {
