@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: تست‌ها و بررسی نسخه
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: نصب وابستگی‌ها
+        run: npm ci --no-audit --no-fund
+
+      - name: هم‌خوانی نسخه‌ها (taxi.html · sw.js · package.json)
+        run: npm run version:check
+
+      - name: بررسی نحو سرویس‌ورکر
+        run: node --check sw.js
+
+      - name: اجرای تست‌ها
+        run: npm test
+
+      - name: بررسی سلامت اسناد کلیدی
+        run: |
+          node -e "const fs=require('fs');const html=fs.readFileSync('taxi.html','utf8');if(!html.includes('</html>'))throw new Error('taxi.html ناقص است');JSON.parse(fs.readFileSync('manifest.json','utf8'));console.log('taxi.html و manifest.json سالم‌اند', html.length, 'بایت');"
