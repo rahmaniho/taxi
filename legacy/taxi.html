@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="سامانهٔ مدیریت و اتوماسیون آژانس تاکسی تلفنی — فارسی، آفلاین، نصب‌پذیر روی موبایل و دسکتاپ">
+    <meta name="theme-color" content="#0a0e27">
+    <meta name="color-scheme" content="dark light">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="تاکسی تلفنی">
+    <meta name="format-detection" content="telephone=no">
+
+    <title>تاکسی تلفنی کارن‌سافت | مدیریت آژانس تلفنی</title>
+
+    <!-- ===== منابع برنامه (PWA) ===== -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+    <!-- ===== پیش‌بارگذاری فونت‌های فارسی (نسخهٔ WebP فونت‌ها در پوشهٔ fonts) ===== -->
+    <link rel="preload" href="./fonts/BNazanin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./fonts/BTitrBold.woff2" as="font" type="font/woff2" crossorigin>
+
+    <!-- ===== استایل‌ها ===== -->
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/print.css" media="print">
+
+    <style>
+        /* صفحهٔ راه‌انداز اولیه — پیش از آماده شدن ماژول‌ها نمایش داده می‌شود */
+        #boot-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            background: radial-gradient(1000px 500px at 70% 10%, rgba(212, 175, 55, 0.14), transparent 60%), #0a0e27;
+            color: #f1f5f9;
+            transition: opacity 0.35s ease;
+        }
+        #boot-splash .splash-ring {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            border: 3px solid rgba(212, 175, 55, 0.25);
+            border-top-color: #D4AF37;
+            animation: splash-spin 0.9s linear infinite;
+        }
+        #boot-splash .splash-title { font-family: 'BTitr', Tahoma, sans-serif; color: #D4AF37; font-size: 1.05rem; }
+        #boot-splash .splash-sub { font-size: 0.72rem; color: #94a3b8; }
+        @keyframes splash-spin { to { transform: rotate(360deg); } }
+    </style>
+
+    <noscript>
+        <style>
+            #boot-splash { display: none; }
+            .noscript-box {
+                position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center;
+                background: #0a0e27; color: #f1f5f9; text-align: center; padding: 24px; font-family: Tahoma, sans-serif;
+            }
+        </style>
+    </noscript>
+</head>
+<body>
+
+<noscript>
+    <div class="noscript-box">
+        <div>
+            <h1 style="color:#D4AF37">جاوااسکریپت غیرفعال است</h1>
+            <p>برای استفاده از سامانهٔ تاکسی تلفنی، جاوااسکریپت مرورگر خود را فعال کنید.</p>
+        </div>
+    </div>
+</noscript>
+
+<!-- ===== صفحهٔ راه‌انداز (با آماده شدن برنامه پنهان می‌شود) ===== -->
+<div id="boot-splash">
+    <div class="splash-ring"></div>
+    <div class="splash-title">تاکسی تلفنی کارن‌سافت</div>
+    <div class="splash-sub">در حال آماده‌سازی سامانه…</div>
+</div>
+
+<!-- ===== پس‌زمینه ذرات طلایی (هویت بصری نسخهٔ قبلی) ===== -->
+<canvas id="particles-canvas" aria-hidden="true"></canvas>
+
+<!-- ===== صفحهٔ ورود / انتخاب کاربر ===== -->
+<div id="auth-screen" hidden></div>
+
+<!-- ===== پوستهٔ اصلی برنامه ===== -->
+<div id="app-shell" hidden>
+    <aside class="sidebar closed" id="sidebar"></aside>
+
+    <div class="main-content" id="mainContent">
+        <header class="header"></header>
+        <!-- همهٔ صفحه‌ها به‌صورت پویا در این ناحیه رندر می‌شوند -->
+        <main id="view" role="main"></main>
+    </div>
+</div>
+
+<!-- ===== ناحیهٔ چاپ (فقط هنگام print نمایش داده می‌شود) ===== -->
+<div id="print-root"></div>
+
+<!-- ===== اعلان‌ها و مودال‌ها ===== -->
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+
+<!-- ===== هستهٔ برنامه (ES Modules) ===== -->
+<script type="module" src="./js/app.js"></script>
+
+<script>
+    /* پیام فارسی برای مرورگرهای بسیار قدیمی که از ES Modules پشتیبانی نمی‌کنند */
+    (function () {
+        var supported = 'noModule' in HTMLScriptElement.prototype;
+        if (supported) return;
+        var splash = document.getElementById('boot-splash');
+        if (splash) {
+            splash.innerHTML = '<div style="text-align:center; padding:20px; font-family:Tahoma,sans-serif">' +
+                '<h1 style="color:#D4AF37; font-size:1.1rem">مرورگر شما قدیمی است</h1>' +
+                '<p style="font-size:0.8rem; line-height:2">برای استفاده از سامانهٔ تاکسی تلفنی، لطفاً از نسخهٔ جدید ' +
+                'مرورگرها (کروم، اج، فایرفاکس یا سافاری) استفاده کنید.</p></div>';
+        }
+    })();
+</script>
+
+</body>
+</html>
