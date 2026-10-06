@@ -165,10 +165,18 @@ export function ensureAgencyTags(db, agencyId = DEFAULT_AGENCY_ID) {
     return db;
 }
 
-/** اطمینان از وجود آژانس پیش‌فرض و کدینگ حساب‌ها در سند بارگذاری‌شده */
-function ensureFoundation(db) {
+/**
+ * اطمینان از وجود آژانس پیش‌فرض و کدینگ حساب‌ها در سند بارگذاری‌شده.
+ * اگر سند قدیمی هیچ آژانسی نداشته باشد، آژانس پیش‌فرض هم‌نام تنظیمات ساخته می‌شود
+ * تا نام آژانس کاربر (تغییر‌یافته در تنظیمات نسخهٔ ۵) از دست نرود.
+ */
+function ensureFoundation(db, { hadAgencies = true } = {}) {
+    const settingsName = db.settings?.companyName || '';
+    if (!hadAgencies) {
+        db.agencies = [defaultAgency({ name: settingsName || 'آژانس کارن‌سافت' })];
+    }
     if (!Array.isArray(db.agencies) || !db.agencies.length) {
-        db.agencies = [defaultAgency({ name: db.settings?.companyName || 'آژانس کارن‌سافت' })];
+        db.agencies = [defaultAgency({ name: settingsName || 'آژانس کارن‌سافت' })];
     }
     const existing = new Set((db.agencies || []).map((a) => a.id));
     if (!existing.has(DEFAULT_AGENCY_ID)) {
@@ -661,7 +669,8 @@ function normalizeDB(data) {
     });
     db.auditLog = Array.isArray(db.auditLog) ? db.auditLog.slice(-3000) : [];
     /* نسخهٔ ۶: آژانس پیش‌فرض + کدینگ حساب‌ها + مهر آژانس روی دادهٔ قدیمی */
-    ensureFoundation(db);
+    const hadAgencies = Array.isArray(data?.agencies) && data.agencies.length > 0;
+    ensureFoundation(db, { hadAgencies });
     ensureAgencyTags(db, DEFAULT_AGENCY_ID);
     db.meta.version = SCHEMA_VERSION;
     return db;

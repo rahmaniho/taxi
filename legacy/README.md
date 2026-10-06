@@ -15,7 +15,12 @@
 * صفحهٔ ورود: `https://rahmaniho.github.io/taxi/` (به‌طور خودکار به برنامه می‌رود)
 * برنامه: `https://rahmaniho.github.io/taxi/legacy/taxi.html`
 
-> برای فعال‌سازی: Settings → Pages → Source: *Deploy from a branch* → Branch: `main` / Folder: `/(root)` → Save.
+> **فعال‌سازی یک‌باره (۱۵ ثانیه):** Settings → Pages → Source: **GitHub Actions** → Save،
+> سپس تب Actions → گردش‌کار «انتشار آنلاین» → **Run workflow**.
+> از آن پس هر push به `main` سایت را خودکار به‌روز می‌کند.
+>
+> جایگزین: اگر می‌خواهید روی GitHub Pages مخزن دیگرتان (مثل `karen-soft`) منتشر شود، همان پوشهٔ
+> `legacy/` را در آن مخزن کپی کنید؛ همهٔ مسیرها نسبی‌اند و در زیرپوشه هم کار می‌کنند.
 
 ---
 
