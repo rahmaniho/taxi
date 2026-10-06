@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="تاکسی تلفنی">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111634"/>
+      <stop offset="1" stop-color="#05070f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F0D46B"/>
+      <stop offset="1" stop-color="#D4AF37"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="24" y="24" width="464" height="464" rx="92" fill="none" stroke="url(#gold)" stroke-opacity="0.45" stroke-width="6"/>
+
+  <!-- بدنهٔ تاکسی -->
+  <path d="M120 296l22-62c6-17 20-28 38-28h152c18 0 32 11 38 28l22 62v78a16 16 0 0 1-16 16h-24a16 16 0 0 1-16-16v-14H176v14a16 16 0 0 1-16 16h-24a16 16 0 0 1-16-16z"
+        fill="url(#gold)"/>
+  <path d="M168 210h176c8 0 14 5 17 13l12 33H139l12-33c3-8 9-13 17-13z" fill="#05070f" opacity="0.35"/>
+  <circle cx="176" cy="330" r="24" fill="#0b1020" stroke="#F0D46B" stroke-width="6"/>
+  <circle cx="336" cy="330" r="24" fill="#0b1020" stroke="#F0D46B" stroke-width="6"/>
+
+  <!-- تابلوی تاکسی -->
+  <rect x="196" y="164" width="120" height="40" rx="14" fill="url(#gold)"/>
+  <rect x="212" y="176" width="88" height="16" rx="8" fill="#0b1020" opacity="0.6"/>
+
+  <!-- گوشی تلفن (نماد تلفنی) -->
+  <path d="M352 96c22 0 40 18 40 40v34c0 10-8 18-18 18h-18c-8 0-14-5-17-12l-8-20c-3-8-1-17 6-22l6-4c-4-8-10-14-18-18l-4 6c-5 7-14 9-22 6l-20-8c-7-3-12-9-12-17V83c0-6 5-11 11-11h34z"
+        fill="url(#gold)" transform="translate(28 120) scale(0.86)"/>
+</svg>
