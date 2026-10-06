@@ -71,7 +71,8 @@ const GLOBALS = [
     'window', 'document', 'HTMLElement', 'HTMLScriptElement', 'HTMLInputElement', 'HTMLSelectElement',
     'Element', 'Node', 'NodeList', 'Event', 'CustomEvent', 'MouseEvent', 'KeyboardEvent',
     'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame', 'DOMParser', 'CSS',
-    'localStorage', 'sessionStorage', 'location', 'history'
+    'localStorage', 'sessionStorage', 'location', 'history',
+    'FileReader', 'File', 'Blob', 'Image'
 ];
 for (const key of GLOBALS) {
     try { globalThis[key] = window[key]; } catch (e) { /* بعضی ویژگی‌ها فقط‌خواندنی‌اند */ }
@@ -90,6 +91,9 @@ console.error = (...args) => { consoleErrors.push(args.map(String).join(' ')); }
 function ok(cond, label, extra = '') {
     if (cond) { passed++; console.log(`  ✅ ${label}`); }
     else { failures.push(label + (extra ? ` — ${extra}` : '')); console.log(`  ❌ ${label}${extra ? ' — ' + extra : ''}`); }
+}
+function eq(actual, expected, label) {
+    ok(actual === expected, label, `دریافتی: ${JSON.stringify(actual)} — انتظار: ${JSON.stringify(expected)}`);
 }
 function group(t) { console.log(`\n— ${t}`); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -125,7 +129,7 @@ ok(document.documentElement.getAttribute('lang') === 'fa', 'زبان صفحه ف
 /* -------------------------------- ورود کاربر -------------------------------- */
 group('ورود کاربر و ساخت پوسته');
 document.querySelector('#loginUser').value = 'admin';
-document.querySelector('#loginPass').value = 'admin123';
+document.querySelector('#loginPass').value = 'admin';
 document.querySelector('#loginForm').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
 const loggedIn = await waitFor(() => !document.getElementById('app-shell').hasAttribute('hidden') && document.querySelector('#sidebarNav .nav-item'));
 ok(loggedIn, 'ورود با کاربر پیش‌فرض مدیر انجام شد');
@@ -323,9 +327,161 @@ if (subSelect) {
     }
 }
 
+/* --------------------- حسابداری دوطرفه در رابط کاربری --------------------- */
+group('صفحه‌های حسابداری دوطرفه');
+const { Journals, Accounts, ACCOUNT_MAP } = await import(pathToFileURL(path.join(root, 'js', 'ledger.js')).href);
+
+App.navigate('journal', {}, { fromHash: true });
+await sleep(60);
+ok(!!document.querySelector('#view #journalTable'), 'دفتر روزنامه جدول اسناد را می‌سازد');
+ok(!!document.querySelector('#view [data-backfill]'), 'دکمهٔ «تولید اسناد از دادهٔ موجود» وجود دارد');
+const journalsBefore = Journals.all().length;
+document.querySelector('#view [data-new]').click();
+await sleep(80);
+ok(document.getElementById('modalOverlay').classList.contains('active'), 'فرم سند دستی در مودال باز می‌شود');
+ok(document.querySelectorAll('#modalOverlay [data-line]').length >= 2, 'سند دستی حداقل دو سطر دارد');
+document.querySelector('#modalOverlay #vAddLine').click();
+await sleep(30);
+ok(document.querySelectorAll('#modalOverlay [data-line]').length >= 3, 'افزودن سطر به سند کار می‌کند');
+/* سند نامتوازن باید رد شود */
+document.querySelector('#modalOverlay #vDesc').value = 'سند نامتوازن آزمون';
+const firstRow = document.querySelector('#modalOverlay [data-line]');
+firstRow.querySelector('[data-field="debit"]').value = '5000';
+firstRow.dispatchEvent(new window.Event('input', { bubbles: true }));
+document.querySelector('#modalOverlay #vSave').click();
+await sleep(80);
+eq(Journals.all().length, journalsBefore, 'سند نامتوازن ثبت نمی‌شود');
+ok(document.getElementById('modalOverlay').classList.contains('active'), 'فرم پس از خطا باز می‌ماند');
+/* سند متوازن */
+const rows = [...document.querySelectorAll('#modalOverlay [data-line]')];
+rows[0].querySelector('[data-field="accountCode"]').value = ACCOUNT_MAP.cash;
+rows[0].querySelector('[data-field="debit"]').value = '5000';
+rows[0].dispatchEvent(new window.Event('input', { bubbles: true }));
+rows[1].querySelector('[data-field="accountCode"]').value = ACCOUNT_MAP.commissionIncome;
+rows[1].querySelector('[data-field="credit"]').value = '5000';
+rows[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+document.querySelector('#modalOverlay #vSave').click();
+await sleep(120);
+eq(Journals.all().length, journalsBefore + 1, 'سند متوازن از رابط کاربری ثبت می‌شود');
+ok(/JV-/.test(document.getElementById('view').textContent), 'شمارهٔ سند در جدول دفتر روزنامه دیده می‌شود');
+ok(fa(document.getElementById('view').textContent), 'جدول دفتر روزنامه فارسی است');
+
+App.navigate('trial', {}, { fromHash: true });
+await sleep(60);
+ok(!!document.querySelector('#view #trialTable'), 'تراز آزمایشی جدول را می‌سازد');
+ok(/متوازن/.test(document.getElementById('view').textContent), 'وضعیت تراز در صفحه نمایش داده می‌شود');
+
+App.navigate('pl', {}, { fromHash: true });
+await sleep(60);
+ok(!!document.querySelector('#view #plKpis'), 'صورت سود و زیان کارت‌های آماری دارد');
+ok(!!document.querySelector('#view #plIncome') && !!document.querySelector('#view #plExpense'), 'جداول درآمد و هزینه ساخته می‌شوند');
+ok(fa(document.querySelector('#view #plNotes').textContent), 'یادداشت‌های مدیریتی فارسی است');
+
+App.navigate('chart', {}, { fromHash: true });
+await sleep(60);
+ok(!!document.querySelector('#view #chartTable'), 'کدینگ حساب‌ها جدول دارد');
+ok(Accounts.all().length >= 20, 'حساب‌های پیش‌فرض در رابط کاربری دیده می‌شوند');
+
+App.navigate('account-ledger', {}, { fromHash: true });
+await sleep(60);
+const accountSelect = document.querySelector('#view #alAccount');
+ok(!!accountSelect && accountSelect.options.length >= 20, 'دفتر معین فهرست حساب‌ها را دارد');
+accountSelect.value = ACCOUNT_MAP.cash;
+accountSelect.dispatchEvent(new window.Event('change', { bubbles: true }));
+await sleep(60);
+ok(!!document.querySelector('#view #ledgerTable'), 'با انتخاب حساب، دفتر معین رندر می‌شود');
+
+/* ------------------------- آژانس‌ها، لوگو و اشتراک ------------------------- */
+group('مدیریت آژانس‌ها، لوگو و اشتراک');
+const agencyModule = await import(pathToFileURL(path.join(root, 'js', 'agency.js')).href);
+const { Agency, DEFAULT_AGENCY_ID } = agencyModule;
+
+ok(!!document.getElementById('agencyChip'), 'نشانگر آژانس فعال در نوار بالا ساخته شد');
+ok(document.getElementById('agencyChip').textContent.includes(Agency.current().name), 'نام آژانس فعال در نوار بالا دیده می‌شود');
+ok(typeof App.switchAgency === 'function', 'API جابه‌جایی آژانس در App موجود است');
+
+App.navigate('agencies', {}, { fromHash: true });
+await sleep(70);
+ok(document.querySelectorAll('#view .agency-card').length >= 1, 'کارت آژانس‌ها ساخته می‌شود');
+ok(!!document.querySelector('#view [data-new]'), 'دکمهٔ ساخت آژانس جدید وجود دارد');
+ok(/admin|آژانس/.test(document.getElementById('view').textContent), 'صفحهٔ آژانس‌ها محتوای مدیریتی دارد');
+
+/* ساخت آژانس از رابط کاربری */
+document.querySelector('#view [data-new]').click();
+await sleep(90);
+ok(document.getElementById('modalOverlay').classList.contains('active'), 'فرم ساخت آژانس باز می‌شود');
+const agencyForm = document.querySelector('#modalOverlay form');
+const setField = (name, value) => {
+    const el = agencyForm.querySelector(`[name="${name}"]`);
+    if (el) { el.value = value; el.dispatchEvent(new window.Event('input', { bubbles: true })); }
+    return !!el;
+};
+ok(setField('name', 'آژانس مرورگر'), 'فیلد نام آژانس در فرم هست');
+setField('code', 'browser-agency');
+setField('adminName', 'مدیر آژانس مرورگر');
+setField('adminUsername', 'browser-admin');
+setField('adminPassword', 'browser123');
+const agenciesBefore = Agency.all().length;
+document.querySelector('#modalOverlay [data-form-submit]').click();
+await sleep(200);
+eq(Agency.all().length, agenciesBefore + 1, 'آژانس جدید از رابط کاربری ساخته می‌شود');
+ok(Agency.all().some((a) => a.name === 'آژانس مرورگر'), 'نام آژانس ساخته‌شده ثبت شده است');
+
+/* کاربر مستقل آژانس جدید وارد می‌شود */
+const authModule = await import(pathToFileURL(path.join(root, 'js', 'auth.js')).href);
+await authModule.Auth.login('browser-admin', 'browser123');
+eq(App.DB.scope(), Agency.all().find((a) => a.name === 'آژانس مرورگر').id, 'ورود کاربر آژانس جدید، دامنهٔ داده را به آژانس خودش محدود می‌کند');
+App.reload();
+await sleep(60);
+ok(!document.querySelector('#sidebarNav [data-page="agencies"]'), 'منوی «آژانس‌ها» برای مدیر آژانس معمولی نمایش داده نمی‌شود');
+await authModule.Auth.logout({ silent: true });
+await authModule.Auth.login('admin', 'admin');
+App.navigate('dashboard', {}, { fromHash: true });
+await sleep(40);
+
+/* بارگذاری لوگو از رابط کاربری (تنظیمات ← هویت آژانس و لوگو) */
+App.navigate('settings', {}, { fromHash: true });
+await sleep(70);
+const logoInput = document.querySelector('#view #agencyLogoFile');
+ok(!!logoInput, 'ورودی بارگذاری لوگو در تنظیمات آژانس هست');
+ok(!!document.querySelector('#view #agencyPreview'), 'دکمهٔ پیش‌نمایش سربرگ اسناد وجود دارد');
+const pngBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]);
+const logoFile = new window.File([pngBytes], 'logo.png', { type: 'image/png' });
+Object.defineProperty(logoInput, 'files', { value: [logoFile], configurable: true });
+logoInput.dispatchEvent(new window.Event('change', { bubbles: true }));
+await sleep(250);
+ok(!!Agency.identity().hasLogo, 'لوگو در سامانه ذخیره شد');
+ok(String(Agency.identity().logo).startsWith('data:image/'), 'لوگو به‌صورت Data-URL ذخیره می‌شود');
+const invoiceHTML = (await import(pathToFileURL(path.join(root, 'js', 'prints.js')).href)).invoiceHTML({
+    subscriber: { fullName: 'مشترک آزمون مرورگر', subscriptionNumber: 'SUB-BROWSER', type: 'corporate' },
+    trips: [], payments: [], totalFare: 0, companyFare: 0, debt: 0, debtAge: 0, from: '', to: ''
+});
+ok(invoiceHTML.includes('data:image/'), 'لوگوی آژانس روی صورت‌حساب چاپی مشترک درج می‌شود');
+ok(/class="doc-logo"/.test(invoiceHTML), 'لوگو با کلاس چاپی ساخته می‌شود');
+
+/* پیش‌نمایش و چاپ نمونهٔ صورت‌حساب از صفحهٔ آژانس‌ها */
+App.navigate('agencies', {}, { fromHash: true });
+await sleep(70);
+const invBtn = document.querySelector('#view [data-invoice]');
+ok(!!invBtn, 'دکمهٔ «نمونهٔ صورت‌حساب» روی کارت آژانس هست');
+if (invBtn) {
+    printCalls = 0;
+    invBtn.click();
+    await sleep(150);
+    const frame = document.querySelector('#modalOverlay .print-preview-frame');
+    ok(!!frame, 'پیش‌نمایش صورت‌حساب باز می‌شود');
+    ok(!!frame?.querySelector('.print-doc .doc-logo, .print-doc img'), 'لوگوی آژانس در پیش‌نمایش سند دیده می‌شود');
+    document.querySelector('#modalOverlay [data-do-print]')?.click();
+    await sleep(500);
+    ok(printCalls >= 1, 'چاپ نمونهٔ صورت‌حساب انجام شد');
+    ok(!!document.getElementById('print-root').querySelector('.print-doc'), 'سند نهایی در #print-root قرار گرفت');
+}
+/* پاک‌سازی: حذف لوگو تا آزمون‌های بعدی تمیز بمانند */
+Agency.setLogo(DEFAULT_AGENCY_ID, '');
+
 /* --------------------------- دسترسی نقش‌ها --------------------------- */
 group('محدودیت دسترسی نقش‌ها');
-const { Auth } = await import(pathToFileURL(path.join(root, 'js', 'auth.js')).href);
+const { Auth } = authModule;
 await Auth.logout({ silent: true });
 await Auth.login('accountant', 'account123');
 App.navigate('dashboard', {}, { fromHash: true });

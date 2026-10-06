@@ -12,7 +12,7 @@
  *   • همهٔ مسیرها نسبی‌اند تا برنامه هم در ریشه و هم در زیرپوشه (legacy/) کار کند.
  * ========================================================================== */
 
-const CACHE_VERSION = 'taxi-v5.0.1';
+const CACHE_VERSION = 'taxi-v5.1.0';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const FONT_CACHE = `${CACHE_VERSION}-fonts`;
@@ -20,6 +20,7 @@ const FONT_CACHE = `${CACHE_VERSION}-fonts`;
 /** پیش‌بارگذاری پوستهٔ برنامه */
 const PRECACHE = [
     './taxi.html',
+    './index.html',
     './manifest.json',
     './css/main.css',
     './css/print.css',
@@ -52,6 +53,10 @@ const PRECACHE = [
     './js/pages/backup.js',
     './js/pages/training.js',
     './js/pages/about.js',
+    './js/pages/ledger.js',
+    './js/pages/agencies.js',
+    './js/agency.js',
+    './js/ledger.js',
     './icons/favicon.svg',
     './icons/favicon-32.png',
     './icons/icon-192.png',

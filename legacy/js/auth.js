@@ -7,10 +7,12 @@
  * AuthAdapter سروری جایگزین می‌شود و بقیه برنامه تغییری نمی‌کند.
  * ========================================================================== */
 
-import { DB } from './db.js';
+import { DB, DEFAULT_AGENCY_ID } from './db.js';
+import { Agency } from './agency.js';
 import { uid, nowISO, todayJalali, toFa, sum } from './utils.js';
 
-export const SESSION_KEY = 'taxi_session_v5';
+export const SESSION_KEY = 'taxi_session_v6';
+export const LEGACY_SESSION_KEY = 'taxi_session_v5';
 const SESSION_TTL_HOURS = 12;
 
 /* ------------------------------ SHA-256 ------------------------------ */
@@ -96,13 +98,17 @@ export const ROLES = ['admin', 'operator', 'accountant'];
 
 export const ROLE_LABELS = { admin: 'مدیر سامانه', operator: 'اپراتور', accountant: 'حسابدار' };
 
+/** سطح دسترسی مورد نیاز برای مدیریت آژانس‌ها */
+export const SUPER_ADMIN_ONLY_PAGES = ['agencies'];
+
 /** صفحه‌های مجاز هر نقش (کلیدها همان id بخش‌های SPA هستند) */
 export const PAGES_BY_ROLE = {
     admin: [
         'dashboard', 'queue', 'trips-new', 'trips-list', 'drivers', 'addresses', 'subscribers',
         'acc-driver', 'acc-report', 'acc-commissions', 'acc-subscribers', 'acc-payments', 'acc-expenses',
         'reports-operator', 'reports-cancel', 'reports-debtors', 'reports-drivers',
-        'audit', 'settings', 'operators', 'backup', 'training', 'about'
+        'journal', 'account-ledger', 'trial', 'pl', 'chart',
+        'audit', 'settings', 'operators', 'agencies', 'backup', 'training', 'about'
     ],
     operator: [
         'dashboard', 'queue', 'trips-new', 'trips-list', 'drivers', 'addresses', 'subscribers',
@@ -111,6 +117,7 @@ export const PAGES_BY_ROLE = {
     accountant: [
         'dashboard', 'subscribers', 'drivers',
         'acc-driver', 'acc-report', 'acc-commissions', 'acc-subscribers', 'acc-payments', 'acc-expenses',
+        'journal', 'account-ledger', 'trial', 'pl', 'chart',
         'reports-operator', 'reports-debtors', 'reports-drivers',
         'backup', 'training', 'about'
     ]
@@ -127,7 +134,9 @@ const CAPS = {
 };
 
 /** پیش‌فرض رمز کاربران نمونه (کاربر باید آن را تغییر دهد) */
-const DEFAULT_PASSWORDS = { admin: 'admin123', operator: 'operator123', accountant: 'account123' };
+const DEFAULT_PASSWORDS = { admin: 'admin', operator: 'operator123', accountant: 'account123' };
+
+/** توضیح: رمز پیش‌فرض مدیر سامانه طبق درخواست کارفرما «admin» است (نام کاربری: admin). */
 
 /* ------------------------------- هستهٔ Auth ------------------------------- */
 
@@ -137,9 +146,41 @@ export const Auth = {
     /** راه‌اندازی: ساخت هش رمز کاربران پیش‌فرض در اولین اجرا + بازیابی نشست */
     async init() {
         await Auth.ensurePasswords();
+        await Auth.ensureDemoCredentials();
+        Auth.ensureSuperAdmin();
         _session = Auth.loadSession();
+        if (_session?.agencyId) DB.setScope(_session.agencyId);
         DB.setActor(_session || { fullName: 'سیستم' });
         return _session;
+    },
+
+    /**
+     * نصب‌های قبلی رمز «admin123» داشتند؛ کاربر خواست رمز پیش‌فرض «admin» باشد.
+     * این تابع فقط زمانی رمز را بازنشانی می‌کند که کاربر هنوز رمز پیش‌فرض مدیریتی
+     * را تغییر نداده باشد (mustChangePassword) و همان هش قدیمی را داشته باشد.
+     */
+    /**
+     * کاربر «admin» مدیر سامانه است: تنها کسی که می‌تواند آژانس بسازد، اشتراک را
+     * تمدید کند و بین آژانس‌ها جابه‌جا شود. برای نصب‌های قبلی هم این پرچم ست می‌شود.
+     */
+    ensureSuperAdmin() {
+        const admin = DB.findGlobal('operators', 'username', 'admin');
+        if (!admin) return false;
+        const patch = {};
+        if (!admin.superAdmin) patch.superAdmin = true;
+        if (!admin.agencyId) patch.agencyId = DEFAULT_AGENCY_ID;
+        if (Object.keys(patch).length) DB.update('operators', admin.id, patch, { silent: true });
+        return true;
+    },
+
+    async ensureDemoCredentials() {
+        const admin = DB.findGlobal('operators', 'username', 'admin');
+        if (!admin || !admin.passwordHash || !admin.mustChangePassword) return false;
+        const legacyHash = await hashPassword('admin123', admin.salt || '');
+        if (legacyHash !== admin.passwordHash) return false;
+        const salt = randomSalt();
+        DB.update('operators', admin.id, { salt, passwordHash: await hashPassword(DEFAULT_PASSWORDS.admin, salt) }, { silent: true });
+        return true;
     },
 
     /** اگر کاربری passwordHash ندارد (کاربر پیش‌فرض یا داده مهاجرت‌شده)، رمز پیش‌فرض می‌سازیم */
@@ -157,7 +198,8 @@ export const Auth = {
             const salt = randomSalt();
             DB.insert('operators', {
                 fullName: 'مدیر سامانه', username: 'admin', role: 'admin', status: 'active',
-                salt, passwordHash: await hashPassword('admin123', salt), mustChangePassword: true,
+                agencyId: DEFAULT_AGENCY_ID, superAdmin: true,
+                salt, passwordHash: await hashPassword(DEFAULT_PASSWORDS.admin, salt), mustChangePassword: true,
                 notes: 'حساب پیش‌فرض مدیر سامانه'
             }, { silent: true });
         }
@@ -166,7 +208,16 @@ export const Auth = {
     /* ---------- نشست ---------- */
     loadSession() {
         try {
-            const raw = localStorage.getItem(SESSION_KEY);
+            let raw = localStorage.getItem(SESSION_KEY);
+            if (!raw) {
+                /* مهاجرت نشست نسخهٔ ۵ به ۶ */
+                const legacy = localStorage.getItem(LEGACY_SESSION_KEY);
+                if (legacy) {
+                    localStorage.setItem(SESSION_KEY, legacy);
+                    localStorage.removeItem(LEGACY_SESSION_KEY);
+                    raw = legacy;
+                }
+            }
             if (!raw) return null;
             const s = JSON.parse(raw);
             if (!s?.userId) return null;
@@ -176,7 +227,9 @@ export const Auth = {
             }
             const user = DB.get('operators', s.userId);
             if (!user || user.status !== 'active') return null;
-            return { ...s, role: user.role, fullName: user.fullName };
+            const agencyId = user.agencyId || DEFAULT_AGENCY_ID;
+            DB.setScope(agencyId);
+            return { ...s, role: user.role, fullName: user.fullName, agencyId, superAdmin: !!user.superAdmin };
         } catch (_) {
             return null;
         }
@@ -189,11 +242,14 @@ export const Auth = {
             username: user.username,
             fullName: user.fullName,
             role: user.role,
+            agencyId: user.agencyId || DEFAULT_AGENCY_ID,
+            superAdmin: !!user.superAdmin,
             loginAt: nowISO(),
             expiresAt: expires
         };
         localStorage.setItem(SESSION_KEY, JSON.stringify(s));
         _session = s;
+        DB.setScope(s.agencyId);
         DB.setActor(s);
         return s;
     },
@@ -218,24 +274,37 @@ export const Auth = {
     async login(username, password) {
         const uname = String(username || '').trim().toLowerCase();
         if (!uname || !password) throw new Error('نام کاربری و رمز عبور را وارد کنید');
-        const users = DB.list('operators');
-        const user = users.find((u) => String(u.username).toLowerCase() === uname);
+        /* نام کاربری در کل سامانه یکتاست؛ بنابراین جست‌وجو باید بدون فیلتر آژانس باشد */
+        const user = DB.findGlobal('operators', 'username', uname);
         if (!user) throw new Error('نام کاربری یا رمز عبور نادرست است');
         if (user.status !== 'active') throw new Error('حساب کاربری غیرفعال است');
 
         const hash = await hashPassword(password, user.salt || '');
         if (hash !== user.passwordHash) throw new Error('نام کاربری یا رمز عبور نادرست است');
 
+        /* بررسی وضعیت آژانس و اعتبار اشتراک نرم‌افزار (مدیر سامانه مستثنی است) */
+        const agencyId = user.agencyId || DEFAULT_AGENCY_ID;
+        if (!user.superAdmin) {
+            const check = Agency.canLogin(agencyId);
+            if (!check.ok) throw new Error(check.message);
+        }
+
+        DB.setScope(agencyId);
         DB.update('operators', user.id, { lastLoginAt: nowISO() }, { silent: true });
         Auth.saveSession(user);
-        DB.mutate(() => ([{ action: 'login', entity: 'operators', entityId: user.id, newValue: { username: user.username, role: user.role } }]), {});
+        DB.mutate(() => ([{
+            action: 'login', entity: 'operators', entityId: user.id,
+            newValue: { username: user.username, role: user.role, agencyId }
+        }]), {});
         return _session;
     },
 
     logout({ silent = false } = {}) {
         const s = _session;
         localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(LEGACY_SESSION_KEY);
         _session = null;
+        DB.setScope(null);
         DB.setActor({ fullName: 'سیستم' });
         if (s && !silent) {
             DB.mutate(() => ([{ action: 'logout', entity: 'operators', entityId: s.userId }]), {});
@@ -256,18 +325,68 @@ export const Auth = {
         return true;
     },
 
-    async createUser({ fullName, username, password, role = 'operator', phone = '', notes = '' }) {
+    async createUser({ fullName, username, password, role = 'operator', phone = '', notes = '', agencyId = null, superAdmin = false, minPassword = 6 }) {
         const uname = String(username || '').trim().toLowerCase();
         if (!fullName || !uname) throw new Error('نام و نام کاربری الزامی است');
-        if (DB.findBy('operators', 'username', uname)) throw new Error('این نام کاربری قبلاً ثبت شده است');
-        if (String(password || '').length < 6) throw new Error('رمز عبور باید حداقل ۶ کاراکتر باشد');
+        if (!/^[a-z0-9._-]{3,30}$/.test(uname)) throw new Error('نام کاربری باید ۳ تا ۳۰ کاراکتر انگلیسی، عدد یا . _ - باشد');
+        /* نام کاربری در کل سامانه یکتاست (ورود فقط با نام کاربری و رمز انجام می‌شود) */
+        if (DB.findGlobal('operators', 'username', uname)) throw new Error('این نام کاربری قبلاً ثبت شده است');
+        if (String(password || '').length < minPassword) throw new Error(`رمز عبور باید حداقل ${toFa(minPassword)} کاراکتر باشد`);
         if (!ROLES.includes(role)) throw new Error('سطح دسترسی نامعتبر است');
+        const targetAgency = agencyId || DB.scope() || DEFAULT_AGENCY_ID;
+        if (!Agency.get(targetAgency)) throw new Error('آژانس انتخابی یافت نشد');
+        if (!superAdmin) Agency.assertUserQuota(targetAgency);
         const salt = randomSalt();
         const hash = await hashPassword(password, salt);
         return DB.insert('operators', {
             fullName, username: uname, role, phone, notes, status: 'active',
+            agencyId: targetAgency, superAdmin: !!superAdmin,
             salt, passwordHash: hash, mustChangePassword: true
-        });
+        }, `ایجاد کاربر «${uname}» با نقش ${ROLE_LABELS[role] || role}`);
+    },
+
+    /* --------------------------- آژانس و کاربران --------------------------- */
+
+    agency() {
+        return Agency.current();
+    },
+
+    agencyId() {
+        return _session?.agencyId || DB.scope() || DEFAULT_AGENCY_ID;
+    },
+
+    isSuperAdmin() {
+        return !!_session?.superAdmin;
+    },
+
+    /** جابه‌جایی آژانس فعال (فقط مدیر سامانه) */
+    switchAgency(agencyId) {
+        if (!Auth.isSuperAdmin()) throw new Error('فقط مدیر سامانه می‌تواند آژانس فعال را تغییر دهد');
+        const a = Agency.get(agencyId);
+        if (!a) throw new Error('آژانس یافت نشد');
+        Agency.setCurrent(a.id);
+        if (_session) {
+            _session.agencyId = a.id;
+            localStorage.setItem(SESSION_KEY, JSON.stringify(_session));
+        }
+        return a;
+    },
+
+    /** کاربران آژانس فعال (مدیر سامانه می‌تواند همهٔ آژانس‌ها را ببیند) */
+    users(agencyId = null) {
+        const all = DB.listGlobal('operators').filter((u) => !u.deletedAt);
+        const target = agencyId || DB.scope();
+        if (!target) return all;
+        return all.filter((u) => (u.agencyId || DEFAULT_AGENCY_ID) === target);
+    },
+
+    /** صفحه‌های قابل نمایش برای نقش جاری (با در نظر گرفتن مدیر سامانه) */
+    pages() {
+        const pages = (PAGES_BY_ROLE[Auth.role()] || []).slice();
+        if (pages.includes('agencies') && !Auth.isSuperAdmin()) {
+            return pages.filter((p) => p !== 'agencies');
+        }
+        return pages;
     },
 
     can(cap) {
@@ -280,7 +399,7 @@ export const Auth = {
     canAccess(pageId) {
         const role = Auth.role();
         if (!role) return false;
-        return (PAGES_BY_ROLE[role] || []).includes(pageId);
+        return Auth.pages().includes(pageId);
     },
 
     /* ---------- شیفت ---------- */

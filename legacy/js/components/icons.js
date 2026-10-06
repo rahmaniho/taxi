@@ -69,6 +69,19 @@ export const ICONS = {
 
     /* وضعیت و زمان */
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+    /* آیکون‌های تکمیلی (حسابداری، آژانس، پروفایل) */
+    'arrow-up': '<path d="M12 19V5M6 11l6-6 6 6"/>',
+    'arrow-down': '<path d="M12 5v14M6 13l6 6 6-6"/>',
+    book: '<path d="M4 5a2 2 0 0 1 2-2h11v18H6a2 2 0 0 1-2-2Z"/><path d="M8 3v18"/>',
+    calculator: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15v3"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
+    lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+    edit: '<path d="M4 20h4l10-10-4-4L4 16Z"/><path d="m13.5 6.5 4 4"/>',
+    cloud: '<path d="M17.5 19a4.5 4.5 0 0 0 .5-8.98A6 6 0 0 0 6.2 11.2A3.9 3.9 0 0 0 7 19Z"/>',
+    cpu: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M4 10h3M4 14h3M17 10h3M17 14h3M10 4v3M14 4v3M10 17v3M14 17v3"/>',
+    heart: '<path d="M12 20s-7-4.3-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.7 12 20 12 20Z"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.6 2.3c-.7.4-1.1 1-1.1 1.7v.5"/><path d="M12 17h.01"/>',
+    'user-tie': '<circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M12 14v3l-1.5 1.5"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     flag: '<path d="M4 22V4"/><path d="M4 4h13l-1.5 4L17 12H4"/>',

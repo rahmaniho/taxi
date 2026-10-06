@@ -739,3 +739,70 @@ export function validateValue(value, type, opts = {}) {
         default: return '';
     }
 }
+
+/* ==========================================================================
+ * فایل و تصویر (برای بارگذاری لوگوی آژانس)
+ * ========================================================================== */
+
+/** خواندن فایل به‌صورت Data-URL */
+export function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        if (typeof FileReader === 'undefined') { reject(new Error('مرورگر از خواندن فایل پشتیبانی نمی‌کند')); return; }
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('خواندن فایل ناموفق بود'));
+        reader.readAsDataURL(file);
+    });
+}
+
+export function formatFileSize(bytes) {
+    const b = Number(bytes) || 0;
+    if (b < 1024) return `${toFa(b)} بایت`;
+    if (b < 1024 * 1024) return `${toFa(Math.round(b / 1024))} کیلوبایت`;
+    return `${toFa((b / (1024 * 1024)).toFixed(1))} مگابایت`;
+}
+
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        if (typeof Image === 'undefined') { reject(new Error('تصویر پشتیبانی نمی‌شود')); return; }
+        const img = new Image();
+        const timer = setTimeout(() => reject(new Error('بارگذاری تصویر زمان‌بر شد')), 2500);
+        img.onload = () => { clearTimeout(timer); resolve(img); };
+        img.onerror = () => { clearTimeout(timer); reject(new Error('فایل تصویر معتبر نیست')); };
+        img.src = src;
+    });
+}
+
+/**
+ * تبدیل فایل لوگو به Data-URL. فایل‌های بزرگ با Canvas کوچک می‌شوند تا در
+ * حافظهٔ مرورگر جا شوند (لوگو در سند دادهٔ سامانه ذخیره می‌شود).
+ */
+export async function imageFileToDataURL(file, {
+    maxBytes = 400 * 1024, maxWidth = 640, maxHeight = 320,
+    allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml']
+} = {}) {
+    if (!file) throw new Error('فایلی انتخاب نشده است');
+    const type = String(file.type || '').toLowerCase();
+    if (allowedTypes.length && !allowedTypes.includes(type)) {
+        throw new Error('فقط تصویر PNG، JPG، WEBP، GIF یا SVG مجاز است');
+    }
+    if (Number(file.size) > maxBytes * 4) {
+        throw new Error(`حجم فایل بیش از حد مجاز است (حداکثر ${formatFileSize(maxBytes * 4)})`);
+    }
+    const raw = await readFileAsDataURL(file);
+    if (type === 'image/svg+xml' || Number(file.size) <= maxBytes) return raw;
+    try {
+        const img = await loadImage(raw);
+        const ratio = Math.min(1, maxWidth / (img.width || maxWidth), maxHeight / (img.height || maxHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round((img.width || maxWidth) * ratio));
+        canvas.height = Math.max(1, Math.round((img.height || maxHeight) * ratio));
+        const ctx = canvas.getContext && canvas.getContext('2d');
+        if (!ctx) return raw;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const out = canvas.toDataURL('image/png');
+        return out && out.length < raw.length ? out : raw;
+    } catch (_) {
+        return raw;
+    }
+}

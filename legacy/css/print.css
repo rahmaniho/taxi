@@ -21,7 +21,14 @@
     font-family: 'BTitr', 'BNazanin', Tahoma, sans-serif;
     margin: 0;
 }
-.print-doc .doc-head {
+.print-doc .doc-logo {
+  max-height: 56px;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
+}
+
+.doc-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;

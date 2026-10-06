@@ -2116,3 +2116,71 @@ td.num, th.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .text-nowrap { white-space: nowrap; }
 .soft-divider { height: 1px; background: var(--border-glass); margin: 10px 0; }
 .w-70 { width: 70px; }
+
+/* ---------------- لوگوی آژانس (مولتی‌تنانت) ---------------- */
+.sidebar-logo-img {
+  max-height: 40px;
+  max-width: 44px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px;
+}
+
+.agency-logo-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px dashed var(--border, rgba(212, 175, 55, 0.35));
+  border-radius: 12px;
+  background: rgba(212, 175, 55, 0.04);
+}
+
+.agency-logo-preview img {
+  max-height: 64px;
+  max-width: 170px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px;
+}
+
+.agency-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.agency-card {
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+}
+
+.agency-card.active-agency {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.4) inset;
+}
+
+.journal-lines .line-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.4fr auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+  .journal-lines .line-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.balance-tag {
+  font-size: 0.78rem;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(212, 175, 55, 0.12);
+}

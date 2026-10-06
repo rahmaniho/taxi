@@ -15,24 +15,86 @@ import {
     currentJalaliMonth, jalaliKey, sortBy, jalaliDateWithTime
 } from './utils.js';
 
-export const SCHEMA_VERSION = 5;
-export const DB_KEY = 'taxi_dispatch_db_v5';
-export const LEGACY_KEYS = ['taxi_dispatch_db_v4'];
+export const SCHEMA_VERSION = 6;
+export const DB_KEY = 'taxi_dispatch_db_v6';
+export const LEGACY_KEYS = ['taxi_dispatch_db_v5', 'taxi_dispatch_db_v4'];
+
+/** شناسهٔ آژانس پیش‌فرض (همهٔ داده‌های قدیمی بدون شناسه، متعلق به این آژانس‌اند) */
+export const DEFAULT_AGENCY_ID = 'ag1';
+
+/** مجموعه‌هایی که فیلتر آژانس (tenant) روی آن‌ها اعمال نمی‌شود */
+export const SCOPE_EXEMPT = ['agencies'];
 export const API_CONFIG_KEY = 'taxi_api_config';
 
 /* ترتیب مجموعه‌ها (برای خروجی/ورودی و پیمایش) */
 export const COLLECTIONS = [
+    'agencies',
     'drivers', 'vehicles', 'addresses', 'subscribers', 'trips',
     'subscriberPayments', 'driverPayments', 'transactions', 'expenses',
-    'operators', 'shifts', 'auditLog'
+    'operators', 'shifts', 'auditLog',
+    'accounts', 'journals'
 ];
 
 export const COLLECTION_LABELS = {
+    agencies: 'آژانس',
     drivers: 'راننده', vehicles: 'خودرو', addresses: 'آدرس', subscribers: 'مشترک',
     trips: 'سفر', subscriberPayments: 'پرداخت مشترک', driverPayments: 'پرداخت راننده',
     transactions: 'تراکنش', expenses: 'هزینه', operators: 'کاربر', shifts: 'شیفت',
-    auditLog: 'گزارش تغییرات'
+    auditLog: 'گزارش تغییرات',
+    accounts: 'حساب', journals: 'سند حسابداری'
 };
+
+/* ------------------------- کدینگ پیش‌فرض حساب‌ها ------------------------- */
+/**
+ * ساختار استاندارد حساب‌ها برای آژانس تاکسی تلفنی.
+ * قاعدهٔ حسابداری دوطرفه: دارایی/هزینه ماهیت بدهکار، بدهی/سرمایه/درآمد ماهیت بستانکار.
+ */
+export const DEFAULT_CHART_OF_ACCOUNTS = [
+    { code: '1000', name: 'صندوق', type: 'asset', group: 'نقد و بانک' },
+    { code: '1010', name: 'بانک', type: 'asset', group: 'نقد و بانک' },
+    { code: '1020', name: 'حساب‌های دریافتنی — مشترکین', type: 'asset', group: 'دریافتنی‌ها' },
+    { code: '1030', name: 'حساب‌های دریافتنی — رانندگان', type: 'asset', group: 'دریافتنی‌ها' },
+    { code: '1040', name: 'موجودی ملزومات', type: 'asset', group: 'موجودی‌ها' },
+    { code: '2000', name: 'حساب‌های پرداختنی — رانندگان', type: 'liability', group: 'پرداختنی‌ها' },
+    { code: '2010', name: 'مالیات بر ارزش افزوده', type: 'liability', group: 'پرداختنی‌ها' },
+    { code: '2020', name: 'حقوق پرداختنی', type: 'liability', group: 'پرداختنی‌ها' },
+    { code: '3000', name: 'سرمایه', type: 'equity', group: 'سرمایه' },
+    { code: '3010', name: 'برداشت مالک', type: 'equity', group: 'سرمایه' },
+    { code: '4000', name: 'درآمد کمیسیون سفرها', type: 'income', group: 'درآمد عملیاتی' },
+    { code: '4010', name: 'درآمد اشتراک مشترکین', type: 'income', group: 'درآمد عملیاتی' },
+    { code: '4020', name: 'درآمد متفرقه', type: 'income', group: 'درآمد غیرعملیاتی' },
+    { code: '5000', name: 'هزینهٔ حقوق و دستمزد', type: 'expense', group: 'هزینه‌های پرسنلی' },
+    { code: '5010', name: 'هزینهٔ اجاره دفتر', type: 'expense', group: 'هزینه‌های سربار' },
+    { code: '5020', name: 'آب، برق، گاز و اینترنت', type: 'expense', group: 'هزینه‌های سربار' },
+    { code: '5030', name: 'تعمیر و نگهداری خودرو', type: 'expense', group: 'هزینه‌های عملیاتی' },
+    { code: '5040', name: 'سوخت', type: 'expense', group: 'هزینه‌های عملیاتی' },
+    { code: '5050', name: 'هزینه‌های اداری و متفرقه', type: 'expense', group: 'هزینه‌های سربار' },
+    { code: '5060', name: 'تبلیغات و بازاریابی', type: 'expense', group: 'هزینه‌های سربار' }
+];
+
+/** آژانس پیش‌فرض (اولین اجرا) */
+export function defaultAgency(overrides = {}) {
+    return {
+        id: DEFAULT_AGENCY_ID,
+        code: 'default',
+        name: 'آژانس کارن‌سافت',
+        ownerName: '',
+        phone: '',
+        address: '',
+        logo: '',
+        economicCode: '',
+        nationalId: '',
+        footerNote: '',
+        plan: 'pro',
+        status: 'active',
+        softwareStart: todayJalali(),
+        softwareEnd: addJalaliDays(todayJalali(), 365),
+        maxUsers: 20,
+        notes: 'آژانس پیش‌فرض سامانه',
+        createdAt: nowISO(),
+        ...overrides
+    };
+}
 
 /* ---------------------------------- پایه ---------------------------------- */
 
@@ -77,13 +139,47 @@ export function emptyDB() {
             sampleData: false
         },
         settings: defaultSettings(),
-        sequences: { trip: 1, subscriber: 1, payment: 1, driverPayment: 1, operator: 1, shift: 1 },
+        sequences: {
+            trip: 1, subscriber: 1, payment: 1, driverPayment: 1, operator: 1, shift: 1,
+            journal: 1, agency: 1, account: 1
+        },
         auditLog: []
     };
     COLLECTIONS.forEach((c) => {
         if (c === 'auditLog') return;
         db[c] = [];
     });
+    db.agencies = [defaultAgency()];
+    db.accounts = DEFAULT_CHART_OF_ACCOUNTS.map((a, i) => ({
+        id: 'acc-' + a.code, ...a, isActive: true, notes: '', order: i
+    }));
+    return db;
+}
+
+/** افزودن شناسهٔ آژانس به همهٔ رکوردهای یک سند (برای داده نمونه/مهاجرت) */
+export function ensureAgencyTags(db, agencyId = DEFAULT_AGENCY_ID) {
+    COLLECTIONS.forEach((c) => {
+        if (SCOPE_EXEMPT.includes(c)) return;
+        (db[c] || []).forEach((r) => { if (!r.agencyId) r.agencyId = agencyId; });
+    });
+    return db;
+}
+
+/** اطمینان از وجود آژانس پیش‌فرض و کدینگ حساب‌ها در سند بارگذاری‌شده */
+function ensureFoundation(db) {
+    if (!Array.isArray(db.agencies) || !db.agencies.length) {
+        db.agencies = [defaultAgency({ name: db.settings?.companyName || 'آژانس کارن‌سافت' })];
+    }
+    const existing = new Set((db.agencies || []).map((a) => a.id));
+    if (!existing.has(DEFAULT_AGENCY_ID)) {
+        db.agencies.unshift(defaultAgency({ name: db.agencies[0]?.name || 'آژانس کارن‌سافت' }));
+    }
+    if (!Array.isArray(db.accounts) || !db.accounts.length) {
+        db.accounts = DEFAULT_CHART_OF_ACCOUNTS.map((a, i) => ({
+            id: 'acc-' + a.code, ...a, isActive: true, notes: '', order: i, agencyId: DEFAULT_AGENCY_ID
+        }));
+    }
+    if (!Array.isArray(db.journals)) db.journals = [];
     return db;
 }
 
@@ -157,9 +253,16 @@ export function setApiConfig(cfg) {
 let _db = null;
 let _adapter = LocalStorageAdapter;
 let _listeners = [];
+let _hooks = [];
 let _actor = { id: '', name: 'سیستم' };
+let _scope = null;              // شناسهٔ آژانس فعال (null = بدون فیلتر؛ قبل از ورود)
 let _saveTimer = null;
 let _ready = false;
+
+/** شناسهٔ آژانس مؤثر یک رکورد (رکوردهای قدیمی بدون شناسه متعلق به آژانس پیش‌فرض‌اند) */
+export function agencyOf(rec) {
+    return rec?.agencyId || DEFAULT_AGENCY_ID;
+}
 
 function notify(meta = {}) {
     _listeners.forEach((fn) => {
@@ -202,19 +305,47 @@ export const DB = {
     /** سند کامل (فقط برای پشتیبان‌گیری/دیباگ) */
     raw() { return _db; },
 
+    /* ---------- دامنهٔ آژانس (multi-tenant) ---------- */
+    /** تعیین آژانس فعال؛ همهٔ فهرست‌ها از این پس فیلتر می‌شوند (null = بدون فیلتر) */
+    setScope(agencyId) {
+        _scope = agencyId || null;
+        return _scope;
+    },
+
+    scope: () => _scope,
+
+    /** بررسی تعلق یک رکورد به آژانس فعال */
+    inScope(rec) {
+        if (SCOPE_EXEMPT.includes(rec?.__collection)) return true;
+        if (!_scope) return true;
+        return agencyOf(rec) === _scope;
+    },
+
     /** همهٔ رکوردهای یک مجموعه، بدون حذف‌شده‌ها */
     list(name) {
         const arr = _db?.[name] || [];
-        return arr.filter((r) => !r.deletedAt);
+        return arr.filter((r) => !r.deletedAt && DB._visible(name, r));
     },
 
     /** همهٔ رکوردهای یک مجموعه، شامل حذف‌شده‌ها */
     listAll(name) {
-        return clone(_db?.[name] || []);
+        return clone((_db?.[name] || []).filter((r) => DB._visible(name, r)));
     },
 
     listDeleted(name) {
-        return (_db?.[name] || []).filter((r) => !!r.deletedAt);
+        return (_db?.[name] || []).filter((r) => !!r.deletedAt && DB._visible(name, r));
+    },
+
+    /** فهرست بدون فیلتر آژانس (برای ورود/مدیریت سامانه) */
+    listGlobal(name) {
+        return clone(_db?.[name] || []);
+    },
+
+    /** آیا رکورد در آژانس فعال دیده می‌شود؟ */
+    _visible(name, rec) {
+        if (SCOPE_EXEMPT.includes(name)) return true;
+        if (!_scope) return true;
+        return agencyOf(rec) === _scope;
     },
 
     get(name, id) {
@@ -226,6 +357,16 @@ export const DB = {
     /** جست‌وجوی یکتایی بر اساس فیلد (مثلاً username یا plateNumber) */
     findBy(name, field, value) {
         return (_db?.[name] || []).find((r) => !r.deletedAt && r[field] === value) || null;
+    },
+
+    /** جست‌وجوی یکتا در همهٔ آژانس‌ها (برای نام کاربری و شناسهٔ آژانس) */
+    findGlobal(name, field, value) {
+        return (_db?.[name] || []).find((r) => !r.deletedAt && r[field] === value) || null;
+    },
+
+    /** جست‌وجوی یکتا در آژانس فعال */
+    findByScoped(name, field, value) {
+        return (_db?.[name] || []).find((r) => !r.deletedAt && DB._visible(name, r) && r[field] === value) || null;
     },
 
     query(name, predicate) {
@@ -277,6 +418,14 @@ export const DB = {
             .filter((d) => d && typeof d === 'object');
         if (desc) descriptors.forEach((d) => { if (!d.note) d.note = desc; });
 
+        /* مهر آژانس فعال روی رکوردهای تازه‌ساخته‌شده (نوشتن‌های مستقیم در mutate) */
+        descriptors.forEach((d) => {
+            if (!d.entity || SCOPE_EXEMPT.includes(d.entity)) return;
+            const arr = _db[d.entity] || [];
+            const row = d.entityId ? arr.find((r) => r.id === d.entityId) : null;
+            if (row && !row.agencyId) row.agencyId = _scope || DEFAULT_AGENCY_ID;
+        });
+
         _db.meta = { ...(_db.meta || {}), version: SCHEMA_VERSION, updatedAt: nowISO() };
 
         if (!silent) {
@@ -287,6 +436,12 @@ export const DB = {
         const summary = descriptors.length
             ? { action: descriptors[0].action, entity: descriptors[0].entity, count: descriptors.length }
             : { action: 'update', entity: 'db', count: 0 };
+
+        /* قلاب‌های پس از نوشتن (ثبت خودکار اسناد حسابداری و ...) */
+        _hooks.forEach((h) => {
+            try { h(descriptors, _db, summary); } catch (e) { console.error('DB hook error', e); }
+        });
+
         notify(summary);
         return result;
     },
@@ -294,6 +449,7 @@ export const DB = {
     insert(name, obj, opts = {}) {
         opts = DB._opts(opts);
         const rec = { id: obj.id || uid(name.slice(0, 3)), createdAt: nowISO(), ...obj };
+        if (!SCOPE_EXEMPT.includes(name) && !rec.agencyId) rec.agencyId = _scope || DEFAULT_AGENCY_ID;
         DB.mutate((db) => {
             db[name] = db[name] || [];
             db[name].push(rec);
@@ -419,6 +575,12 @@ export const DB = {
         return () => { _listeners = _listeners.filter((x) => x !== fn); };
     },
 
+    /** ثبت قلاب پس از هر نوشتن موفق (خروجی: تابع لغو) */
+    onWrite(fn) {
+        _hooks.push(fn);
+        return () => { _hooks = _hooks.filter((x) => x !== fn); };
+    },
+
     /* ---------- پشتیبان‌گیری ---------- */
     exportObject() {
         return clone(_db);
@@ -498,17 +660,26 @@ function normalizeDB(data) {
         if (!Array.isArray(db[c])) db[c] = [];
     });
     db.auditLog = Array.isArray(db.auditLog) ? db.auditLog.slice(-3000) : [];
+    /* نسخهٔ ۶: آژانس پیش‌فرض + کدینگ حساب‌ها + مهر آژانس روی دادهٔ قدیمی */
+    ensureFoundation(db);
+    ensureAgencyTags(db, DEFAULT_AGENCY_ID);
+    db.meta.version = SCHEMA_VERSION;
     return db;
 }
 
-/** تلاش برای مهاجرت از نسخه دموی v4 و در غیر این صورت داده نمونه */
+/** تلاش برای مهاجرت از نسخه‌های قبلی و در غیر این صورت داده نمونه */
 async function migrateOrSeed() {
     for (const key of LEGACY_KEYS) {
         const raw = localStorage.getItem(key);
         if (!raw) continue;
         try {
             const old = JSON.parse(raw);
-            if (old && (old.drivers || old.trips)) {
+            if (!old) continue;
+            if (key === 'taxi_dispatch_db_v5' || old.meta?.version === 5) {
+                console.info('مهاجرت داده‌ها از نسخهٔ ۵ به ۶ (چند آژانسی + حسابداری دوطرفه)');
+                return migrateFromV5(old);
+            }
+            if (old.drivers || old.trips) {
                 console.info('مهاجرت داده‌ها از نسخه دموی قبلی انجام شد');
                 return migrateFromV4(old);
             }
@@ -517,6 +688,14 @@ async function migrateOrSeed() {
         }
     }
     return seedSampleDB();
+}
+
+/** نگاشت نسخهٔ ۵ به ۶: افزودن آژانس پیش‌فرض، کدینگ حساب‌ها و مهر آژانس */
+export function migrateFromV5(old) {
+    const db = normalizeDB(old);
+    db.meta.migratedFrom = 'v5';
+    db.meta.version = SCHEMA_VERSION;
+    return db;
 }
 
 function migrateSeedSync() {
@@ -609,6 +788,7 @@ function seedSync() {
 export function seedSampleDB() {
     const db = emptyDB();
     db.meta.sampleData = true;
+    db.meta.agencyScoped = true;
 
     /* تعطیلات ثابت سال جاری */
     const jy = Number(currentJalaliMonth().slice(0, 4));
@@ -619,7 +799,7 @@ export function seedSampleDB() {
 
     /* کاربران پیش‌فرض (رمزها در auth.js ساخته می‌شوند: admin123 / operator123 / account123) */
     db.operators = [
-        SAMPLE({ id: 'op-admin', fullName: 'مدیر سامانه', username: 'admin', role: 'admin', status: 'active', phone: '', passwordHash: '', notes: 'حساب پیش‌فرض مدیر' }),
+        SAMPLE({ id: 'op-admin', fullName: 'مدیر سامانه', username: 'admin', role: 'admin', status: 'active', phone: '', passwordHash: '', superAdmin: true, agencyId: DEFAULT_AGENCY_ID, notes: 'حساب پیش‌فرض مدیر سامانه (admin / admin)' }),
         SAMPLE({ id: 'op-oper', fullName: 'زهرا رضایی', username: 'operator', role: 'operator', status: 'active', phone: '09121112233', passwordHash: '', notes: 'اپراتور شیفت صبح' }),
         SAMPLE({ id: 'op-acc', fullName: 'محسن افشار', username: 'accountant', role: 'accountant', status: 'active', phone: '09124445566', passwordHash: '', notes: 'حسابدار' })
     ];
@@ -741,6 +921,8 @@ export function seedSampleDB() {
         SAMPLE({ id: 'e3', date: addJalaliDays(todayJalali(), -1), category: 'چای و قند', description: 'خرید مایحتاج', amount: 260000, createdAt: nowISO() })
     ];
     db.transactions = [];
+    /* همهٔ رکوردهای نمونه متعلق به آژانس پیش‌فرض‌اند */
+    ensureAgencyTags(db, DEFAULT_AGENCY_ID);
     db.sequences.subscriber = db.subscribers.length + 1;
     db.sequences.payment = 3;
     db.sequences.driverPayment = 3;

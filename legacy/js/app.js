@@ -8,7 +8,9 @@
  * ========================================================================== */
 
 import { DB } from './db.js';
-import { Auth, ROLE_LABELS, PAGES_BY_ROLE } from './auth.js';
+import { Auth, ROLE_LABELS } from './auth.js';
+import { Agency } from './agency.js';
+import { registerLedgerAutoPosting } from './ledger.js';
 import { Toast, toastError } from './components/toast.js';
 import { Modal } from './components/modal.js';
 import { icon, installSprite, brandSVG } from './components/icons.js';
@@ -27,6 +29,8 @@ import { reportsOperator, reportsCancel, reportsDebtors, reportsDrivers } from '
 import audit from './pages/audit.js';
 import settings from './pages/settings.js';
 import operators from './pages/operators.js';
+import agencies from './pages/agencies.js';
+import { journal, chart, trial, pl, accountLedger } from './pages/ledger.js';
 import backup from './pages/backup.js';
 import training from './pages/training.js';
 import about, { APP_VERSION } from './pages/about.js';
@@ -39,7 +43,8 @@ const PAGES = {
     'acc-subscribers': accSubscribers, 'acc-payments': accPayments, 'acc-expenses': accExpenses,
     'reports-operator': reportsOperator, 'reports-cancel': reportsCancel,
     'reports-debtors': reportsDebtors, 'reports-drivers': reportsDrivers,
-    audit, settings, operators, backup, training, about
+    journal, chart, trial, pl, 'account-ledger': accountLedger,
+    audit, settings, operators, agencies, backup, training, about
 };
 
 /* فهرست منو (بر اساس نقش فیلتر می‌شود) */
@@ -66,6 +71,15 @@ const NAV = [
         ]
     },
     {
+        label: 'حسابداری دوطرفه', icon: 'book', children: [
+            { id: 'journal', label: 'دفتر روزنامه', icon: 'book' },
+            { id: 'account-ledger', label: 'دفتر معین', icon: 'list' },
+            { id: 'trial', label: 'تراز آزمایشی', icon: 'bar-chart' },
+            { id: 'pl', label: 'صورت سود و زیان', icon: 'activity' },
+            { id: 'chart', label: 'کدینگ حساب‌ها', icon: 'calculator' }
+        ]
+    },
+    {
         label: 'گزارش‌ها', icon: 'bar-chart', children: [
             { id: 'reports-operator', label: 'گزارش اپراتور', icon: 'headset' },
             { id: 'reports-cancel', label: 'گزارش لغو سفرها', icon: 'x-circle' },
@@ -75,6 +89,7 @@ const NAV = [
     },
     { id: 'audit', label: 'گزارش تغییرات', icon: 'clipboard' },
     { id: 'operators', label: 'کاربران و شیفت‌ها', icon: 'shield' },
+    { id: 'agencies', label: 'آژانس‌ها و اشتراک‌ها', icon: 'building' },
     { id: 'backup', label: 'پشتیبان‌گیری', icon: 'database' },
     { id: 'settings', label: 'تنظیمات', icon: 'settings' },
     { id: 'training', label: 'آموزش', icon: 'book' },
@@ -89,6 +104,12 @@ const THEME_KEY = 'taxi_theme';
 let _currentPage = '';
 let _currentParams = {};
 let _sidebarRole = '';
+
+/** امضای وضعیت کاربر: با تغییر نقش، آژانس یا سطح مدیر سامانه، منو بازسازی می‌شود */
+function _userSignature() {
+    const u = Auth.current() || {};
+    return [u.id || '', u.role || '', u.agencyId || '', Auth.isSuperAdmin() ? 'super' : 'user'].join('|');
+}
 let _deferredInstall = null;
 let _renderCount = 0;
 
@@ -111,6 +132,13 @@ async function boot() {
         await Auth.init();
     } catch (err) {
         console.error('Auth init', err);
+    }
+
+    /* ثبت خودکار اسناد حسابداری برای سفرها/پرداخت‌ها/هزینه‌ها */
+    try {
+        registerLedgerAutoPosting();
+    } catch (err) {
+        console.error('ledger init', err);
     }
 
     window.addEventListener('hashchange', () => routeFromHash());
@@ -146,8 +174,8 @@ function showLogin() {
       <div class="auth-card">
         <div class="auth-brand">
           ${brandSVG(64)}
-          <h1>تاکسی تلفنی کارن‌سافت</h1>
-          <p>سامانهٔ مدیریت آژانس تلفنی — نسخهٔ ${toFa(APP_VERSION)}</p>
+          <h1>سامانهٔ مدیریت تاکسی تلفنی</h1>
+          <p>ورود کاربران آژانس — نسخهٔ ${toFa(APP_VERSION)}</p>
         </div>
         <form id="loginForm" autocomplete="off">
           <div class="form-group">
@@ -162,11 +190,12 @@ function showLogin() {
           <button class="btn btn-gold w-100 mt-10" type="submit" id="loginBtn">${icon('lock')} ورود به سامانه</button>
         </form>
         <div class="auth-hint">
-          ${icon('info')} کاربران پیش‌فرض نسخهٔ نمایشی: <b dir="ltr">admin / admin123</b> — اپراتور: <b dir="ltr">operator / operator123</b> — حسابدار: <b dir="ltr">accountant / account123</b><br>
+          ${icon('info')} مدیر سامانه: <b dir="ltr">admin / admin</b> — کاربران نمونه: اپراتور <b dir="ltr">operator / operator123</b> و حسابدار <b dir="ltr">accountant / account123</b><br>
+          هر آژانس کاربران و دادهٔ مستقل خود را دارد؛ هر کاربر فقط دادهٔ آژانس خود را می‌بیند.
           پس از اولین ورود، رمزها را از «کاربران و شیفت‌ها» تغییر دهید.
         </div>
         <div class="auth-footer">
-          داده‌ها به‌صورت محلی روی همین مرورگر ذخیره می‌شوند · ${formatJalali(todayJalali())}
+          داده‌ها روی همین مرورگر ذخیره می‌شوند${DB.adapterName() === 'rest' ? ' و با سرور ابری هم‌گام می‌شوند' : ''} · ${formatJalali(todayJalali())}
         </div>
       </div>`;
 
@@ -219,13 +248,17 @@ function startApp() {
 
 function buildSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const allowed = PAGES_BY_ROLE[Auth.role()] || [];
+    const allowed = Auth.pages();
+    const agency = Agency.current();
+    const identity = Agency.identity();
     sidebar.innerHTML = `
       <div class="sidebar-header">
-        <div class="sidebar-logo">${brandSVG(40)}</div>
+        <div class="sidebar-logo">${identity.hasLogo
+            ? `<img class="sidebar-logo-img" src="${escapeHTML(identity.logo)}" alt="${escapeHTML(identity.name)}">`
+            : brandSVG(40)}</div>
         <div class="sidebar-brand">
-          <div class="brand-name">کارن‌سافت</div>
-          <div class="brand-sub">مدیریت تاکسی تلفنی</div>
+          <div class="brand-name">${escapeHTML(agency?.name || 'کارن‌سافت')}</div>
+          <div class="brand-sub">${escapeHTML(agency?.plan ? 'اشتراک ' + (agency.plan === 'pro' ? 'حرفه‌ای' : agency.plan === 'basic' ? 'پایه' : agency.plan === 'unlimited' ? 'نامحدود' : 'آزمایشی') : 'مدیریت تاکسی تلفنی')}</div>
         </div>
         <button class="theme-toggle-header" id="themeToggleHeader" type="button" aria-label="تغییر تم" title="تغییر تم روشن/تاریک">
           ${icon(document.documentElement.getAttribute('data-theme') === 'dark' ? 'sun' : 'moon')}
@@ -235,12 +268,12 @@ function buildSidebar() {
         ${NAV.map((item) => navItemHTML(item, allowed)).join('')}
       </nav>
       <div class="sidebar-footer">
-        <span>کارن‌سافت</span> •
+        <span>${escapeHTML(agency?.name || 'کارن‌سافت')}</span> •
         <a href="mailto:info@karen-soft.ir">info@karen-soft.ir</a><br>
         نسخهٔ ${toFa(APP_VERSION)} · ${formatJalali(todayJalali())}
       </div>`;
 
-    _sidebarRole = Auth.role();
+    _sidebarRole = _userSignature();
 
     /* وضعیت باز/بستهٔ سایدبار روی موبایل */
     if (localStorage.getItem(SIDEBAR_KEY) === 'open') sidebar.classList.add('open');
@@ -306,6 +339,7 @@ function buildHeader() {
         <span class="dot"></span><span>${navigator.onLine ? 'آماده' : 'آفلاین — داده محلی'}</span>
       </div>
       <div class="header-user">
+        <button class="top-chip" id="agencyChip" type="button" title="آژانس فعال"></button>
         <button class="top-chip" id="shiftChip" type="button" title="شیفت کاری"></button>
         <button class="top-chip" id="alertChip" type="button" title="هشدارها">${icon('bell')} <span class="txt">هشدارها</span> <span class="chip-count" id="alertCount">۰</span></button>
         <div class="dropdown">
@@ -349,11 +383,28 @@ function buildHeader() {
         if (action === 'password') return App.changeMyPassword();
         if (action === 'profile') return App.showProfile();
     });
+    header.querySelector('#agencyChip').addEventListener('click', () => {
+        if (Auth.isSuperAdmin()) App.navigate('agencies');
+        else App.navigate('settings');
+    });
     header.querySelector('#shiftChip').addEventListener('click', openShiftPanel);
     header.querySelector('#alertChip').addEventListener('click', () => App.navigate('dashboard', { focus: 'alerts' }));
 
     updateShiftChip();
+    updateAgencyChip();
     setInterval(updateShiftChip, 60000);
+}
+
+/** نشانگر آژانس فعال در نوار بالا (برای مدیر سامانه قابل کلیک و جابه‌جایی است) */
+function updateAgencyChip() {
+    const chip = document.getElementById('agencyChip');
+    if (!chip) return;
+    const a = Agency.current();
+    const sub = Agency.subscription(a);
+    const tone = sub.tone === 'danger' ? 'style="color:#dc2626"' : sub.tone === 'warn' ? 'style="color:#d97706"' : '';
+    chip.innerHTML = `${icon('building')} <span class="txt">${escapeHTML(a?.name || 'آژانس')}</span>
+      <span class="hint" ${tone}>${sub.known ? escapeHTML(sub.label) : ''}</span>`;
+    chip.title = Auth.isSuperAdmin() ? 'آژانس فعال — برای جابه‌جایی کلیک کنید' : 'آژانس فعال شما';
 }
 
 function toggleSidebar(open) {
@@ -420,7 +471,7 @@ function routeFromHash() {
 }
 
 function _pagesVisible() {
-    return PAGES_BY_ROLE[Auth.role()] || [];
+    return Auth.pages();
 }
 
 /**
@@ -436,8 +487,8 @@ function renderPage(pageId, params = {}) {
         if (pageId !== 'dashboard') { App.navigate('dashboard'); }
         return;
     }
-    /* اگر نقش کاربر عوض شده باشد (ورود کاربر جدید)، منو بازسازی می‌شود */
-    if (_sidebarRole !== Auth.role()) buildSidebar();
+    /* اگر کاربر/نقش/آژانس عوض شده باشد (ورود کاربر جدید)، منو بازسازی می‌شود */
+    if (_sidebarRole !== _userSignature()) buildSidebar();
 
     const view = document.getElementById('view');
     view.innerHTML = '';
@@ -458,6 +509,16 @@ function renderPage(pageId, params = {}) {
         Toast.error('نمایش صفحه با خطا مواجه شد');
     }
     JalaliDatepicker.init(view);
+
+    /* هشدار پایان نزدیک اشتراک نرم‌افزار آژانس (فقط یک‌بار در هر نشست) */
+    try {
+        const sub = Agency.subscription(Agency.current());
+        if (sub.known && sub.tone !== 'ok' && !sessionStorage.getItem('taxi_sub_warned')) {
+            sessionStorage.setItem('taxi_sub_warned', '1');
+            if (sub.expired) Toast.error('اشتراک نرم‌افزار این آژانس به پایان رسیده است؛ با پشتیبانی تماس بگیرید');
+            else Toast.warning(`اشتراک نرم‌افزار این آژانس تا ${toFa(sub.daysLeft)} روز دیگر به پایان می‌رسد`);
+        }
+    } catch (_) { /* ignore */ }
     document.querySelectorAll('#sidebarNav [data-page]').forEach((b) => b.classList.toggle('active', b.dataset.page === pageId));
     document.querySelectorAll('#sidebarNav .submenu').forEach((box) => {
         const has = !!box.querySelector('[data-page].active');
@@ -676,7 +737,7 @@ const App = {
     currentPage: () => _currentPage,
     params: () => ({ ..._currentParams }),
     pages: () => ({ ...PAGES }),
-    nav: () => PAGES_BY_ROLE[Auth.role()] || [],
+    nav: () => Auth.pages(),
     renderCount: () => _renderCount,
 
     setTheme(dark) {
@@ -688,7 +749,18 @@ const App = {
 
     toggleSidebar,
     updateShiftChip,
+    updateAgencyChip,
     updateSidebarBadges,
+
+    /** جابه‌جایی آژانس فعال (مدیر سامانه) */
+    switchAgency(id) {
+        Auth.switchAgency(id);
+        buildSidebar();
+        buildHeader();
+        App.reload();
+    },
+
+    agency() { return Agency.current(); },
 
     async installPWA() {
         if (_deferredInstall) {
@@ -762,7 +834,8 @@ const App = {
 
     /* دسترسی مستقیم به لایه‌های داده برای صفحه‌ها (بدون متغیر سراسری اضافه) */
     get DB() { return DB; },
-    get Auth() { return Auth; }
+    get Auth() { return Auth; },
+    get Agency() { return Agency; }
 };
 
 /* دسترسی به هشدارها برای نشان‌گر نوار (بدون import چرخشی) */

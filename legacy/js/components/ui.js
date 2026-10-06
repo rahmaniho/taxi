@@ -6,6 +6,7 @@ import { icon, brandSVG } from './icons.js';
 import { escapeHTML, formatJalali, formatDateTime, toFa, formatNumber, todayJalali } from '../utils.js';
 import { S } from '../strings.js';
 import { DB } from '../db.js';
+import { Agency } from '../agency.js';
 
 /* ------------------------------- نشان‌ها ------------------------------- */
 
@@ -199,15 +200,32 @@ export function previewPrint(html, { title = 'پیش‌نمایش چاپ', filen
 }
 
 /** سربرگ استاندارد اسناد چاپی (فاکتور، رسید، گزارش مالی) */
-export function docHeader({ title, subtitle = '', extraMeta = '' }) {
+/**
+ * نشان آژانس برای سربرگ اسناد چاپی:
+ * اگر آژانس لوگو بارگذاری کرده باشد، همان تصویر چاپ می‌شود؛ در غیر این صورت
+ * نشان پیش‌فرض برنامه (SVG) استفاده می‌شود. طبق درخواست کارفرما، لوگو باید روی
+ * «صورت‌حساب‌هایی که برای مشترکین پرینت می‌شود» دیده شود.
+ */
+export function agencyLogoHTML(height = 54) {
+    const id = Agency.identity();
+    if (id.hasLogo) {
+        return `<img class="doc-logo" src="${escapeHTML(id.logo)}" alt="${escapeHTML(id.name)}" style="max-height:${Number(height) || 54}px">`;
+    }
+    return brandSVG(height);
+}
+
+export function docHeader({ title, subtitle = '', extraMeta = '', agencyId = null }) {
     const s = DB.settings();
+    const id = Agency.identity(agencyId);
+    const extra = [id.economicCode ? `کد اقتصادی: ${escapeHTML(id.economicCode)}` : '', id.nationalId ? `شناسهٔ ملی: ${escapeHTML(id.nationalId)}` : ''].filter(Boolean);
     return `<div class="doc-head">
         <div class="doc-brand">
-          ${brandSVG(54)}
+          ${agencyLogoHTML(54)}
           <div>
-            <h2 style="font-size:1.05rem">${escapeHTML(s.companyName || 'کارن‌سافت')}</h2>
-            <div style="font-size:0.78rem;color:#555">${escapeHTML(s.companyAddress || '')}</div>
-            <div style="font-size:0.78rem;color:#555">تلفن: ${toFa(s.companyPhone || '—')}</div>
+            <h2 style="font-size:1.05rem">${escapeHTML(id.name || s.companyName || 'کارن‌سافت')}</h2>
+            <div style="font-size:0.78rem;color:#555">${escapeHTML(id.address || s.companyAddress || '')}</div>
+            <div style="font-size:0.78rem;color:#555">تلفن: ${toFa(id.phone || s.companyPhone || '—')}</div>
+            ${extra.map((x) => `<div style="font-size:0.72rem;color:#666">${x}</div>`).join('')}
           </div>
         </div>
         <div class="doc-meta">
@@ -221,11 +239,13 @@ export function docHeader({ title, subtitle = '', extraMeta = '' }) {
 
 export function docFooter(text = '') {
     const s = DB.settings();
+    const id = Agency.identity();
+    const watermark = text || id.footerNote || `${id.name || s.companyName || 'کارن‌سافت'} · سامانه مدیریت تاکسی تلفنی — این سند به‌صورت خودکار تولید شده است`;
     return `<div class="doc-foot">
         <div class="sign-box">مهر و امضای آژانس</div>
         <div class="sign-box">امضای راننده / مشترک</div>
       </div>
-      <div class="doc-watermark">${escapeHTML(text || (s.companyName || 'کارن‌سافت') + ' · سامانه مدیریت تاکسی تلفنی — این سند به‌صورت خودکار تولید شده است')}</div>`;
+      <div class="doc-watermark">${escapeHTML(watermark)}</div>`;
 }
 
 /* ----------------------------- سایر کمکی‌ها ----------------------------- */
@@ -248,5 +268,5 @@ export function timeAgo(iso) {
 export default {
     statusBadge, availabilityBadge, priorityBadge, paymentBadge, debtBadge, agingBadge,
     tripStepper, pageHeader, card, kpi, statCard, alertRow, printDocument, previewPrint,
-    docHeader, docFooter, ratingStars, labelOf, timeAgo
+    docHeader, docFooter, agencyLogoHTML, ratingStars, labelOf, timeAgo
 };
