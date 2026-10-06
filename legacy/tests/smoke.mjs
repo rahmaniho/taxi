@@ -361,6 +361,209 @@ ok(receiptHTML.includes(escapeForTest(receiptDriver.fullName)), 'رسید ران
 ok(/شرکت آزمون/.test(Prints.invoiceHTML(Subscribers.statement(testSub.id))), 'فاکتور مشترک شامل نام همان مشترک است');
 ok((Prints.invoiceHTML(subStatement).match(/\u062a\u0648\u0645\u0627\u0646/g) || []).length > 0, 'مبالغ با واحد تومان در سند درج می‌شوند');
 
+/* ---------------------- ۸٫۵) آژانس‌ها و چند‌مستأجری ---------------------- */
+group('آژانس‌ها، اشتراک نرم‌افزار و جداسازی دادهٔ آژانس‌ها');
+/* رمزهای پیش‌فرض کاربران نمونه در Auth.init ساخته می‌شوند */
+await Auth.init();
+const { Agency, DEFAULT_AGENCY_ID } = await import('../js/agency.js');
+ok(Agency.all().length >= 1, 'آژانس پیش‌فرض سامانه وجود دارد');
+const defaultAgencyRow = Agency.get(DEFAULT_AGENCY_ID);
+ok(!!defaultAgencyRow, 'آژانس پیش‌فرض با شناسهٔ ag1 ساخته شده است');
+ok(DB.list('drivers').every((d) => (d.agencyId || DEFAULT_AGENCY_ID) === DEFAULT_AGENCY_ID),
+    'همهٔ رکوردها مهر آژانس دارند (دادهٔ قدیمی به آژانس پیش‌فرض منتسب است)');
+
+const agencyCountBefore = Agency.all().length;
+const eastAgency = Agency.create({ name: 'آژانس آزمون شرق', code: 'test-east', phone: '02133445566', plan: 'basic', months: 6, maxUsers: 3 });
+eq(Agency.all().length, agencyCountBefore + 1, 'آژانس (اشتراک) جدید ساخته شد');
+ok(Agency.subscription(eastAgency).daysLeft > 150, 'اعتبار اشتراک آژانس جدید محاسبه می‌شود');
+let dupCodeBlocked = false;
+try { Agency.create({ name: 'آژانس تکراری', code: 'test-east' }); } catch (e) { dupCodeBlocked = true; }
+ok(dupCodeBlocked, 'شناسهٔ تکراری آژانس پذیرفته نمی‌شود');
+
+await Auth.createUser({ fullName: 'مدیر آژانس شرق', username: 'east-admin', password: 'east12345', role: 'admin', agencyId: eastAgency.id });
+await Auth.login('east-admin', 'east12345');
+eq(DB.scope(), eastAgency.id, 'دامنهٔ داده به آژانس کاربر محدود شد');
+eq(DB.list('drivers').length, 0, 'کاربر آژانس جدید هیچ راننده‌ای از آژانس دیگر نمی‌بیند');
+eq(DB.list('trips').length, 0, 'سفرهای آژانس دیگر برای این کاربر دیده نمی‌شود');
+const eastDriver = DB.insert('drivers', { fullName: 'رانندهٔ شرق', phone: '09121110000', commissionRate: 15, status: 'active', availability: 'available' });
+eq(DB.get('drivers', eastDriver.id).agencyId, eastAgency.id, 'رکورد جدید به آژانس فعال مهر می‌شود');
+let switchDenied = false;
+try { Auth.switchAgency(DEFAULT_AGENCY_ID); } catch (e) { switchDenied = true; }
+ok(switchDenied, 'کاربر غیرمدیر سامانه نمی‌تواند آژانس فعال را عوض کند');
+
+Auth.logout({ silent: true });
+await Auth.login('admin', 'admin');
+ok(Auth.isSuperAdmin(), 'کاربر admin مدیر سامانه است');
+Auth.switchAgency(eastAgency.id);
+eq(DB.list('drivers').length, 1, 'مدیر سامانه پس از جابه‌جایی، دادهٔ همان آژانس را می‌بیند');
+Auth.switchAgency(DEFAULT_AGENCY_ID);
+eq(DB.list('drivers').length > 1, true, 'با بازگشت به آژانس پیش‌فرض، دادهٔ آن دیده می‌شود');
+
+/* سقف کاربران آژانس */
+let quotaBlocked = false;
+try {
+    await Auth.createUser({ fullName: 'کاربر ۲', username: 'east-user2', password: 'east12345', role: 'operator', agencyId: eastAgency.id });
+    await Auth.createUser({ fullName: 'کاربر ۳', username: 'east-user3', password: 'east12345', role: 'operator', agencyId: eastAgency.id });
+    await Auth.createUser({ fullName: 'کاربر ۴', username: 'east-user4', password: 'east12345', role: 'operator', agencyId: eastAgency.id });
+} catch (e) { quotaBlocked = /سقف/.test(e.message); }
+ok(quotaBlocked, 'سقف کاربران آژانس رعایت می‌شود');
+
+/* انقضا و تمدید اشتراک نرم‌افزار */
+Agency.update(eastAgency.id, { softwareEnd: U.addJalaliDays(today, -1) }, 'آزمون انقضای اشتراک');
+ok(Agency.subscription(Agency.get(eastAgency.id)).expired, 'اشتراک منقضی‌شده تشخیص داده می‌شود');
+let expiredBlocked = false;
+try { await Auth.login('east-admin', 'east12345'); } catch (e) { expiredBlocked = /اشتراک/.test(e.message); }
+ok(expiredBlocked, 'ورود کاربر آژانس با اشتراک منقضی مسدود می‌شود');
+Agency.extend(eastAgency.id, 12);
+ok(!Agency.subscription(Agency.get(eastAgency.id)).expired, 'تمدید اشتراک کار می‌کند');
+Agency.setStatus(eastAgency.id, 'suspended');
+ok(!Agency.canLogin(Agency.get(eastAgency.id)).ok, 'آژانس غیرفعال اجازهٔ ورود نمی‌دهد');
+Agency.setStatus(eastAgency.id, 'active');
+
+/* پاک‌سازی داده‌های آزمون آژانس (بدون اثر روی داده اصلی) */
+let deleteBlocked = false;
+try { Agency.remove(eastAgency.id); } catch (e) { deleteBlocked = true; }
+ok(deleteBlocked, 'آژانس دارای دادهٔ عملیاتی حذف نمی‌شود');
+DB.listGlobal('operators').filter((u) => ['east-user2', 'east-user3'].includes(u.username)).forEach((u) => DB.remove('operators', u.id, 'پاک‌سازی آزمون'));
+DB.remove('drivers', eastDriver.id, 'پاک‌سازی آزمون');
+
+/* ------------------- ۸٫۶) لوگوی آژانس روی اسناد چاپی ------------------- */
+group('لوگوی آژانس روی صورت‌حساب‌های چاپی');
+const LOGO_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==';
+Auth.switchAgency(DEFAULT_AGENCY_ID);
+Agency.setLogo(DEFAULT_AGENCY_ID, LOGO_DATA_URL);
+ok(Agency.identity().hasLogo, 'لوگو در هویت آژانس ثبت شد');
+const invoiceWithLogo = Prints.invoiceHTML(subStatement);
+ok(invoiceWithLogo.includes('data:image/png;base64'), 'لوگو در سربرگ صورت‌حساب مشترک درج می‌شود');
+ok(/class="doc-logo"/.test(invoiceWithLogo), 'تصویر لوگو با کلاس چاپی .doc-logo ساخته می‌شود');
+let badLogoBlocked = false;
+try { Agency.setLogo(DEFAULT_AGENCY_ID, 'https://example.com/logo.png'); } catch (e) { badLogoBlocked = true; }
+ok(badLogoBlocked, 'لوگوی غیرتصویری (آدرس بیرونی) رد می‌شود');
+Agency.setLogo(DEFAULT_AGENCY_ID, '');
+ok(!Prints.invoiceHTML(subStatement).includes('class="doc-logo"'), 'در نبود لوگو، نشان پیش‌فرض چاپ می‌شود');
+ok(Prints.invoiceHTML(subStatement).includes('doc-brand'), 'سربرگ سند در هر حالت ساخته می‌شود');
+Agency.update(DEFAULT_AGENCY_ID, { name: 'آژانس آزمون سند', phone: '02112345678', address: 'تهران، خیابان آزمون' });
+const invoiceNamed = Prints.invoiceHTML(subStatement);
+ok(invoiceNamed.includes('آژانس آزمون سند'), 'نام آژانس روی اسناد چاپی درج می‌شود');
+ok(invoiceNamed.includes('تهران، خیابان آزمون'), 'نشانی آژانس روی اسناد چاپی درج می‌شود');
+const receiptWithAgency = Prints.driverReceiptHTML(Drivers.statement(DB.list('drivers')[0].id));
+ok(receiptWithAgency.includes('آژانس آزمون سند'), 'رسید راننده هم سربرگ آژانس را دارد');
+Agency.update(DEFAULT_AGENCY_ID, { name: defaultAgencyRow.name, phone: defaultAgencyRow.phone, address: defaultAgencyRow.address });
+let invalidLogoFile = false;
+try { await U.imageFileToDataURL({ type: 'text/plain', size: 10, name: 'a.txt' }); } catch (e) { invalidLogoFile = /تصویر/.test(e.message); }
+ok(invalidLogoFile, 'فایل غیرتصویری برای لوگو رد می‌شود');
+
+/* ----------------------- ۸٫۷) حسابداری دوطرفه ----------------------- */
+group('حسابداری دوطرفه: کدینگ، سند، تراز، سود و زیان، دفتر معین');
+const { Accounts, Journals, ACCOUNT_MAP, expenseAccountCode, registerLedgerAutoPosting } = await import('../js/ledger.js');
+ok(Accounts.all().length >= 20, 'کدینگ پیش‌فرض حساب‌ها ساخته شده است', `تعداد: ${Accounts.all().length}`);
+eq(expenseAccountCode('قبض اینترنت دفتر'), '5020', 'دستهٔ هزینه به کد حساب درست نگاشت می‌شود');
+eq(expenseAccountCode('دستهٔ ناشناخته'), ACCOUNT_MAP.defaultExpense, 'هزینهٔ ناشناخته به حساب پیش‌فرض می‌رود');
+let dupAccBlocked = false;
+try { Accounts.create({ code: ACCOUNT_MAP.cash, name: 'حساب تکراری', type: 'asset' }); } catch (e) { dupAccBlocked = true; }
+ok(dupAccBlocked, 'کد حساب تکراری رد می‌شود');
+let badTypeBlocked = false;
+try { Accounts.create({ code: '9911', name: 'نوع نامعتبر', type: 'whatever' }); } catch (e) { badTypeBlocked = true; }
+ok(badTypeBlocked, 'نوع حساب نامعتبر رد می‌شود');
+let unbalancedBlocked = false;
+try {
+    Journals.create({ description: 'سند نامتوازن', lines: [{ accountCode: ACCOUNT_MAP.cash, debit: 1000 }, { accountCode: ACCOUNT_MAP.commissionIncome, credit: 900 }] });
+} catch (e) { unbalancedBlocked = /متوازن/.test(e.message); }
+ok(unbalancedBlocked, 'سند نامتوازن ثبت نمی‌شود');
+let singleLineBlocked = false;
+try { Journals.create({ description: 'یک سطر', lines: [{ accountCode: ACCOUNT_MAP.cash, debit: 100 }] }); } catch (e) { singleLineBlocked = true; }
+ok(singleLineBlocked, 'سند تک‌سطری رد می‌شود');
+let bothSidesBlocked = false;
+try { Journals.create({ description: 'دو طرفه', lines: [{ accountCode: ACCOUNT_MAP.cash, debit: 100, credit: 100 }, { accountCode: ACCOUNT_MAP.capital, debit: 100, credit: 100 }] }); } catch (e) { bothSidesBlocked = true; }
+ok(bothSidesBlocked, 'سطر هم‌زمان بدهکار و بستانکار رد می‌شود');
+
+const openingJournal = Journals.create({
+    date: today, description: 'سند سرمایهٔ اولیه (آزمون)',
+    lines: [
+        { accountCode: ACCOUNT_MAP.cash, debit: 50000000, description: 'موجودی صندوق' },
+        { accountCode: ACCOUNT_MAP.capital, credit: 50000000, description: 'سرمایهٔ مالک' }
+    ]
+});
+ok(/^JV-\d{4}$/.test(openingJournal.number), 'شمارهٔ سند به‌صورت JV-xxxx ساخته می‌شود');
+const opTotals = Journals.totals(Journals.get(openingJournal.id).lines);
+eq(opTotals.debit, opTotals.credit, 'سند ثبت‌شده متوازن است');
+
+const wide = { from: U.addJalaliDays(today, -400), to: today };
+const tb = Journals.trialBalance(wide);
+ok(tb.rows.length > 0, 'تراز آزمایشی سطر دارد');
+eq(tb.totalDebit, tb.totalCredit, 'جمع بدهکار و بستانکار تراز آزمایشی برابر است');
+ok(tb.balanced, 'وضعیت تراز «متوازن» است');
+const pl = Journals.incomeStatement(wide);
+eq(pl.profit, pl.totalIncome - pl.totalExpense, 'سود صورت مالی = درآمد − هزینه');
+const bs = Journals.balanceSheet({ to: today });
+ok(bs.balanced, 'ترازنامه متوازن است (دارایی = بدهی + سرمایه)', JSON.stringify({ a: bs.totalAssets, l: bs.totalLiabilities, e: bs.totalEquity }));
+const capLedger = Journals.accountLedger(ACCOUNT_MAP.capital, wide);
+eq(capLedger.closing, capLedger.opening + capLedger.totalDebit - capLedger.totalCredit, 'ماندهٔ دفتر معین درست بسته می‌شود');
+ok(capLedger.rows.length >= 1, 'دفتر معین گردش حساب را نشان می‌دهد');
+
+group('ثبت خودکار اسناد حسابداری از دادهٔ عملیاتی');
+registerLedgerAutoPosting();
+const autoTrip = Trips.create({
+    subscriberName: 'مسافر آزمون حسابداری', subscriberPhone: '09120000011',
+    pickupAddress: 'میدان ونک', dropoffAddress: 'فرودگاه امام', distance: 30,
+    fare: 1000000, tripDate: today, pickupTime: U.jalaliDateWithTime(today, '10:30'),
+    paymentMethod: 'cash', driverId: DB.list('drivers')[0]?.id || ''
+});
+Trips.setStatus(autoTrip.id, 'completed');
+const tripJournal = Journals.findRef('trip', autoTrip.id);
+ok(!!tripJournal, 'برای سفر تکمیل‌شده سند خودکار ساخته می‌شود');
+if (tripJournal) {
+    const tl = tripJournal.lines;
+    ok(tl.some((l) => l.accountCode === ACCOUNT_MAP.cash && l.debit === Number(tripJournal.lines.find((x) => x.accountCode === ACCOUNT_MAP.cash).debit)),
+        'کرایهٔ نقدی به حساب صندوق بدهکار می‌شود');
+    ok(tl.some((l) => l.accountCode === ACCOUNT_MAP.commissionIncome && l.credit > 0), 'درآمد کمیسیون بستانکار می‌شود');
+    ok(tl.some((l) => l.accountCode === ACCOUNT_MAP.driverPayable && l.credit > 0), 'سهم راننده به بدهی رانندگان بستانکار می‌شود');
+    eq(Journals.totals(tl).debit, Journals.totals(tl).credit, 'سند خودکار سفر متوازن است');
+}
+
+const corpSub = DB.insert('subscribers', {
+    subscriptionNumber: 'SUB-TEST-9', type: 'corporate', fullName: 'شرکت آزمون حسابداری',
+    companyName: 'شرکت آزمون حسابداری', phone: '02177778888', debt: 0, subscriptionStart: today, subscriptionEnd: U.addJalaliDays(today, 30)
+});
+const corpTrip = Trips.create({
+    subscriberId: corpSub.id, subscriberName: corpSub.fullName, subscriberPhone: corpSub.phone,
+    pickupAddress: 'دفتر مرکزی', dropoffAddress: 'پایانه غرب', distance: 12,
+    fare: 500000, tripDate: today, pickupTime: U.jalaliDateWithTime(today, '12:00'),
+    paymentMethod: 'credit', billedTo: 'company'
+});
+Trips.setStatus(corpTrip.id, 'completed');
+const corpJournal = Journals.findRef('trip', corpTrip.id);
+ok(!!corpJournal, 'سفر حقوقی هم سند خودکار دارد');
+ok(!!corpJournal && corpJournal.lines.some((l) => l.accountCode === ACCOUNT_MAP.subscriberReceivable && l.debit > 0),
+    'کرایهٔ سفر حقوقی به حساب‌های دریافتنی مشترکین بدهکار می‌شود');
+
+Subscribers.addPayment({ subscriberId: corpSub.id, amount: 200000, date: today, method: 'cash', notes: 'آزمون' });
+const subPay = DB.list('subscriberPayments').find((p) => p.subscriberId === corpSub.id);
+const subPayJournal = Journals.findRef('subscriberPayment', subPay.id);
+ok(!!subPayJournal, 'برای دریافت از مشترک سند خودکار ساخته می‌شود');
+ok(!!subPayJournal && subPayJournal.lines.some((l) => l.accountCode === ACCOUNT_MAP.subscriberReceivable && l.credit === 200000),
+    'دریافت مشترک، حساب دریافتنی را بستانکار می‌کند');
+
+const expRow = DB.insert('expenses', { date: today, category: 'اینترنت', description: 'آزمون سند هزینه', amount: 300000 });
+const expJournal = Journals.findRef('expense', expRow.id);
+ok(!!expJournal, 'برای هزینهٔ جانبی سند خودکار ساخته می‌شود');
+ok(!!expJournal && expJournal.lines.some((l) => l.accountCode === '5020' && l.debit === 300000), 'هزینه به حساب درست بدهکار می‌شود');
+
+const backfillFirst = Journals.backfill();
+ok(U.sum(Object.values(backfillFirst), (v) => v) > 0, 'تولید اسناد از دادهٔ موجود، اسناد سفرهای قبلی را می‌سازد',
+    JSON.stringify(backfillFirst));
+const cov = Journals.coverage();
+ok(cov.trips.posted === cov.trips.total && cov.expenses.posted === cov.expenses.total
+    && cov.subscriberPayments.posted === cov.subscriberPayments.total && cov.driverPayments.posted === cov.driverPayments.total,
+    'پس از تولید، همهٔ رکوردهای عملیاتی سند حسابداری دارند', JSON.stringify(cov));
+const backfillAgain = Journals.backfill();
+eq(U.sum(Object.values(backfillAgain), (v) => v), 0, 'تولید دوبارهٔ اسناد، سند تکراری نمی‌سازد (idempotent)');
+const tbAfter = Journals.trialBalance(wide);
+ok(tbAfter.balanced, 'تراز پس از ثبت اسناد خودکار همچنان متوازن است');
+Journals.remove(openingJournal.id);
+ok(!DB.get('journals', openingJournal.id), 'حذف نرم سند حسابداری کار می‌کند');
+ok(Journals.trialBalance(wide).balanced, 'تراز پس از حذف سند متوازن می‌ماند');
+
 /* ------------------------------- ۹) هشدارها ------------------------------- */
 group('هشدارهای داشبورد');
 const alerts = Alerts.all ? Alerts.all() : [];
@@ -375,7 +578,7 @@ await Auth.init();
 let loginFailed = false;
 try { await Auth.login('admin', 'wrong-password'); } catch (e) { loginFailed = true; }
 ok(loginFailed, 'رمز نادرست رد می‌شود');
-const session = await Auth.login('admin', 'admin123');
+const session = await Auth.login('admin', 'admin');
 ok(!!session, 'ورود مدیر با رمز پیش‌فرض انجام شد');
 eq(Auth.role(), 'admin', 'نقش کاربر شناسایی شد');
 ok(Auth.canAccess('dashboard') && Auth.canAccess('settings'), 'مدیر به همهٔ صفحه‌ها دسترسی دارد');

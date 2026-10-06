@@ -4,6 +4,7 @@
 
 import { DB } from '../db.js';
 import { Auth, ROLES, ROLE_LABELS, hashPassword, randomSalt } from '../auth.js';
+import { Agency, DEFAULT_AGENCY_ID } from '../agency.js';
 import { Toast, toastError } from '../components/toast.js';
 import { Modal } from '../components/modal.js';
 import { renderTable } from '../components/table.js';
@@ -43,6 +44,11 @@ export default {
                           <span class="cell-sub" dir="ltr">${escapeHTML(u.username)}</span>`
                     },
                     { key: 'role', label: 'نقش', sortable: true, align: 'center', render: (u) => `<span class="role-badge role-${u.role}">${ROLE_LABELS[u.role] || u.role}</span>` },
+                    {
+                        key: 'agencyId', label: 'آژانس', sortable: true,
+                        sortValue: (u) => Agency.get(u.agencyId || DEFAULT_AGENCY_ID)?.name || '',
+                        render: (u) => escapeHTML(Agency.get(u.agencyId || DEFAULT_AGENCY_ID)?.name || 'آژانس پیش‌فرض')
+                    },
                     { key: 'phone', label: 'تلفن همراه', sortable: true, align: 'center', render: (u) => toFa(u.phone || '—') },
                     { key: 'status', label: 'وضعیت', sortable: true, align: 'center', render: (u) => statusBadge(u.status || 'active') },
                     {
@@ -148,6 +154,11 @@ function openUserForm(user, onDone) {
             <div class="form-group"><label class="form-label">تلفن همراه</label>
               <input class="form-input" id="ufPhone" dir="ltr" placeholder="09xxxxxxxxx" value="${escapeHTML(user?.phone || '')}"></div>
           </div>
+          ${Auth.isSuperAdmin() ? `<div class="form-group"><label class="form-label">آژانس کاربر</label>
+            <select class="form-select" id="ufAgency">
+              ${Agency.all().map((a) => `<option value="${a.id}" ${(user?.agencyId || DB.scope() || DEFAULT_AGENCY_ID) === a.id ? 'selected' : ''}>${escapeHTML(a.name)}</option>`).join('')}
+            </select>
+            <div class="hint">هر کاربر فقط داده‌های آژانس خودش را می‌بیند.</div></div>` : ''}
           ${isNew ? `<div class="form-row">
             <div class="form-group"><label class="form-label">رمز عبور <span class="req">*</span></label>
               <input class="form-input" id="ufPass" type="password" dir="ltr" placeholder="حداقل ۸ کاراکتر"></div>
@@ -172,11 +183,13 @@ function openUserForm(user, onDone) {
                 const phone = node.querySelector('#ufPhone').value.trim();
                 const status = node.querySelector('#ufStatus').value;
                 const notes = node.querySelector('#ufNotes').value.trim();
+                const agencyId = node.querySelector('#ufAgency')?.value || user?.agencyId || DB.scope() || DEFAULT_AGENCY_ID;
                 try {
                     if (!fullName) throw new Error('نام و نام خانوادگی الزامی است');
                     if (!/^[a-z0-9._-]{3,}$/.test(username)) throw new Error('نام کاربری باید حداقل ۳ کاراکتر لاتین/عدد باشد');
                     if (phone && !/^09\d{9}$/.test(phone)) throw new Error('شماره همراه معتبر نیست (نمونه: ۰۹۱۲۳۴۵۶۷۸۹)');
-                    if (DB.list('operators').some((u) => u.username === username && u.id !== user?.id)) throw new Error('این نام کاربری قبلاً ثبت شده است');
+                    const dup = DB.findGlobal('operators', 'username', username);
+                    if (dup && dup.id !== user?.id) throw new Error('این نام کاربری قبلاً ثبت شده است');
 
                     if (isNew) {
                         const pass = node.querySelector('#ufPass').value;
@@ -185,7 +198,8 @@ function openUserForm(user, onDone) {
                         if (pass !== pass2) throw new Error('تکرار رمز عبور مطابقت ندارد');
                         const salt = randomSalt();
                         const passwordHash = await hashPassword(pass, salt);
-                        DB.insert('operators', { fullName, username, role, phone, status, notes, salt, passwordHash, mustChangePassword: false },
+                        if (!user) Agency.assertUserQuota(agencyId);
+                        DB.insert('operators', { fullName, username, role, phone, status, notes, salt, passwordHash, mustChangePassword: false, agencyId },
                             { desc: `کاربر «${fullName}» با نقش ${ROLE_LABELS[role]} افزوده شد` });
                         Toast.success('کاربر جدید افزوده شد');
                     } else {

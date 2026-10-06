@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>سامانهٔ مدیریت تاکسی تلفنی — ورود به برنامه</title>
+  <meta name="description" content="سامانهٔ فارسی مدیریت تاکسی تلفنی: صف انتظار، تخصیص راننده، مشترکین، حسابداری دوطرفه و گزارش‌ها. نصب‌پذیر (PWA) و قابل استفاده روی موبایل، تبلت و دسکتاپ.">
+  <meta name="theme-color" content="#0a0e27">
+  <link rel="icon" href="./legacy/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./legacy/icons/apple-touch-icon.png">
+  <style>
+    :root {
+      --gold: #d4af37;
+      --bg: #0a0e27;
+      --card: rgba(255, 255, 255, 0.05);
+      --line: rgba(212, 175, 55, 0.28);
+      --text: #f2f4ff;
+      --muted: rgba(242, 244, 255, 0.68);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: Tahoma, "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 480px at 85% -10%, rgba(212, 175, 55, 0.18), transparent 60%),
+        radial-gradient(700px 420px at 10% 110%, rgba(60, 90, 255, 0.18), transparent 60%),
+        var(--bg);
+    }
+
+    .wrap { width: 100%; max-width: 720px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 26px 22px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+
+    .brand img { width: 56px; height: 56px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); padding: 6px; }
+
+    h1 { font-size: 1.32rem; margin: 0 0 4px; }
+
+    .sub { color: var(--muted); font-size: 0.92rem; line-height: 2; margin: 0; }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #e8c764, var(--gold));
+      color: #201800;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      box-shadow: 0 12px 28px rgba(212, 175, 55, 0.32);
+    }
+
+    .cta:hover { filter: brightness(1.06); }
+
+    .creds {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px dashed var(--line);
+      background: rgba(212, 175, 55, 0.07);
+      font-size: 0.88rem;
+      line-height: 2.1;
+      color: var(--muted);
+    }
+
+    .creds b { color: var(--text); direction: ltr; display: inline-block; }
+
+    .features {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      list-style: none;
+      padding: 0;
+    }
+
+    .features li {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .note { margin-top: 16px; font-size: 0.8rem; color: var(--muted); line-height: 2; }
+
+    .redirect {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      color: var(--gold);
+      display: none;
+    }
+
+    .redirect.show { display: block; }
+
+    a.plain { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <div class="brand">
+        <img src="./legacy/icons/favicon.svg" alt="نشان سامانه">
+        <div>
+          <h1>سامانهٔ مدیریت تاکسی تلفنی</h1>
+          <p class="sub">صف انتظار، تخصیص راننده، مشترکین، حسابداری دوطرفه و گزارش‌های مدیریتی — فارسی و راست‌به‌چپ، نصب‌پذیر روی موبایل و دسکتاپ.</p>
+        </div>
+      </div>
+
+      <a class="cta" href="./legacy/taxi.html">ورود به برنامهٔ تاکسی تلفنی ←</a>
+
+      <div class="creds">
+        ورود مدیر سامانه: <b>admin / admin</b><br>
+        هر آژانس (اشتراک) کاربران، داده و لوگوی مستقل خود را دارد؛ هر کاربر فقط داده‌های آژانس خودش را می‌بیند.
+      </div>
+
+      <ul class="features">
+        <li>مولتی‌تنانت: چند آژانس با کاربران و دادهٔ جدا</li>
+        <li>لوگوی اختصاصی هر آژانس روی صورت‌حساب مشترکین</li>
+        <li>حسابداری دوطرفه: دفتر روزنامه، تراز، سود و زیان، دفتر معین</li>
+        <li>چاپ صورت‌حساب، رسید راننده و گزارش‌های مالی (PDF)</li>
+        <li>تقویم و اعداد شمسی، بدون وابستگی به اینترنت</li>
+      </ul>
+
+      <div class="note">
+        داده‌ها روی همین مرورگر ذخیره می‌شوند (بدون نیاز به سرور). برای کار هم‌زمان چند کاربر روی چند دستگاه، از
+        «آژانس‌ها و اشتراک‌ها ← حالت اشتراکی آنلاین» آدرس یک سرور دادهٔ سازگار با قرارداد <span dir="ltr">GET/PUT /db</span> را وارد کنید.
+      </div>
+      <div class="redirect" id="redirectNote">در حال انتقال به برنامه… اگر منتقل نشدید، <a class="plain" href="./legacy/taxi.html">اینجا را بزنید</a>.</div>
+    </section>
+  </main>
+
+  <script>
+    /* انتقال خودکار به برنامه پس از یک لحظه (کاربر می‌تواند همان‌جا هم روی دکمه بزند) */
+    (function () {
+      if (/[?&]stay=1/.test(location.search)) return;
+      setTimeout(function () {
+        document.getElementById('redirectNote').classList.add('show');
+        setTimeout(function () { location.replace('./legacy/taxi.html'); }, 1200);
+      }, 800);
+    })();
+  </script>
+</body>
+</html>

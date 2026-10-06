@@ -4,19 +4,24 @@
  * ========================================================================== */
 
 import { DB } from '../db.js';
+import { Auth } from '../auth.js';
+import { Agency, LOGO_MAX_BYTES } from '../agency.js';
 import { Toast, toastError } from '../components/toast.js';
 import { Modal } from '../components/modal.js';
 import { icon } from '../components/icons.js';
 import { pageHeader } from '../components/ui.js';
 import { JalaliDatepicker } from '../jalali.js';
-import { calculateFare, isHolidayKey, todayJalali, formatJalali, formatNumber, formatMoney, escapeHTML, toFa, parseNumber } from '../utils.js';
+import {
+    calculateFare, isHolidayKey, todayJalali, formatJalali, formatNumber, formatMoney, escapeHTML, toFa,
+    parseNumber, imageFileToDataURL, formatFileSize
+} from '../utils.js';
 
 export default {
     id: 'settings',
     title: 'تنظیمات',
 
     render(view) {
-        let tab = 'general';
+        let tab = 'agency';
         const s = DB.settings();
         const jy = todayJalali().slice(0, 4);
 
@@ -29,7 +34,8 @@ export default {
           })}
 
           <div class="tab-lite" id="setTabs">
-            <button type="button" data-tab="general" class="active">${icon('building')} آژانس و کمیسیون</button>
+            <button type="button" data-tab="agency" class="active">${icon('building')} هویت آژانس و لوگو</button>
+            <button type="button" data-tab="general">${icon('percent')} کمیسیون و مالیات</button>
             <button type="button" data-tab="fare">${icon('calculator')} تعرفه پلکانی</button>
             <button type="button" data-tab="holidays">${icon('calendar')} تعطیلات رسمی</button>
             <button type="button" data-tab="ops">${icon('clock')} قواعد عملیاتی</button>
@@ -46,15 +52,101 @@ export default {
         const form = () => body.querySelector('form') || body;
 
         const renderTab = () => {
-            if (tab === 'general') {
-                body.innerHTML = `<div class="card"><form>
-                  ${section('اطلاعات آژانس', 'building')}
+            if (tab === 'agency') {
+                const a = Agency.current() || {};
+                const sub = Agency.subscription(a);
+                body.innerHTML = `
+                <div class="card mb-16">
+                  <div class="card-header"><div class="card-title">${icon('image')} لوگوی آژانس روی اسناد چاپی</div>
+                    <div class="card-actions"><span class="chip ${sub.tone === 'danger' ? 'chip-red' : sub.tone === 'warn' ? 'chip-gold' : 'chip-green'}">اشتراک: ${escapeHTML(sub.label)}</span></div></div>
+                  <div class="agency-logo-preview mb-12">
+                    <div id="logoBox">${a.logo
+                        ? `<img src="${escapeHTML(a.logo)}" alt="لوگو">`
+                        : `<div style="opacity:.7">${icon('image', 'icon-xl')}</div>`}</div>
+                    <div>
+                      <div class="text-bold">${escapeHTML(a.name || 'آژانس')}</div>
+                      <div class="hint">این لوگو بالای صورت‌حساب مشترکین، رسید راننده و گزارش‌های مالی چاپ می‌شود.</div>
+                    </div>
+                  </div>
+                  <div class="flex gap-8 flex-wrap items-center">
+                    <input type="file" id="agencyLogoFile" class="form-input" style="max-width:320px" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml">
+                    <button class="btn btn-outline btn-sm" type="button" id="agencyLogoRemove">${icon('trash')} حذف لوگو</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="agencyPreview">${icon('printer')} پیش‌نمایش سربرگ</button>
+                  </div>
+                  <div class="hint mt-10">حجم مجاز تا ${toFa(Math.round(LOGO_MAX_BYTES / 1024))} کیلوبایت؛ PNG با پس‌زمینهٔ شفاف بهترین نتیجه را می‌دهد.</div>
+                </div>
+                <div class="card"><form>
+                  ${section('هویت آژانس', 'building')}
                   <div class="form-row mb-10">
-                    ${field('نام آژانس', 'companyName', s.companyName)}
-                    ${field('تلفن آژانس', 'companyPhone', s.companyPhone)}
+                    ${field('نام آژانس', 'agencyName', a.name || s.companyName)}
+                    ${field('تلفن آژانس', 'agencyPhone', a.phone || s.companyPhone)}
                   </div>
                   <div class="form-row mb-10">
-                    ${field('نشانی آژانس', 'companyAddress', s.companyAddress)}
+                    ${field('نشانی آژانس', 'agencyAddress', a.address || s.companyAddress)}
+                    ${field('شناسهٔ ملی / کد اقتصادی', 'agencyEconomicCode', a.economicCode || '')}
+                  </div>
+                  <div class="form-row mb-10">
+                    ${field('متن پاصفحهٔ اسناد (اختیاری)', 'agencyFooterNote', a.footerNote || '')}
+                    <div class="form-group"><label class="form-label">آژانس فعال</label>
+                      <input class="form-input" value="${escapeHTML(a.name || '')}" readonly>
+                      <div class="hint">جابه‌جایی آژانس از منوی «آژانس‌ها و اشتراک‌ها» انجام می‌شود (فقط مدیر سامانه).</div></div>
+                  </div>
+                  ${section('کمیسیون و مالیات', 'percent')}
+                  <div class="form-row mb-10">
+                    ${fieldNum('درصد کمیسیون پیش‌فرض', 'commissionDefault', s.commissionDefault, 0, 100, '0.5', '٪')}
+                    ${fieldNum('درصد مالیات (اختیاری)', 'taxRate', s.taxRate, 0, 100, '0.1', '%')}
+                  </div>
+                  <div class="soft-box">${icon('info')} درصد کمیسیون هر راننده در پروندهٔ خودش قابل تغییر است؛ این مقدار فقط پیش‌فرض رانندگان جدید است.</div>
+                </form></div>`;
+
+                const logoBox = root.querySelector('#logoBox');
+                const paintLogo = (dataUrl) => {
+                    logoBox.innerHTML = dataUrl
+                        ? `<img src="${escapeHTML(dataUrl)}" alt="لوگو">`
+                        : `<div style="opacity:.7">${icon('image', 'icon-xl')}</div>`;
+                };
+                root.querySelector('#agencyLogoFile').addEventListener('change', async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                        const dataUrl = await imageFileToDataURL(file, { maxBytes: LOGO_MAX_BYTES });
+                        Agency.setLogo(a.id, dataUrl);
+                        paintLogo(dataUrl);
+                        window.App.updateAgencyChip?.();
+                        window.App.reload();
+                        Toast.success(`لوگو ذخیره شد (${formatFileSize(file.size)}) و روی اسناد چاپی چاپ می‌شود`);
+                    } catch (err) { toastError(err); }
+                });
+                root.querySelector('#agencyLogoRemove').addEventListener('click', async () => {
+                    const ok = await Modal.confirm({ title: 'حذف لوگو', message: 'لوگوی این آژانس حذف شود؟', danger: true, okText: 'حذف' });
+                    if (!ok) return;
+                    try {
+                        Agency.setLogo(a.id, '');
+                        paintLogo('');
+                        window.App.updateAgencyChip?.();
+                        window.App.reload();
+                        Toast.success('لوگو حذف شد');
+                    } catch (err) { toastError(err); }
+                });
+                root.querySelector('#agencyPreview').addEventListener('click', () => {
+                    const identity = Agency.identity();
+                    Modal.open({
+                        title: 'سربرگ اسناد چاپی', iconName: 'printer',
+                        body: `<div class="agency-logo-preview mb-12" id="hdrPrev">
+                          ${identity.hasLogo ? `<img src="${escapeHTML(identity.logo)}" alt="لوگو">` : icon('image', 'icon-xl')}
+                          <div><div class="text-bold">${escapeHTML(identity.name)}</div>
+                            <div class="hint">${escapeHTML(identity.address || '')}</div>
+                            <div class="hint">تلفن: ${toFa(identity.phone || '—')}</div></div>
+                        </div>
+                        <div class="soft-box">${icon('info')} لوگو و این مشخصات، بالای همهٔ اسناد چاپی (صورت‌حساب مشترک، رسید راننده، گزارش‌های مالی) درج می‌شود. برای دیدن خروجی واقعی، از «آژانس‌ها ← نمونهٔ صورتحساب» استفاده کنید.</div>`,
+                        footer: `<button class="btn btn-outline" type="button" data-modal-close>بستن</button>`
+                    });
+                });
+            } else if (tab === 'general') {
+                body.innerHTML = `<div class="card"><form>
+                  ${section('کمیسیون و مالیات', 'percent')}
+                  <div class="form-row mb-10">
+                    ${fieldNum('درصد کمیسیون پیش‌فرض', 'commissionDefault', s.commissionDefault, 0, 100, '0.5', '٪')}
                     ${fieldNum('درصد مالیات (اختیاری)', 'taxRate', s.taxRate, 0, 100, '0.1', '%')}
                   </div>
                   ${section('کمیسیون', 'percent')}
@@ -62,7 +154,7 @@ export default {
                     ${fieldNum('درصد کمیسیون پیش‌فرض', 'commissionDefault', s.commissionDefault, 0, 100, '0.5', '٪')}
                     ${fieldNum('ارقام واحد پول', 'currencyRate', 1, 1, 1, '1', '')}
                   </div>
-                  <div class="soft-box">${icon('info')} درصد کمیسیون هر راننده در پروندهٔ خودش قابل تغییر است؛ این مقدار فقط پیش‌فرض رانندگان جدید است.</div>
+                  <div class="soft-box">${icon('info')} نام و لوگوی آژانس در تب «هویت آژانس و لوگو» تنظیم می‌شود.</div>
                 </form></div>`;
             } else if (tab === 'fare') {
                 body.innerHTML = `<div class="card"><form>
@@ -290,10 +382,32 @@ export default {
 
         const save = () => {
             try {
-                const before = DB.settings();
                 const patch = collect();
+                if (!patch.companyName && !patch.agencyName) throw new Error('نام آژانس الزامی است');
+                if (!patch.companyName) patch.companyName = patch.agencyName;
                 validate(patch);
+
+                /* هویت آژانس در رکورد آژانس ذخیره می‌شود (سربرگ اسناد از آن می‌آید) */
+                if (patch.agencyName || patch.agencyPhone || patch.agencyAddress || patch.agencyEconomicCode || patch.agencyFooterNote !== undefined) {
+                    const a = Agency.current();
+                    if (a) {
+                        Agency.update(a.id, {
+                            name: patch.agencyName || a.name,
+                            phone: patch.agencyPhone ?? a.phone,
+                            address: patch.agencyAddress ?? a.address,
+                            economicCode: patch.agencyEconomicCode ?? a.economicCode,
+                            footerNote: patch.agencyFooterNote ?? a.footerNote
+                        });
+                        patch.companyName = patch.agencyName || a.name;
+                        patch.companyPhone = patch.agencyPhone ?? a.phone;
+                        patch.companyAddress = patch.agencyAddress ?? a.address;
+                    }
+                }
+                delete patch.agencyName; delete patch.agencyPhone; delete patch.agencyAddress;
+                delete patch.agencyEconomicCode; delete patch.agencyFooterNote;
+
                 updateSettings(patch);
+                window.App.updateAgencyChip?.();
                 Toast.success('تنظیمات ذخیره شد');
                 return true;
             } catch (err) {
@@ -359,6 +473,7 @@ export function updateSettings(patch) {
 
 function labelOfCollection(key) {
     const labels = {
+        agencies: 'آژانس‌ها', accounts: 'کدینگ حساب‌ها', journals: 'اسناد حسابداری',
         drivers: 'رانندگان', vehicles: 'خودروها', addresses: 'آدرس‌ها', subscribers: 'مشترکین',
         trips: 'سفرها', subscriberPayments: 'پرداخت مشترکین', driverPayments: 'پرداخت رانندگان',
         transactions: 'تراکنش‌ها', expenses: 'هزینه‌ها', operators: 'کاربران', shifts: 'شیفت‌ها', auditLog: 'گزارش تغییرات'

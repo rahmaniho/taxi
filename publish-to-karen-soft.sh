@@ -22,7 +22,7 @@ SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/legacy"
 WORK_DIR="${TMPDIR:-/tmp}/karen-soft-publish"
 
 FILES=(
-  taxi.html sw.js manifest.json README.md CHANGELOG.md
+  index.html taxi.html sw.js manifest.json README.md CHANGELOG.md
   css js fonts icons tests
 )
 
