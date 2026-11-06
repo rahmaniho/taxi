@@ -38,27 +38,31 @@ function openRoute(window, doc, route) {
   return doc.querySelector('#app-root');
 }
 
-test('راه‌اندازی پیش‌فرض: بدون قفل و با نقش مدیر', async t => {
+test('راه‌اندازی پیش‌فرض تک‌کاربره: بدون قفل، دسترسی کامل و بدون منوهای چنداپراتوره', async t => {
   const { doc, App } = await boot(t);
   assert.ok(App, 'API برنامه در دسترس است');
   assert.equal(App.security.securityActive(), false);
   assert.equal(App.security.state().locked, false);
   assert.equal(doc.querySelector('#lock-root').children.length, 0, 'صفحهٔ قفل نمایش داده نمی‌شود');
   assert.equal(App.security.roleOf(), 'مدیر');
+  assert.equal(App.data.operators.length, 1, 'سیستم تک‌کاربره است و فقط یک پروفایل کاربری دارد');
   assert.equal(App.security.can('settings.manage'), true);
   assert.equal(App.security.can('data.delete'), true);
   assert.equal(doc.querySelector('#lock-action').hidden, true, 'دکمهٔ قفل تا فعال‌نشدن PIN پنهان است');
+  assert.equal(doc.querySelector('#operator-pill'), null, 'دکمهٔ تغییر اپراتور حذف شده است');
+  assert.ok(doc.querySelector('#top-logout-btn'), 'دکمهٔ خروج در نوار بالا هست');
+  assert.ok(doc.querySelector('#sidebar-logout-btn'), 'دکمهٔ خروج در نوار کناری هست');
   assert.equal(doc.querySelector('.sidebar [data-route="settings"]').hidden, false);
-  assert.equal(doc.querySelector('.sidebar .nav-section').style.display, '', 'بخش‌های منو برای مدیر کامل دیده می‌شوند');
 });
 
-test('فعال‌سازی قفل ورود: تعیین PIN، کد بازیابی، ورود و بازیابی با کد', async t => {
+test('قفل اختیاری PIN دستگاه در حالت تک‌کاربره: تعیین PIN، کد بازیابی، بازگشایی و بازیابی با کد', async t => {
   const { window, doc, App } = await boot(t);
   openRoute(window, doc, 'settings');
   const form = doc.querySelector('form[data-form="settings-security"]');
-  assert.ok(form, 'کارت امنیت در تنظیمات رندر شده است');
+  assert.ok(form, 'کارت قفل PIN دستگاه در تنظیمات رندر شده است');
+  assert.equal(doc.querySelector('#app-root').textContent.includes('پیام‌های آماده'), false, 'کارت پیام‌های آماده در تنظیمات وجود ندارد');
 
-  // مدیر هنوز PIN ندارد؛ با روشن‌کردن قفل باید فرم تعیین PIN باز شود
+  // کاربر هنوز PIN ندارد؛ با روشن‌کردن قفل باید فرم تعیین PIN باز شود
   form.querySelector('[name="requirePin"]').checked = true;
   form.querySelector('[name="autoLockMinutes"]').value = '5';
   submit(window, form);
@@ -68,7 +72,7 @@ test('فعال‌سازی قفل ورود: تعیین PIN، کد بازیابی�
   doc.querySelector('#reset-pin-value').value = '1234';
   doc.querySelector('#reset-pin-repeat').value = '1234';
   submit(window, pinForm);
-  await waitFor(() => App.data.settings.security.requirePin === true, 'قفل ورود فعال نشد');
+  await waitFor(() => App.data.settings.security.requirePin === true, 'قفل PIN دستگاه فعال نشد');
 
   assert.equal(App.security.operatorHasPin(), true);
   assert.equal(App.data.settings.security.autoLockMinutes, 5);
@@ -82,6 +86,8 @@ test('فعال‌سازی قفل ورود: تعیین PIN، کد بازیابی�
   assert.ok(doc.querySelector('.lock-screen'), 'صفحهٔ قفل نمایش داده می‌شود');
   assert.equal(doc.body.classList.contains('is-locked'), true);
   assert.equal(doc.querySelector('#lock-action').hidden, false, 'دکمهٔ قفل در نوار بالا فعال است');
+  assert.equal(doc.querySelector('[data-action="lock-switch"]'), null, 'گزینهٔ تعویض اپراتور در صفحهٔ قفل وجود ندارد');
+  assert.ok(doc.querySelector('.lock-screen [data-action="auth-logout"]'), 'امکان خروج از حساب روی صفحهٔ قفل هم در دسترس است');
 
   // PIN نادرست
   doc.querySelector('#lock-pin').value = '9999';
@@ -96,7 +102,7 @@ test('فعال‌سازی قفل ورود: تعیین PIN، کد بازیابی�
   await waitFor(() => App.security.state().locked === false, 'ورود با PIN درست انجام نشد');
   assert.equal(doc.querySelector('#lock-root').children.length, 0);
   assert.equal(doc.body.classList.contains('is-locked'), false);
-  assert.equal(App.security.state().attempts, 0, 'شمارندهٔ تلاش‌ها پس از ورود پاک می‌شود');
+  assert.equal(App.security.state().attempts, 0, 'شمارندهٔ تلاش‌ها پس از بازگشایی پاک می‌شود');
 
   // بازیابی با کد بازیابی و ساخت PIN جدید
   App.security.lock('تست دوم');
@@ -110,29 +116,21 @@ test('فعال‌سازی قفل ورود: تعیین PIN، کد بازیابی�
   assert.equal(await App.security.verifyCurrentPin('5678'), true, 'PIN جدید فعال است');
   assert.equal(await App.security.verifyCurrentPin('1234'), false, 'PIN قبلی بی‌اعتبار شده است');
 
-  // ورود با اپراتور دیگر فقط با PIN او ممکن است
-  App.data.operators.push({ id: 'op-2', name: 'اپراتور دوم', role: 'اپراتور', active: true, pin: await App.security.createSecret('4321') });
-  App.render();
-  click(window, doc.querySelector('[data-action="operator-menu"]'));
-  click(window, doc.querySelector('[data-action="select-operator"][data-id="op-2"]'));
-  ok: {
-    assert.ok(doc.querySelector('form[data-form="operator-pin"]'), 'درخواست PIN اپراتور مقصد');
-    doc.querySelector('#operator-pin-value').value = '0000';
-    submit(window, doc.querySelector('form[data-form="operator-pin"]'));
-    await wait(120);
-    assert.notEqual(App.data.meta.currentOperatorId, 'op-2', 'PIN نادرست اجازهٔ تغییر اپراتور نمی‌دهد');
-    doc.querySelector('#operator-pin-value').value = '4321';
-    submit(window, doc.querySelector('form[data-form="operator-pin"]'));
-    await waitFor(() => App.data.meta.currentOperatorId === 'op-2', 'تغییر اپراتور با PIN درست انجام نشد');
-  }
-  assert.equal(App.security.roleOf(), 'اپراتور');
+  // تغییر PIN از صفحهٔ تنظیمات
+  openRoute(window, doc, 'settings');
+  click(window, doc.querySelector('[data-action="change-pin"]'));
+  assert.ok(doc.querySelector('form[data-form="change-pin"]'), 'فرم تغییر PIN باز شد');
+  doc.querySelector('#change-pin-current').value = '5678';
+  doc.querySelector('#change-pin-value').value = '4321';
+  doc.querySelector('#change-pin-repeat').value = '4321';
+  submit(window, doc.querySelector('form[data-form="change-pin"]'));
+  await waitFor(async () => await App.security.verifyCurrentPin('4321'), 'تغییر PIN ذخیره نشد');
 });
 
-test('قفل برای اپراتور بدون PIN وارد مرحلهٔ تعیین رمز می‌شود', async t => {
+test('قفل بدون PIN ذخیره‌شده وارد مرحلهٔ تعیین رمز اولیه می‌شود', async t => {
   const { window, doc, App } = await boot(t);
   App.data.settings.security.requirePin = true;
-  App.data.operators.push({ id: 'op-9', name: 'اپراتور تازه', role: 'اپراتور', active: true });
-  App.data.meta.currentOperatorId = 'op-9';
+  App.data.operators[0].pin = null;
   App.security.lock('تست');
   assert.equal(App.security.state().mode, 'setup');
   assert.ok(doc.querySelector('#lock-pin2'), 'فیلد تکرار رمز نمایش داده شد');
@@ -145,125 +143,28 @@ test('قفل برای اپراتور بدون PIN وارد مرحلهٔ تعیی
   await waitFor(() => App.security.state().locked === false, 'پس از ثبت کد، قفل باز نشد');
 });
 
-test('نقش اپراتور: بخش‌های مدیریتی بسته و اکشن‌های حساس غیرفعال', async t => {
-  const { window, doc, App } = await boot(t);
-  App.data.operators.push({ id: 'op-2', name: 'اپراتور دوم', role: 'اپراتور', active: true });
-  App.data.subscribers.push({ id: 'sub-1', name: 'مشترک تست', phone: '09120000000', type: 'individual', company: '', expiry: '', active: true });
-  App.data.meta.currentOperatorId = 'op-2';
-  App.render();
-
-  assert.equal(App.security.roleOf(), 'اپراتور');
-  assert.equal(App.security.can('settings.manage'), false);
-  assert.equal(App.security.can('trips.manage'), true);
-  assert.equal(App.security.can('reports.view'), false);
-  assert.equal(App.security.can('data.delete'), false);
-  assert.equal(doc.querySelector('.sidebar [data-route="settings"]').hidden, true);
-  assert.equal(doc.querySelector('.sidebar [data-route="accounting"]').hidden, true);
-  assert.equal(doc.querySelector('.sidebar [data-route="trips"]').hidden, false);
-  assert.equal(doc.querySelector('.sidebar [data-route="subscribers"]').hidden, false);
-  assert.equal(doc.querySelector('.nav-sub[data-subnav="accounting"]').style.display, 'none', 'زیرمنوی حسابداری پنهان می‌شود');
-  assert.equal(doc.querySelector('.nav-sub[data-subnav="trips"]').style.display, '', 'زیرمنوی سفرها برای اپراتور باز است');
-
-  // ورود مستقیم با هش به بخش غیرمجاز
-  openRoute(window, doc, 'settings');
-  assert.match(doc.querySelector('#app-root').textContent, /دسترسی محدود/);
-
-  // اکشن‌های حساس در صفحهٔ مشترکین غیرفعال می‌شوند
-  openRoute(window, doc, 'subscribers');
-  const deleteButton = doc.querySelector('[data-action="delete-subscriber"]');
-  const editButton = doc.querySelector('[data-action="edit-subscriber"]');
-  assert.ok(deleteButton && editButton);
-  assert.equal(deleteButton.disabled, true, 'حذف مشترک برای اپراتور غیرفعال است');
-  assert.equal(editButton.disabled, false, 'ویرایش مشترک برای اپراتور مجاز است');
-
-  const before = App.data.subscribers.length;
-  click(window, deleteButton);
-  assert.equal(App.data.subscribers.length, before, 'حذف انجام نمی‌شود چون اکشن مسدود است');
-
-  // ناوبری با کلیک روی منوی پنهان هم کار نمی‌کند
-  const beforeHash = window.location.hash;
-  window.App.navigate('accounting');
-  assert.equal(window.location.hash, beforeHash, 'هدایت به بخش غیرمجاز مسدود می‌شود');
-  assert.match(doc.querySelector('#app-root').textContent, /مشترکین/, 'صفحهٔ قبلی دست‌نخورده می‌ماند');
-});
-
-test('نقش حسابدار: گزارش‌ها و پرداخت‌ها باز، ثبت سفر بسته', async t => {
-  const { doc, App } = await boot(t);
-  App.data.operators.push({ id: 'op-3', name: 'حسابدار اصلی', role: 'حسابدار', active: true });
-  App.data.meta.currentOperatorId = 'op-3';
-  App.render();
-  assert.equal(App.security.roleOf(), 'حسابدار');
-  assert.equal(App.security.can('reports.view'), true);
-  assert.equal(App.security.can('payments.record'), true);
-  assert.equal(App.security.can('expenses.manage'), true);
-  assert.equal(App.security.can('trips.manage'), false);
-  assert.equal(App.security.can('settings.manage'), false);
-  assert.equal(doc.querySelector('.sidebar [data-route="accounting"]').hidden, false);
-  assert.equal(doc.querySelector('.nav-sub[data-subnav="accounting"]').style.display, '');
-  assert.equal(doc.querySelector('.sidebar [data-route="trips"]').hidden, false, 'مشاهدهٔ سفرها برای حسابدار باز است');
-  assert.equal(doc.querySelector('.top-actions [data-action="new-trip"]').disabled, true, 'ثبت سفر برای حسابدار بسته است');
-});
-
-test('نرمال‌سازی داده: نقش نامعتبر و اپراتور ناقص اصلاح می‌شود', async t => {
-  const { window, App } = await boot(t);
+test('نرمال‌سازی دادهٔ قدیمی چنداپراتوره به حالت تک‌کاربره با حفظ PIN قبلی', async t => {
+  const { App } = await boot(t);
+  const savedPin = await App.security.createSecret('2468');
   const raw = JSON.parse(JSON.stringify(App.data));
-  raw.operators = [{ name: 'بی‌نقش' }, { id: 'op-x', name: 'مدیر دوم', role: 'مدیر' }];
+  raw.operators = [
+    { id: 'op-legacy-1', name: 'اپراتور شیفت صبح', role: 'اپراتور', active: true },
+    { id: 'op-legacy-2', name: 'مدیر آژانس', role: 'مدیر', active: true, pin: savedPin },
+  ];
   raw.settings.security = undefined;
-  raw.meta.currentOperatorId = 'op-x';
-  // پایگاه‌دادهٔ قدیمی (بدون تنظیمات امنیتی) هنگام بالا آمدن برنامه نرمال‌سازی می‌شود
-  const { JSDOM } = await import('jsdom');
+  raw.meta.currentOperatorId = 'op-legacy-2';
+
   const dom2 = new JSDOM(html, {
     url: 'https://localhost/', runScripts: 'dangerously', pretendToBeVisual: true,
     beforeParse(window) { window.localStorage.setItem('taxi_db_v1', JSON.stringify(raw)); },
   });
   t.after(() => dom2.window.close());
   await new Promise(resolve => dom2.window.addEventListener('load', resolve, { once: true }));
+
   const operators = dom2.window.App.data.operators;
-  assert.equal(operators[0].role, 'اپراتور', 'نقش نامعتبر به اپراتور تبدیل می‌شود');
+  assert.equal(operators.length, 1, 'چند اپراتور قدیمی به یک کاربر واحد تجمیع شد');
+  assert.equal(operators[0].role, 'مدیر', 'کاربر واحد دارای دسترسی کامل مدیر است');
   assert.equal(operators[0].active, true);
-  assert.ok(operators[0].id, 'شناسهٔ نبوده ساخته می‌شود');
-  assert.equal(operators[1].role, 'مدیر');
-  assert.equal(dom2.window.App.security.securityActive(), false, 'تنظیمات امنیتی پیش‌فرض بازسازی می‌شود');
-  assert.equal(dom2.window.localStorage.getItem('taxi_db_v1') !== null, true);
-});
-
-test('مدیریت اپراتورها: تعیین PIN، ویرایش، غیرفعال‌سازی و حذف با محافظ مدیر', async t => {
-  const { window, doc, App } = await boot(t);
-  App.data.operators.push({ id: 'op-2', name: 'اپراتور دوم', role: 'اپراتور', active: true });
-  openRoute(window, doc, 'settings');
-
-  // تعیین PIN برای اپراتور دوم توسط مدیر
-  click(window, doc.querySelector('[data-action="reset-pin"][data-id="op-2"]'));
-  doc.querySelector('#reset-pin-value').value = '2468';
-  doc.querySelector('#reset-pin-repeat').value = '2468';
-  submit(window, doc.querySelector('form[data-form="reset-pin"]'));
-  await waitFor(() => {
-    const operator = App.data.operators.find(o => o.id === 'op-2');
-    return !!(operator && operator.pin && operator.pin.hash);
-  }, 'PIN اپراتور دوم ثبت نشد');
-  assert.match(doc.querySelector('.recovery-code').textContent.trim(), /^[A-Z2-9]{5}-[A-Z2-9]{5}$/);
-  click(window, doc.querySelector('[data-action="close-modal"]'));
-
-  // ویرایش نام و غیرفعال‌سازی
-  click(window, doc.querySelector('[data-action="edit-operator"][data-id="op-2"]'));
-  doc.querySelector('#edit-operator-name').value = 'اپراتور ویرایش‌شده';
-  doc.querySelector('form[data-form="edit-operator"] [name="active"]').checked = false;
-  submit(window, doc.querySelector('form[data-form="edit-operator"]'));
-  await waitFor(() => App.data.operators.find(o => o.id === 'op-2').active === false, 'وضعیت اپراتور تغییر نکرد');
-  assert.equal(App.data.operators.find(o => o.id === 'op-2').name, 'اپراتور ویرایش‌شده');
-
-  // اپراتور غیرفعال قابل انتخاب نیست
-  openRoute(window, doc, 'dashboard');
-  click(window, doc.querySelector('[data-action="operator-menu"]'));
-  assert.equal(doc.querySelector('[data-action="select-operator"][data-id="op-2"]').disabled, true, 'اپراتور غیرفعال در فهرست ورود غیرفعال است');
-  click(window, doc.querySelector('[data-action="close-modal"]'));
-
-  // محافظ‌ها: حذف خود و حذف آخرین مدیر
-  openRoute(window, doc, 'settings');
-  assert.equal(doc.querySelector('[data-action="delete-operator"][data-id="op-1"]').disabled, true, 'حذف آخرین مدیر ممکن نیست');
-
-  const before = App.data.operators.length;
-  click(window, doc.querySelector('[data-action="delete-operator"][data-id="op-2"]'));
-  click(window, doc.querySelector('#confirm-action'));
-  await waitFor(() => App.data.operators.length === before - 1, 'اپراتور حذف نشد');
+  assert.equal(await dom2.window.App.security.verifyCurrentPin('2468'), true, 'PIN قبلی حفظ شد');
+  assert.equal(dom2.window.App.security.securityActive(), false, 'تنظیمات امنیتی پیش‌فرض بازسازی شد');
 });

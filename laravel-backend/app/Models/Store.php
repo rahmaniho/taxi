@@ -56,6 +56,11 @@ class Store extends Model
         return $this->hasMany(SubscriptionHistory::class);
     }
 
+    public function syncState(): HasOne
+    {
+        return $this->hasOne(AgencySyncState::class);
+    }
+
     /** آیا فروشگاه آرشیو شده است؟ (داده‌ها حفظ می‌شوند و دسترسی بسته است) */
     public function isArchived(): bool
     {

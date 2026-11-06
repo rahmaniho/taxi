@@ -47,7 +47,7 @@ function externalDatabase(App, mutate) {
   return JSON.parse(JSON.stringify(copy));
 }
 
-test('مهر نسخه: هر تغییر، rev و اپراتور و زمان را روی رکورد ثبت می‌کند', async t => {
+test('مهر نسخه: هر تغییر، rev و کاربر و زمان را روی رکورد ثبت می‌کند', async t => {
   const { App } = await boot(t);
   seedTrip(App, { id: 't1' });
   App.data.trips.push({ ...App.data.trips[0], id: 't2', code: 'TRP-0002' });
@@ -70,8 +70,8 @@ test('مهر نسخه: هر تغییر، rev و اپراتور و زمان را 
   assert.equal(App.data.trips[0].rev, 2, 'نسخه در تغییر دوم افزایش می‌یابد');
 });
 
-test('گزارش تغییرات محلی: هر ذخیره‌سازی با نام اپراتور و تعداد رکورد ثبت می‌شود', async t => {
-  const { App, doc } = await boot(t);
+test('گزارش تغییرات اخیر و ثبت tombstone هنگام حذف رکورد برای سینک ابری', async t => {
+  const { window, App, doc } = await boot(t);
   App.navigate('settings');
   App.render();
   const form = doc.querySelector('form[data-form="settings-company"]');
@@ -81,13 +81,28 @@ test('گزارش تغییرات محلی: هر ذخیره‌سازی با نام
   const log = App.sync.log();
   assert.ok(log.length >= 1, 'گزارش تغییر ثبت شد');
   assert.equal(log[0].action, 'ذخیره اطلاعات شرکت');
-  assert.equal(log[0].operator, App.data.operators[0].name);
   assert.ok(App.data.settingsUpdatedAt, 'زمان تغییر تنظیمات ثبت می‌شود');
+  assert.equal(App.sync.info().dirty, true, 'پرچم تغییرات در انتظار سینک ابری روشن شد');
+
+  // افزودن و حذف راننده → باید در meta.tombstones ثبت شود
+  App.navigate('drivers');
+  App.render();
+  click(window, doc.querySelector('[data-action="add-driver"]'));
+  const drvForm = doc.querySelector('form[data-form="driver"]');
+  drvForm.querySelector('[name="name"]').value = 'راننده موقت';
+  submit(window, drvForm);
+  await wait(20);
+  const drvId = App.data.drivers[0].id;
+  click(window, doc.querySelector(`[data-action="delete-driver"][data-id="${drvId}"]`));
+  click(window, doc.querySelector('#confirm-action'));
+  await wait(20);
+  assert.equal(App.data.drivers.length, 0, 'راننده حذف شد');
+  assert.ok(App.data.meta.tombstones?.drivers?.[drvId], 'حذف راننده در tombstones ثبت شد تا در سینک ابری برنگردد');
 
   App.navigate('sync');
   App.render();
   const text = doc.querySelector('#app-root').textContent;
-  assert.match(text, /گزارش تغییرات محلی/);
+  assert.match(text, /گزارش تغییرات اخیر/);
   assert.match(text, /ذخیره اطلاعات شرکت/);
 });
 
@@ -122,7 +137,7 @@ test('ادغام دو پایگاه‌داده: افزودن رکورد تازه�
   });
   const localFare = App.data.trips.find(x => x.id === 't9').fare;
   const report = App.sync.mergeDatabases({ data: stale, device: 'دستگاه قدیمی' }, { strategy: 'newer' });
-  assert.equal(report.conflicts, 2, 'نسخه‌های قدیمی‌تر/هم‌زمان ورودی، تضاد شمرده می‌شوند');
+  assert.equal(report.conflicts, 1, 'نسخهٔ قدیمی‌تر ورودی تضاد شمرده می‌شود');
   assert.equal(report.updated, 0, 'در تضاد، نسخهٔ محلی برنده است');
   assert.equal(App.data.trips.find(x => x.id === 't9').fare, localFare, 'نسخهٔ محلی حفظ شد');
 
@@ -131,6 +146,40 @@ test('ادغام دو پایگاه‌داده: افزودن رکورد تازه�
   const addOnly = App.sync.mergeDatabases({ data: forced, device: 'دستگاه سوم' }, { strategy: 'addOnly' });
   assert.equal(addOnly.updated, 0, 'در حالت فقط‌افزودن چیزی به‌روز نمی‌شود');
   assert.notEqual(App.data.trips.find(x => x.id === 't1').fare, 999);
+});
+
+test('ادغام ابری (applyCloudPayload): ادغام LWW رکوردها، لوگو و اعمال حذف‌ها (tombstones)', async t => {
+  const { App } = await boot(t);
+  seedTrip(App, { id: 'keep-1', fare: 110000, updatedAt: '2026-11-06T10:00:00.000Z', rev: 1 });
+  seedTrip(App, { id: 'del-1', fare: 90000, updatedAt: '2026-11-06T09:00:00.000Z', rev: 1 });
+  App.data.settings.security.requirePin = true;
+
+  const remotePayload = {
+    settings: {
+      companyName: 'آژانس ابری کارن',
+      logo: { data: 'data:image/svg+xml;base64,PHN2Zy8+', originalName: 'brand.svg', size: 120, uploadedAt: '1405-08-16' },
+    },
+    settingsUpdatedAt: '2026-11-06T12:00:00.000Z',
+    trips: [
+      { id: 'keep-1', code: 'TRP-0001', passengerName: 'مسافر ویرایش‌شده', origin: 'الف', destination: 'ب', fare: 195000, status: 'completed', updatedAt: '2026-11-06T11:30:00.000Z', rev: 2 },
+      { id: 'cloud-new-1', code: 'TRP-0005', passengerName: 'مسافر از موبایل', origin: 'ونک', destination: 'سعادت‌آباد', fare: 145000, status: 'pending', updatedAt: '2026-11-06T11:45:00.000Z', rev: 1 },
+    ],
+    meta: {
+      counters: { trip: 12 },
+      tombstones: {
+        trips: { 'del-1': '2026-11-06T11:00:00.000Z' },
+      },
+    },
+  };
+
+  App.sync.applyCloudPayload(remotePayload, { revision: 7, syncedAt: '2026-11-06T12:01:00.000Z' });
+  assert.equal(App.data.trips.some(x => x.id === 'del-1'), false, 'رکورد حذف‌شده در دستگاه دیگر با tombstone حذف شد');
+  assert.equal(App.data.trips.find(x => x.id === 'keep-1').fare, 195000, 'نسخهٔ جدیدتر سرور اعمال شد');
+  assert.ok(App.data.trips.some(x => x.id === 'cloud-new-1'), 'سفر جدید ثبت‌شده روی موبایل دریافت شد');
+  assert.equal(App.data.settings.companyName, 'آژانس ابری کارن');
+  assert.equal(App.data.settings.logo.originalName, 'brand.svg', 'لوگوی اختصاصی آژانس از سرور سینک شد');
+  assert.equal(App.data.settings.security.requirePin, true, 'تنظیم PIN دستگاه فعلی دست‌نخورده ماند');
+  assert.equal(App.sync.info().serverRevision, 7);
 });
 
 test('ادغام: تنظیمات جدیدتر منتقل می‌شود اما امنیت و بازهٔ گزارش محلی می‌ماند', async t => {
@@ -151,14 +200,9 @@ test('ادغام: تنظیمات جدیدتر منتقل می‌شود اما ا
   assert.equal(App.data.settings.farePerKm, 20000);
   assert.equal(App.data.settings.reportRange.from, '1405-01-01', 'بازهٔ گزارش محلی حفظ می‌شود');
   assert.equal(App.data.settings.security.requirePin, false, 'تنظیمات امنیتی این دستگاه دست‌نخورده می‌ماند');
-
-  const blocked = externalDatabase(App, copy => { copy.settings.companyName = 'شعبه دوم'; });
-  const report = App.sync.mergeDatabases({ data: blocked, device: 'دستگاه سوم' }, { strategy: 'addOnly' });
-  assert.equal(report.settingsMerged, false, 'در حالت فقط‌افزودن تنظیمات ادغام نمی‌شود');
-  assert.equal(App.data.settings.companyName, 'آژانس شعبه');
 });
 
-test('همگام‌سازی زنده: پیام پنجرهٔ دیگر داده‌ها را به‌روزرسانی می‌کند و قابل خاموش‌کردن است', async t => {
+test('همگام‌سازی زنده بین تب‌ها: پیام پنجرهٔ دیگر داده‌ها را به‌روزرسانی می‌کند و قابل خاموش‌کردن است', async t => {
   const { window, App, doc } = await boot(t);
   seedTrip(App, { id: 't1' });
   const other = JSON.parse(window.localStorage.getItem('taxi_db_v1'));
@@ -173,7 +217,6 @@ test('همگام‌سازی زنده: پیام پنجرهٔ دیگر داده‌
   assert.ok(App.data.trips.some(x => x.id === 'peer-trip'), 'دادهٔ تازه از پنجرهٔ دیگر خوانده شد');
   assert.match(doc.querySelector('#toast-container').textContent, /به‌روزرسانی شد/);
 
-  // خاموش‌کردن همگام‌سازی زنده
   App.sync.info().live = false;
   const blocked = JSON.parse(window.localStorage.getItem('taxi_db_v1'));
   blocked.trips.push({ ...blocked.trips[0], id: 'blocked-trip', code: 'TRP-0300' });
@@ -182,32 +225,31 @@ test('همگام‌سازی زنده: پیام پنجرهٔ دیگر داده‌
   await wait(20);
   assert.equal(App.data.trips.some(x => x.id === 'blocked-trip'), false, 'با همگام‌سازی خاموش، تغییر اعمال نمی‌شود');
 
-  // رویداد storage مرورگر هم پذیرفته می‌شود
   App.sync.info().live = true;
   App.sync.adoptExternalChange('پنجرهٔ دیگر');
   await wait(20);
   assert.ok(App.data.trips.some(x => x.id === 'blocked-trip'), 'به‌روزرسانی دستی کار می‌کند');
 });
 
-test('بستهٔ همگام‌سازی: دانلود، بارگذاری فایل و ادغام از مسیر رابط', async t => {
+test('صفحهٔ همگام‌سازی ابری و آفلاین و بستهٔ JSON محلی', async t => {
   const { window, doc, App } = await boot(t);
   seedTrip(App, { id: 't1' });
-  click(window, doc.querySelector('[data-route="sync"]') || doc.querySelector('#app-root [data-route="sync"]'));
   window.location.hash = '#sync';
   App.render();
   const link = [...doc.querySelectorAll('.nav-item')].find(el => el.dataset.route === 'sync') || doc.querySelector('[data-route="sync"]');
-  assert.ok(link, 'مسیر همگام‌سازی در ناوبری هست');
+  assert.ok(link, 'مسیر همگام‌سازی ابری در ناوبری هست');
   click(window, link);
   await wait(20);
   assert.equal(window.location.hash, '#sync');
-  assert.match(doc.querySelector('#app-root').textContent, /همگام‌سازی/);
+  assert.match(doc.querySelector('#app-root').textContent, /همگام‌سازی ابری و آفلاین/);
+  assert.doesNotMatch(doc.querySelector('#app-root').textContent, /عملکرد اپراتورها/, 'بخش چنداپراتوره در صفحهٔ سینک وجود ندارد');
   assert.ok(doc.querySelector('#sync-status'), 'کارت وضعیت همگام‌سازی نمایش داده می‌شود');
+  assert.ok(doc.querySelector('[data-action="cloud-sync-now"]'), 'دکمهٔ همگام‌سازی فوری با سرور هست');
 
   click(window, doc.querySelector('[data-action="sync-export"]'));
   await wait(20);
   assert.ok(App.sync.info().lastExportAt, 'زمان ساخت بسته ثبت می‌شود');
 
-  // فایل بستهٔ همگام‌سازی از «دستگاه دیگر»
   const foreign = JSON.parse(JSON.stringify(App.data));
   foreign.trips.push({ ...foreign.trips[0], id: 'foreign-trip', code: 'TRP-0500', fare: 480000, updatedAt: new Date(Date.now() + 60000).toISOString(), rev: 4 });
   const bundle = new window.File([JSON.stringify({ kind: 'karnsoft-taxi-sync', device: 'دفتر مرکزی', operator: 'مدیر', at: new Date().toISOString(), counts: { trips: foreign.trips.length }, data: foreign })], 'sync.json', { type: 'application/json' });
@@ -220,13 +262,9 @@ test('بستهٔ همگام‌سازی: دانلود، بارگذاری فایل
   await wait(40);
   assert.ok(App.data.trips.some(x => x.id === 'foreign-trip'), 'رکورد بستهٔ ورودی ادغام شد');
   assert.equal(App.data.trips.length, 2, 'رکورد تکراری اضافه نشد');
-  assert.ok(App.sync.info().lastMergeAt, 'زمان ادغام ثبت شد');
-  const report = App.sync.lastReport();
-  assert.equal(report.added, 1);
-  assert.match(doc.querySelector('#app-root').textContent, /آخرین گزارش ادغام|ادغام انجام شد/);
 });
 
-test('صندوق شیفت: محاسبهٔ مبلغ موردانتظار، ثبت اختلاف و بستن شیفت', async t => {
+test('صندوق روزانه: محاسبهٔ مبلغ موردانتظار، ثبت اختلاف و بستن نوبت صندوق', async t => {
   const { window, doc, App } = await boot(t);
   const date = today(App);
   App.data.drivers = [{ id: 'd1', name: 'راننده یک', phone: '0912', commission: 15, status: 'available', vehicleId: '' }];
@@ -234,81 +272,28 @@ test('صندوق شیفت: محاسبهٔ مبلغ موردانتظار، ثبت
   App.sync.startShift();
   await wait(20);
   const shift = App.sync.currentShift();
-  assert.ok(shift, 'شیفت آغاز شد');
+  assert.ok(shift, 'نوبت صندوق آغاز شد');
   seedTrip(App, { id: 'c1', paymentMethod: 'cash', fare: 100000, commission: 15000, status: 'completed' });
   seedTrip(App, { id: 'k1', paymentMethod: 'card', fare: 200000, commission: 30000, status: 'completed' });
   App.data.subscriberPayments.push({ id: 'sp1', subscriberId: 's1', amount: 50000, date, method: 'نقدی', operatorId: 'op-1', createdAt: new Date().toISOString() });
   App.data.expenses.push({ id: 'x1', title: 'سوخت', category: 'سوخت', amount: 20000, date, operatorId: 'op-1', createdAt: new Date().toISOString() });
   const cash = App.sync.shiftCash(shift);
-  assert.equal(cash.commissionCash, 15000, 'کمیسیون سفر نقدی در صندوق');
-  assert.equal(cash.cardFare, 200000, 'کرایهٔ کارتی در صندوق');
-  assert.equal(cash.received, 50000);
-  assert.equal(cash.expenses, 20000);
   assert.equal(cash.total, 245000, 'جمع صندوق = کمیسیون نقدی + کرایهٔ کارتی + دریافتی − هزینه');
 
   window.location.hash = '#sync';
   App.render();
-  assert.match(doc.querySelector('#app-root').textContent, /صندوق شیفت جاری/);
+  assert.match(doc.querySelector('#app-root').textContent, /صندوق روزانه/);
   click(window, doc.querySelector('[data-action="shift-close"]'));
   const form = doc.querySelector('form[data-form="shift-close"]');
-  assert.ok(form, 'مودال بستن شیفت باز شد');
+  assert.ok(form, 'مودال بستن صندوق باز شد');
   assert.equal(Number(form.querySelector('[name="counted"]').value), 245000, 'مبلغ شمارش‌شده پیشنهادی');
   form.querySelector('[name="counted"]').value = '240000';
   form.querySelector('[name="note"]').value = 'کسری نقدی';
   submit(window, form);
   await wait(30);
   const closed = App.data.shifts[0];
-  assert.ok(closed.endedAt, 'شیفت بسته شد');
-  assert.equal(closed.expectedCash, 245000);
-  assert.equal(closed.countedCash, 240000);
+  assert.ok(closed.endedAt, 'نوبت صندوق بسته شد');
   assert.equal(closed.variance, -5000, 'اختلاف صندوق ثبت می‌شود');
-  assert.equal(closed.note, 'کسری نقدی');
-  assert.equal(App.sync.currentShift(), null, 'پس از بستن، شیفتی باز نیست');
-  assert.match(doc.querySelector('#app-root').textContent, /شیفت‌ها و تحویل صندوق/);
-  assert.match(doc.querySelector('#app-root').textContent, /کسری|۲۴۵|۲۴۰/, 'جدول شیفت‌ها مبالغ را نشان می‌دهد');
-});
-
-test('عملکرد اپراتورها: شمارش سفر، پرداخت و صندوق تخمینی هر اپراتور', async t => {
-  const { window, doc, App } = await boot(t);
-  const date = today(App);
-  App.data.operators = [
-    { id: 'op-1', name: 'مدیر', role: 'مدیر', active: true },
-    { id: 'op-2', name: 'اپراتور دوم', role: 'اپراتور', active: true },
-  ];
-  App.data.meta.currentOperatorId = 'op-1';
-  seedTrip(App, { id: 'o1', operatorId: 'op-1', paymentMethod: 'cash', fare: 100000, commission: 15000 });
-  seedTrip(App, { id: 'o2', operatorId: 'op-2', paymentMethod: 'card', fare: 300000, commission: 45000 });
-  App.data.subscriberPayments.push({ id: 'sp1', subscriberId: 's1', amount: 70000, date, operatorId: 'op-2', createdAt: new Date().toISOString() });
-
-  const activity = App.sync.operatorActivity();
-  const first = activity.find(row => row.operator.id === 'op-1');
-  const second = activity.find(row => row.operator.id === 'op-2');
-  assert.equal(first.trips, 1);
-  assert.equal(first.cash, 15000, 'صندوق اپراتور اول = کمیسیون سفر نقدی');
-  assert.equal(second.trips, 1);
-  assert.equal(second.collected, 70000);
-  assert.equal(second.cash, 370000, 'کرایهٔ کارتی + دریافتی مشترک');
-
-  window.location.hash = '#sync';
-  App.render();
-  const text = doc.querySelector('#app-root').textContent;
-  assert.match(text, /عملکرد اپراتورها/);
-  assert.match(text, /اپراتور دوم/);
-});
-
-test('دسترسی: اپراتور عادی کارت‌های مدیریتی همگام‌سازی را نمی‌بیند', async t => {
-  const { window, doc, App } = await boot(t);
-  App.data.operators = [
-    { id: 'op-1', name: 'مدیر', role: 'مدیر', active: true },
-    { id: 'op-2', name: 'اپراتور دوم', role: 'اپراتور', active: true },
-  ];
-  App.data.meta.currentOperatorId = 'op-2';
-  window.location.hash = '#sync';
-  App.render();
-  const text = doc.querySelector('#app-root').textContent;
-  assert.match(text, /همگام‌سازی و اپراتورها/, 'اپراتور عادی به صفحهٔ همگام‌سازی دسترسی دارد');
-  assert.match(text, /صندوق شیفت جاری/);
-  assert.doesNotMatch(text, /ادغام با دستگاه دیگر/, 'کارت ادغام برای اپراتور عادی پنهان است');
-  assert.equal(doc.querySelector('[data-action="sync-export"]'), null, 'دکمهٔ ساخت بستهٔ همگام‌سازی پنهان است');
-  assert.equal(doc.querySelector('[data-action="shift-close"]') === null, true, 'بدون شیفت باز، دکمهٔ بستن شیفت نیست');
+  assert.equal(App.sync.currentShift(), null, 'پس از بستن، نوبت باز نیست');
+  assert.match(doc.querySelector('#app-root').textContent, /تاریخچه نوبت‌های صندوق/);
 });

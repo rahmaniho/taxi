@@ -119,6 +119,41 @@
     .sub-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-soft);flex:none}
     .sub-dot.warn{background:var(--orange);box-shadow:0 0 0 3px var(--gold-soft)}
     .sub-dot.danger{background:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+    .cloud-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line-strong);background:var(--panel-2);color:var(--muted);font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;transition:.18s}
+    .cloud-pill:hover{border-color:rgba(212,175,55,.5);color:var(--text)}
+    .cloud-pill.synced i{color:var(--green)}
+    .cloud-pill.pending i{color:var(--gold)}
+    .cloud-pill.syncing i{color:var(--blue)}
+    .cloud-pill.offline i{color:var(--orange)}
+    .btn-logout{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:11px;border:1px solid rgba(235,93,93,.42);background:var(--red-soft);color:var(--red);font:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:.18s}
+    .btn-logout:hover{background:var(--red);color:#fff;border-color:var(--red)}
+    .sidebar-user-card{display:flex;flex-direction:column;gap:8px;padding:10px 11px;margin-bottom:9px;border-radius:13px;background:var(--panel-2);border:1px solid var(--line)}
+    .sidebar-user-meta{display:flex;align-items:center;gap:8px;min-width:0}
+    .sidebar-user-meta i{color:var(--gold);font-size:14px;flex:none}
+    .sidebar-user-meta div{min-width:0;flex:1}
+    .sidebar-user-meta strong{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sidebar-user-meta small{display:block;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right}
+    .countdown-box{margin:12px 0 14px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,var(--panel-2),var(--bg-soft));border:1px solid var(--line-strong)}
+    .countdown-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+    .countdown-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+    .countdown-unit{padding:10px 8px;border-radius:13px;background:var(--panel);border:1px solid var(--line);text-align:center}
+    .countdown-value{display:block;font-size:21px;font-weight:900;color:var(--gold-2);line-height:1.25;font-variant-numeric:tabular-nums}
+    .countdown-box.is-expired .countdown-value{color:var(--red)}
+    .countdown-box.is-lifetime .countdown-value{color:var(--green)}
+    .countdown-label{display:block;margin-top:3px;font-size:10.5px;color:var(--muted)}
+    .countdown-bar{height:7px;margin-top:12px;border-radius:999px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+    .countdown-bar > span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),#6ee7b7);transition:width .4s ease}
+    .countdown-bar.warn > span{background:linear-gradient(90deg,var(--orange),var(--gold-2))}
+    .countdown-bar.danger > span{background:var(--red)}
+    .renewal-result{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;margin-bottom:13px;border-radius:13px;border:1px solid var(--line-strong);font-size:12.5px;line-height:1.8}
+    .renewal-result.renewed{background:var(--green-soft);border-color:rgba(57,198,149,.5)}
+    .renewal-result.renewed i{color:var(--green);font-size:17px;margin-top:3px}
+    .renewal-result.active{background:var(--blue-soft);border-color:rgba(127,157,255,.45)}
+    .renewal-result.active i{color:var(--blue);font-size:16px;margin-top:3px}
+    .renewal-result.expired{background:var(--red-soft);border-color:rgba(235,93,93,.48)}
+    .renewal-result.expired i{color:var(--red);font-size:16px;margin-top:3px}
+    .renewal-result.offline{background:var(--gold-soft);border-color:rgba(212,175,55,.45)}
+    .renewal-result.offline i{color:var(--gold);font-size:16px;margin-top:3px}
     .sub-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 15px;border-radius:14px;margin-bottom:15px;border:1px solid rgba(235,93,93,.42);background:var(--red-soft);color:var(--text)}
     .sub-banner.warn{border-color:rgba(212,175,55,.45);background:var(--gold-soft)}
     .sub-banner-main{display:flex;align-items:flex-start;gap:10px;font-size:12.8px;line-height:1.75;flex:1;min-width:220px}
@@ -133,7 +168,7 @@
     .manager-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
     .manager-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .manager-filters input,.manager-filters select{min-width:160px}
-    @media(max-width:860px){.manager-shell{grid-template-columns:1fr}.manager-sidebar{position:static;height:auto;border-inline-end:0;border-bottom:1px solid var(--line)}.manager-Sidebar-nav{display:flex;flex-wrap:wrap;gap:6px}.sub-pill .sub-pill-text{display:none}}
+    @media(max-width:860px){.manager-shell{grid-template-columns:1fr}.manager-sidebar{position:static;height:auto;border-inline-end:0;border-bottom:1px solid var(--line)}.manager-Sidebar-nav{display:flex;flex-wrap:wrap;gap:6px}.sub-pill .sub-pill-text,.cloud-pill .cloud-pill-text,.btn-logout .logout-label{display:none}.countdown-value{font-size:17px}}
     @media print{.auth-screen,.manager-shell{display:none!important}}
     :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
     @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
@@ -166,14 +201,21 @@
       <div class="nav-section">مدیریت سامانه</div>
       <nav class="nav-list">
         <button class="nav-item" data-route="backup"><i class="fa-solid fa-box-archive"></i><span>پشتیبان‌گیری</span></button>
-        <button class="nav-item" data-route="sync"><i class="fa-solid fa-arrows-rotate"></i><span>همگام‌سازی و اپراتورها</span></button>
+        <button class="nav-item" data-route="sync"><i class="fa-solid fa-cloud-arrow-up"></i><span>همگام‌سازی ابری</span></button>
         <button class="nav-item" data-route="settings"><i class="fa-solid fa-sliders"></i><span>تنظیمات</span></button>
         <button class="nav-item" data-route="tutorial"><i class="fa-solid fa-circle-question"></i><span>راهنمای استفاده</span></button>
         <button class="nav-item" data-route="about"><i class="fa-solid fa-circle-info"></i><span>درباره کارن‌سافت</span></button>
       </nav>
       <div class="sidebar-bottom">
-        <div class="offline-note"><i class="fa-solid fa-cloud-arrow-down"></i> داده‌ها روی همین دستگاه ذخیره می‌شوند و پس از ورود اولیه، برنامه آفلاین هم در دسترس است.</div>
-        <div class="sidebar-foot"><span id="sidebar-version">نسخه ۱.۳.۰</span><span>ساخته‌شده برای اپراتورهای تاکسی</span></div>
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-meta">
+            <i class="fa-solid fa-circle-user"></i>
+            <div><strong id="sidebar-user-name">حساب آژانس</strong><small id="sidebar-user-email">—</small></div>
+          </div>
+          <button class="btn btn-danger btn-small btn-block" data-action="auth-logout" id="sidebar-logout-btn"><i class="fa-solid fa-right-from-bracket"></i> خروج از حساب کاربری</button>
+        </div>
+        <div class="offline-note"><i class="fa-solid fa-cloud-arrow-up"></i> ذخیرهٔ آفلاین روی دستگاه + همگام‌سازی خودکار با سرور هنگام اتصال اینترنت.</div>
+        <div class="sidebar-foot"><span id="sidebar-version">نسخه ۱.۴.۰</span><span>تک‌کاربره · آفلاین و ابری</span></div>
       </div>
     </aside>
     <div class="main-wrap">
@@ -181,12 +223,12 @@
         <button class="icon-button mobile-menu" data-action="toggle-sidebar" aria-label="باز کردن منو"><i class="fa-solid fa-bars"></i></button>
         <div class="top-titles"><div class="top-title" id="top-title">داشبورد</div><div class="top-subtitle" id="top-subtitle">نمای کلی عملکرد آژانس شما</div></div>
         <div class="top-actions">
+          <button class="cloud-pill synced" data-action="cloud-sync-now" id="cloud-sync-pill" title="همگام‌سازی ابری با سرور"><i class="fa-solid fa-cloud-arrow-up" id="cloud-sync-icon"></i><span class="cloud-pill-text" id="cloud-sync-label">ذخیرهٔ آفلاین و ابری</span></button>
           <button class="sub-pill" data-action="account-menu" id="account-pill" title="وضعیت حساب و اشتراک"><span class="sub-dot" id="account-dot"></span><span class="sub-pill-text" id="account-label">اشتراک فعال</span></button>
-          <button class="operator-pill" data-action="operator-menu" title="تغییر اپراتور"><span class="operator-avatar"><i class="fa-solid fa-user-tie"></i></span><span class="operator-name" id="top-operator">اپراتور اصلی</span></button>
-          <button class="icon-button" data-action="shift" id="shift-action" title="شروع یا پایان شیفت"><i class="fa-solid fa-play"></i></button>
           <button class="icon-button" data-action="lock-now" id="lock-action" title="قفل برنامه" aria-label="قفل برنامه" hidden><i class="fa-solid fa-lock"></i></button>
           <button class="icon-button" data-action="theme" title="تغییر تم"><i class="fa-solid fa-sun"></i></button>
           <button class="btn btn-primary" data-action="new-trip"><i class="fa-solid fa-plus"></i><span class="quick-add-label">ثبت سفر</span></button>
+          <button class="btn-logout" data-action="auth-logout" id="top-logout-btn" title="خروج از حساب کاربری" aria-label="خروج از حساب کاربری"><i class="fa-solid fa-right-from-bracket"></i><span class="logout-label">خروج</span></button>
         </div>
       </header>
       <main id="app-root" class="main-content" tabindex="-1"></main>
@@ -207,7 +249,7 @@
   (()=>{
     'use strict';
     const DB_KEY='taxi_db_v1',AUTH_KEY='taxi_auth_v1';
-    const APP_VERSION='1.3.0';
+    const APP_VERSION='1.4.0';
     function loadAccountState(){
       try{
         const raw=localStorage.getItem(AUTH_KEY);
@@ -266,8 +308,8 @@
     const faWeekdays=['ش','ی','د','س','چ','پ','ج'];
     function nowTime(){return new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Tehran'}).format(new Date());}
     function makeId(prefix){return `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;}
-    function defaultDatabase(){return {version:1,settings:{companyName:'کارن‌سافت',phone:'',address:'',email:'',taxRate:0,commissionDefault:15,farePerKm:12000,baseFare:25000,nightRateMultiplier:1.25,holidayRateMultiplier:1.2,logo:null,theme:'',currency:'IRR',security:{requirePin:false,autoLockMinutes:10,lockOnHide:false},backupReminderDays:7,lastBackupAt:'',dispatch:{turnBased:true,staleMinutes:30,cancelFee:20000,roundTripPercent:80,extraStopFee:20000},reportRange:{preset:'7d',from:'',to:''}},sync:{deviceId:'',deviceName:'',live:true,lastExportAt:'',lastImportAt:'',lastMergeAt:'',log:[]},settingsUpdatedAt:'',drivers:[],vehicles:[],addresses:[],subscribers:[],subscriberPayments:[],driverPayments:[],trips:[],operators:[{id:'op-1',name:'اپراتور اصلی',role:'مدیر'}],shifts:[],expenses:[],auditLog:[],closes:[],invoices:[],archives:[],meta:{createdAt:new Date().toISOString(),currentOperatorId:'op-1',counters:{trip:0,subscriber:0,driver:0,vehicle:0,expense:0}}};}
-    function normalizeDatabase(raw){const base=defaultDatabase();if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('ساختار فایل پشتیبان معتبر نیست.');const merged={...base,...raw};merged.settings={...base.settings,...(raw.settings&&typeof raw.settings==='object'?raw.settings:{})};if(!merged.settings.security||typeof merged.settings.security!=='object')merged.settings.security={...base.settings.security};for(const key of ['drivers','vehicles','addresses','subscribers','subscriberPayments','driverPayments','trips','operators','shifts','expenses','auditLog','closes','invoices','archives'])if(!Array.isArray(merged[key]))merged[key]=[];merged.operators=merged.operators.filter(o=>o&&typeof o==='object').map(o=>({...o,id:o.id||makeId('OP'),name:String(o.name||'اپراتور').slice(0,60),role:['مدیر','حسابدار','اپراتور'].includes(o.role)?o.role:'اپراتور',active:o.active!==false}));merged.meta={...base.meta,...(raw.meta&&typeof raw.meta==='object'?raw.meta:{})};merged.meta.counters={...base.meta.counters,...(merged.meta.counters||{})};if(!merged.sync||typeof merged.sync!=='object')merged.sync={...base.sync};if(!Array.isArray(merged.sync.log))merged.sync.log=[];if(typeof merged.sync.live!=='boolean')merged.sync.live=true;if(!merged.operators.length)merged.operators=base.operators;if(!merged.meta.currentOperatorId||!merged.operators.some(o=>o.id===merged.meta.currentOperatorId))merged.meta.currentOperatorId=merged.operators[0].id;return merged;}
+    function defaultDatabase(){return {version:1,settings:{companyName:'کارن‌سافت',phone:'',address:'',email:'',taxRate:0,commissionDefault:15,farePerKm:12000,baseFare:25000,nightRateMultiplier:1.25,holidayRateMultiplier:1.2,logo:null,theme:'',currency:'IRR',security:{requirePin:false,autoLockMinutes:10,lockOnHide:false},backupReminderDays:7,lastBackupAt:'',dispatch:{turnBased:true,staleMinutes:30,cancelFee:20000,roundTripPercent:80,extraStopFee:20000},reportRange:{preset:'7d',from:'',to:''}},sync:{deviceId:'',deviceName:'',live:true,dirty:false,serverRevision:0,lastServerSyncAt:'',lastExportAt:'',lastImportAt:'',lastMergeAt:'',log:[]},settingsUpdatedAt:'',drivers:[],vehicles:[],addresses:[],subscribers:[],subscriberPayments:[],driverPayments:[],trips:[],operators:[{id:'op-1',name:'کاربر آژانس',role:'مدیر',active:true}],shifts:[],expenses:[],auditLog:[],closes:[],invoices:[],archives:[],meta:{createdAt:new Date().toISOString(),currentOperatorId:'op-1',counters:{trip:0,subscriber:0,driver:0,vehicle:0,expense:0},tombstones:{}}};}
+    function normalizeDatabase(raw){const base=defaultDatabase();if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('ساختار فایل پشتیبان معتبر نیست.');const merged={...base,...raw};merged.settings={...base.settings,...(raw.settings&&typeof raw.settings==='object'?raw.settings:{})};if(!merged.settings.security||typeof merged.settings.security!=='object')merged.settings.security={...base.settings.security};for(const key of ['drivers','vehicles','addresses','subscribers','subscriberPayments','driverPayments','trips','operators','shifts','expenses','auditLog','closes','invoices','archives'])if(!Array.isArray(merged[key]))merged[key]=[];const opsList=merged.operators.filter(o=>o&&typeof o==='object');const curId=raw.meta&&typeof raw.meta==='object'?raw.meta.currentOperatorId:'';const primaryOp=opsList.find(o=>curId&&o.id===curId&&o.pin?.hash)||opsList.find(o=>o.pin?.hash)||opsList.find(o=>curId&&o.id===curId)||opsList.find(o=>o.role==='مدیر')||opsList[0]||base.operators[0];merged.operators=[{...primaryOp,id:primaryOp.id||'op-1',name:String(primaryOp.name||accountState?.user?.name||'کاربر آژانس').slice(0,60),role:'مدیر',active:true}];merged.meta={...base.meta,...(raw.meta&&typeof raw.meta==='object'?raw.meta:{})};merged.meta.counters={...base.meta.counters,...(merged.meta.counters||{})};if(!merged.meta.tombstones||typeof merged.meta.tombstones!=='object'||Array.isArray(merged.meta.tombstones))merged.meta.tombstones={};if(!merged.sync||typeof merged.sync!=='object')merged.sync={...base.sync};if(!Array.isArray(merged.sync.log))merged.sync.log=[];if(typeof merged.sync.live!=='boolean')merged.sync.live=true;if(typeof merged.sync.dirty!=='boolean')merged.sync.dirty=false;merged.sync.serverRevision=Number(merged.sync.serverRevision)||0;merged.meta.currentOperatorId=merged.operators[0].id;return merged;}
     function validateBackup(raw){if(!raw||typeof raw!=='object'||Array.isArray(raw)||!raw.settings||typeof raw.settings!=='object'||!Array.isArray(raw.trips)||!Array.isArray(raw.drivers)||!Array.isArray(raw.subscribers)||!Array.isArray(raw.vehicles)||!Array.isArray(raw.subscriberPayments)||!Array.isArray(raw.driverPayments)||!Array.isArray(raw.expenses))throw new Error('فایل انتخاب‌شده، نسخهٔ پشتیبان کامل کارن‌سافت نیست.');return normalizeDatabase(raw);}
     // لایهٔ دادهٔ قابل‌تعویض: همهٔ خواندن/نوشتن‌های محلی فقط از این مسیر انجام می‌شوند.
     const DB={
@@ -302,20 +344,17 @@
     const FORM_CAPS={'settings-company':'settings.manage','settings-rates':'settings.manage','settings-security':'settings.manage','operator':'operators.manage','reset-pin':'operators.manage','edit-operator':'operators.manage','report-range':'reports.view','close-month':'reports.manage','archive-trips':'data.delete','settle-drivers':'payments.record','sync-settings':'sync.manage','sync-merge':'sync.manage','shift-close':'shift.manage'};
     const CAP_LABELS={'settings.manage':'تنظیمات سامانه','backup.manage':'پشتیبان‌گیری','reports.view':'حسابداری و گزارش‌ها','expenses.manage':'هزینه‌ها','payments.record':'ثبت پرداخت','data.delete':'حذف اطلاعات','operators.manage':'مدیریت اپراتورها','drivers.manage':'مدیریت رانندگان','vehicles.manage':'مدیریت خودروها','trips.manage':'مدیریت سفرها','sync.manage':'همگام‌سازی و اپراتورها','shift.manage':'صندوق شیفت'};
 
-    function roleOf(operator){const target=operator||getOperator();const role=target&&target.role;return ROLE_CAPS[role]?role:ROLE_OPERATOR;}
-    function can(capability){if(!capability)return true;const caps=ROLE_CAPS[roleOf()]||ROLE_CAPS[ROLE_OPERATOR];return caps.includes('*')||caps.includes(capability);}
-    function requireCap(capability,message){if(can(capability))return true;toast(message||`دسترسی «${CAP_LABELS[capability]||'این بخش'}» برای نقش ${roleOf()} باز نیست.`,'error');return false;}
+    function roleOf(){return ROLE_MANAGER;}
+    function can(){return true;}
+    function requireCap(){return true;}
     function routeOf(route){const parts=String(route||'').split('/');return {page:parts[0],key:parts.length>1?`${parts[0]}/${parts[1]}`:parts[0]};}
-    function requiredCapability(route){return route?(SUBROUTE_CAPS[route.key]||ROUTE_CAPS[route.page]||''):'';}
+    function requiredCapability(){return '';}
     function permissionCard(capability){
-      return `${pageHeading('دسترسی محدود','نقش فعلی شما اجازهٔ ورود به این بخش را ندارد.')}<section class="card card-pad"><div class="info-box danger-box"><i class="fa-solid fa-lock"></i><span>بخش «${esc(CAP_LABELS[capability]||'درخواستی')}» برای نقش «${esc(roleOf())}» باز نیست. برای تغییر سطح دسترسی، مدیر سامانه باید از تنظیمات، امنیت، نقش شما را تغییر دهد.</span></div><div class="form-actions"><button class="btn btn-primary" data-route="dashboard"><i class="fa-solid fa-house"></i> بازگشت به داشبورد</button></div></section>`;
+      return `${pageHeading('دسترسی محدود','')}<section class="card card-pad"><div class="info-box"><i class="fa-solid fa-circle-info"></i><span>${esc(CAP_LABELS[capability]||'این بخش')}</span></div></section>`;
     }
     function updateOperatorChrome(){
-      const operator=getOperator();
-      const nameEl=$('#top-operator');if(nameEl)nameEl.textContent=operator.name;
-      const pill=$('[data-action="operator-menu"]');if(pill){pill.title=`${operator.name} · ${roleOf(operator)}`;pill.setAttribute('aria-label',`اپراتور جاری: ${operator.name} · ${roleOf(operator)}`);}
       const lock=$('#lock-action');
-      if(lock){const show=securityActive()&&operatorHasPin();lock.hidden=!show;lock.title=show?'قفل برنامه (نیاز به PIN)':'قفل ورود فعال نیست';}
+      if(lock){const show=securityActive()&&operatorHasPin();lock.hidden=!show;lock.title=show?'قفل صفحه (نیاز به PIN)':'قفل صفحه فعال نیست';}
     }
     function applyNavPermissions(){
       $$('.sidebar [data-route]').forEach(el=>{
@@ -483,35 +522,29 @@
       return `<div class="keypad">${keys.map(([key,label])=>`<button type="button" class="${key==='ok'?'key-ok':key==='del'?'key-del':''}" data-action="pin-key" data-key="${key}" ${busy?'disabled':''}>${label}</button>`).join('')}</div>`;
     }
     function lockScreenHtml(){
-      const auth=ui.auth,sec=security(),target=authTarget(),remaining=lockRemaining();
-      const setup=auth.mode==='setup',recovering=auth.mode==='recover',picking=auth.mode==='switch-list',showingCode=auth.mode==='code';
-      const switching=auth.mode==='switch';
+      const auth=ui.auth,target=getOperator(),remaining=lockRemaining();
+      const setup=auth.mode==='setup',recovering=auth.mode==='recover',showingCode=auth.mode==='code';
       const attemptsLeft=Math.max(0,MAX_PIN_ATTEMPTS-lockState().attempts);
-      let hint='رمز ورود خود را وارد کنید.';
-      if(setup)hint='قفل ورود فعال است؛ برای اپراتور جاری یک PIN چهار تا هشت رقمی تعیین کنید.';
+      let hint='رمز PIN چهار تا هشت رقمی خود را وارد کنید.';
+      if(setup)hint='قفل صفحه فعال است؛ یک رمز PIN چهار تا هشت رقمی برای این دستگاه تعیین کنید.';
       if(recovering)hint='کد بازیابی را وارد کنید و PIN جدید بسازید.';
-      if(switching)hint=`رمز ${esc(target.name)} را وارد کنید.`;
-      if(picking)hint='اپراتور موردنظر را انتخاب کنید.';
-      if(showingCode)hint='این کد را در محل امن نگه دارید.';
-      const list=picking?`<div class="lock-list">${db.operators.filter(o=>o.active!==false).map(o=>`<button type="button" class="profile-choice ${o.id===getOperator().id?'current':''}" data-action="lock-pick" data-id="${esc(o.id)}"><span class="operator-avatar"><i class="fa-solid fa-user-tie"></i></span><span><b>${esc(o.name)}</b><small>${esc(roleOf(o))}${operatorHasPin(o)?'':' · بدون PIN'}</small></span></button>`).join('')}</div>`:'';
+      if(showingCode)hint='این کد بازیابی را در محل امن نگه دارید.';
       const firstInput=`<input id="lock-pin" class="pin-input" type="password" inputmode="numeric" autocomplete="off" maxlength="8" dir="ltr" aria-label="${setup||recovering?'PIN جدید':'رمز ورود'}">`;
       const secondInput=(setup||recovering)?`<input id="lock-pin2" class="pin-input" type="password" inputmode="numeric" autocomplete="off" maxlength="8" dir="ltr" placeholder="تکرار PIN" aria-label="تکرار PIN">`:'';
       const codeInput=recovering?`<input id="lock-code" class="pin-input code" type="text" autocomplete="off" maxlength="11" dir="ltr" placeholder="XXXXX-XXXXX" aria-label="کد بازیابی">`:'';
       const codeBox=showingCode?`<div class="recovery-code">${esc(auth.code)}</div><div class="field-help">این کد فقط یک بار نمایش داده می‌شود؛ اگر PIN را فراموش کردید با آن می‌توانید وارد شوید و PIN جدید بسازید.</div>`:'';
       const errorText=remaining>0?`تلاش‌های ناموفق زیاد بود؛ ${fmtNumber(remaining)} ثانیه دیگر تلاش کنید.`:(auth.error||'');
-      const body=picking?list:(showingCode?codeBox:`${codeInput}${firstInput}${secondInput}${lockKeypad(auth.busy)}`);
+      const body=showingCode?codeBox:`${codeInput}${firstInput}${secondInput}${lockKeypad(auth.busy)}`;
       const foot=[];
-      if(picking&&db.operators.length>1)foot.push(`<button type="button" class="text-link" data-action="lock-back"><i class="fa-solid fa-arrow-right"></i> بازگشت</button>`);
-      else if(showingCode)foot.push(`<button type="button" class="btn btn-primary btn-block" data-action="lock-code-done"><i class="fa-solid fa-check"></i> کد را ذخیره کردم</button>`);
-      else if(switching||recovering)foot.push(`<button type="button" class="text-link" data-action="lock-back"><i class="fa-solid fa-arrow-right"></i> بازگشت</button>`);
-      else if(!setup&&db.operators.length>1)foot.push(`<button type="button" class="text-link" data-action="lock-switch"><i class="fa-solid fa-users"></i> ورود با اپراتور دیگر</button>`);
-      if(!setup&&!recovering&&!picking&&!showingCode&&operatorHasPin(target))foot.push(`<button type="button" class="text-link" data-action="lock-recover"><i class="fa-solid fa-life-ring"></i> کد بازیابی دارم</button>`);
-      if(!showingCode){foot.push(`<button type="button" class="text-link" data-action="lock-export"><i class="fa-solid fa-download"></i> خروجی پشتیبان بدون ورود</button>`);foot.push(`<button type="button" class="text-link danger-link" data-action="lock-reset"><i class="fa-solid fa-unlock"></i> بازنشانی قفل ورود روی این دستگاه</button>`);}
-      const attemptsNote=(!showingCode&&!picking&&remaining<=0&&attemptsLeft<MAX_PIN_ATTEMPTS)?`<span class="lock-note">${fmtNumber(attemptsLeft)} تلاش باقی مانده است.</span>`:'';
+      if(showingCode)foot.push(`<button type="button" class="btn btn-primary btn-block" data-action="lock-code-done"><i class="fa-solid fa-check"></i> کد را ذخیره کردم</button>`);
+      else if(recovering)foot.push(`<button type="button" class="text-link" data-action="lock-back"><i class="fa-solid fa-arrow-right"></i> بازگشت</button>`);
+      if(!setup&&!recovering&&!showingCode&&operatorHasPin(target))foot.push(`<button type="button" class="text-link" data-action="lock-recover"><i class="fa-solid fa-life-ring"></i> کد بازیابی دارم</button>`);
+      if(!showingCode){foot.push(`<button type="button" class="text-link" data-action="lock-export"><i class="fa-solid fa-download"></i> خروجی پشتیبان بدون ورود</button>`);foot.push(`<button type="button" class="text-link danger-link" data-action="lock-reset"><i class="fa-solid fa-unlock"></i> بازنشانی قفل روی این دستگاه</button>`);foot.push(`<button type="button" class="text-link danger-link" data-action="auth-logout"><i class="fa-solid fa-right-from-bracket"></i> خروج از حساب کاربری</button>`);}
+      const attemptsNote=(!showingCode&&remaining<=0&&attemptsLeft<MAX_PIN_ATTEMPTS)?`<span class="lock-note">${fmtNumber(attemptsLeft)} تلاش باقی مانده است.</span>`:'';
       return `<div class="lock-screen"><section class="lock-card ${auth.shake?'lock-shake':''}" aria-label="قفل برنامه">
         <div class="lock-badge">${lockLogo()}</div>
         <div class="lock-name">${esc(db.settings.companyName||'کارن‌سافت')}</div>
-        <div class="lock-role">${esc(target.name)} · ${esc(roleOf(target))}</div>
+        <div class="lock-role">${esc(accountState?.user?.name||target.name)}</div>
         <div class="lock-hint">${hint}</div>
         ${body}
         <div class="lock-error" id="lock-error" role="alert">${esc(errorText)}</div>
@@ -726,38 +759,26 @@
       transact('تغییر نقش اپراتور',state=>{const found=state.operators.find(o=>o.id===id);if(!found)return false;found.role=role;return true;},{message:`نقش ${operator.name} به «${role}» تغییر کرد.`});
     }
     function securityPanel(){
-      const sec=security(),current=getOperator();
-      const managers=db.operators.filter(o=>roleOf(o)===ROLE_MANAGER);
-      const rows=db.operators.map(operator=>{
-        const isSelf=operator.id===current.id;
-        const lastManager=roleOf(operator)===ROLE_MANAGER&&managers.length<=1;
-        return `<div class="security-row ${isSelf?'current':''}">
-          <span class="operator-avatar"><i class="fa-solid fa-user-tie"></i></span>
-          <span class="security-name"><b>${esc(operator.name)}</b><small>${operatorHasPin(operator)?'PIN دارد':'بدون PIN'}${operator.active===false?' · غیرفعال':''}${isSelf?' · شما':''}</small></span>
-          <select class="security-role" data-role-select="${esc(operator.id)}" aria-label="نقش ${esc(operator.name)}">${ROLE_LIST.map(role=>`<option value="${role}" ${roleOf(operator)===role?'selected':''}>${role}</option>`).join('')}</select>
-          <span class="security-actions">
-            <button class="btn btn-small" data-action="reset-pin" data-id="${esc(operator.id)}" title="تعیین یا تغییر PIN"><i class="fa-solid fa-key"></i></button>
-            <button class="btn btn-small" data-action="edit-operator" data-id="${esc(operator.id)}" title="ویرایش نام و وضعیت"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn btn-small btn-danger" data-action="delete-operator" data-id="${esc(operator.id)}" ${isSelf||lastManager?'disabled':''} title="${isSelf?'حساب خودتان حذف نمی‌شود':lastManager?'حداقل یک مدیر لازم است':'حذف اپراتور'}"><i class="fa-solid fa-trash"></i></button>
-          </span>
-        </div>`;}).join('');
+      const sec=security();
       return `<section class="card card-pad" style="margin-top:16px">
-        <div class="card-head"><div><h2 class="card-title"><i class="fa-solid fa-shield-halved"></i> امنیت، قفل ورود و سطح دسترسی</h2><div class="card-hint">PIN ورود اپراتور را کنترل می‌کند و نقش‌ها تعیین می‌کنند هر اپراتور به چه بخش‌هایی دسترسی داشته باشد.</div></div><span class="badge ${sec.requirePin?'gold':''}">${sec.requirePin?'قفل فعال':'قفل غیرفعال'}</span></div>
-        <div class="grid grid-2">
-          <form data-form="settings-security">
-            <label class="security-toggle"><span><b>قفل ورود با PIN</b><small>با هر بار باز شدن برنامه، رمز اپراتور جاری پرسیده می‌شود.</small></span><span class="switch"><input type="checkbox" name="requirePin" ${sec.requirePin?'checked':''}><span></span></span></label>
-            <label class="security-toggle"><span><b>قفل هنگام پنهان شدن پنجره</b><small>با رفتن به تب دیگر، کمینه‌کردن یا بستن و باز کردن برنامه، قفل می‌شود.</small></span><span class="switch"><input type="checkbox" name="lockOnHide" ${sec.lockOnHide?'checked':''}><span></span></span></label>
-            <div class="field"><label for="auto-lock">قفل خودکار پس از بی‌فعالیتی</label><select id="auto-lock" name="autoLockMinutes">${[[0,'غیرفعال'],[1,'۱ دقیقه'],[5,'۵ دقیقه'],[10,'۱۰ دقیقه'],[30,'۳۰ دقیقه']].map(([value,label])=>`<option value="${value}" ${Number(sec.autoLockMinutes)===value?'selected':''}>${label}</option>`).join('')}</select></div>
-            <div class="row wrap" style="margin-top:13px">
-              <button type="submit" class="btn btn-primary btn-small"><i class="fa-solid fa-floppy-disk"></i> ذخیره تنظیمات امنیتی</button>
-              <button type="button" class="btn btn-small" data-action="change-pin"><i class="fa-solid fa-key"></i> ${operatorHasPin()?'تغییر PIN من':'تعیین PIN من'}</button>
-              <button type="button" class="btn btn-small" data-action="lock-now" ${securityActive()&&operatorHasPin()?'':'disabled'}><i class="fa-solid fa-lock"></i> قفل فوری</button>
-              <button type="button" class="btn btn-small" data-action="add-operator"><i class="fa-solid fa-user-plus"></i> اپراتور جدید</button>
+        <div class="card-head"><div><h2 class="card-title"><i class="fa-solid fa-shield-halved"></i> قفل صفحه روی این دستگاه (اختیاری)</h2><div class="card-hint">برای جلوگیری از دسترسی افراد دیگر به صفحهٔ باز برنامه، می‌توانید رمز PIN محلی تعیین کنید.</div></div><span class="badge ${sec.requirePin?'gold':''}">${sec.requirePin?'قفل فعال':'قفل غیرفعال'}</span></div>
+        <form data-form="settings-security">
+          <div class="grid grid-2">
+            <div>
+              <label class="security-toggle"><span><b>قفل صفحه با رمز PIN</b><small>با هر بار باز شدن برنامه روی این دستگاه، رمز PIN پرسیده می‌شود.</small></span><span class="switch"><input type="checkbox" name="requirePin" ${sec.requirePin?'checked':''}><span></span></span></label>
+              <label class="security-toggle"><span><b>قفل هنگام پنهان شدن پنجره</b><small>با رفتن به تب دیگر یا کمینه‌کردن برنامه، صفحه قفل می‌شود.</small></span><span class="switch"><input type="checkbox" name="lockOnHide" ${sec.lockOnHide?'checked':''}><span></span></span></label>
             </div>
-          </form>
-          <div><div class="small muted" style="margin-bottom:8px">اپراتورها، نقش و وضعیت PIN</div><div class="security-list">${rows}</div><div class="field-help" style="margin-top:9px">نقش «مدیر» دسترسی کامل دارد، «حسابدار» به گزارش‌ها، هزینه‌ها و پرداخت‌ها دسترسی دارد و «اپراتور» فقط سفرها، مشترکین، آدرس‌ها و مشاهدهٔ رانندگان را در اختیار دارد.</div></div>
-        </div>
-        <div class="info-box warn-box" style="margin-top:14px"><i class="fa-solid fa-triangle-exclamation"></i><span>PIN و نقش‌ها دسترسی روزمره روی همین دستگاه را محدود می‌کنند؛ داده‌ها رمزنگاری نمی‌شوند و هر کسی به فایل‌های همین مرورگر دسترسی داشته باشد می‌تواند آن‌ها را ببیند. برای امنیت سازمانی به سرور و احراز هویت نیاز است.</span></div>
+            <div>
+              <div class="field"><label for="auto-lock">قفل خودکار پس از بی‌فعالیتی</label><select id="auto-lock" name="autoLockMinutes">${[[0,'غیرفعال'],[1,'۱ دقیقه'],[5,'۵ دقیقه'],[10,'۱۰ دقیقه'],[30,'۳۰ دقیقه']].map(([value,label])=>`<option value="${value}" ${Number(sec.autoLockMinutes)===value?'selected':''}>${label}</option>`).join('')}</select></div>
+              <div class="info-box" style="margin-top:10px"><i class="fa-solid fa-key"></i><span>وضعیت فعلی رمز: <b>${operatorHasPin()?'رمز PIN ثبت شده است':'بدون رمز PIN'}</b></span></div>
+            </div>
+          </div>
+          <div class="row wrap" style="margin-top:13px">
+            <button type="submit" class="btn btn-primary btn-small"><i class="fa-solid fa-floppy-disk"></i> ذخیره تنظیمات قفل</button>
+            <button type="button" class="btn btn-small" data-action="change-pin"><i class="fa-solid fa-key"></i> ${operatorHasPin()?'تغییر رمز PIN':'تعیین رمز PIN'}</button>
+            <button type="button" class="btn btn-small" data-action="lock-now" ${securityActive()&&operatorHasPin()?'':'disabled'}><i class="fa-solid fa-lock"></i> قفل فوری صفحه</button>
+          </div>
+        </form>
       </section>`;
     }
     function exportBackupWithoutLogin(){
@@ -1500,7 +1521,7 @@
     function tripTax(trip){return trip?.tax!=null?Math.max(0,Number(trip.tax)||0):Math.round((Number(trip?.fare)||0)*(Number(db.settings.taxRate)||0)/100);}
     function subscriberBalance(id){const charges=db.trips.filter(t=>t.status==='completed'&&t.customerType==='subscriber'&&t.subscriberId===id).reduce((n,t)=>n+(Number(t.fare)||0)+tripTax(t),0);const paid=db.subscriberPayments.filter(p=>p.subscriberId===id).reduce((n,p)=>n+(Number(p.amount)||0),0);return charges-paid;}
     function driverStatement(driverId){const trips=db.trips.filter(t=>t.driverId===driverId&&t.status==='completed');const fare=trips.reduce((n,t)=>n+(Number(t.fare)||0),0);const commission=trips.reduce((n,t)=>n+(Number(t.commission)||Math.round((Number(t.fare)||0)*(Number(t.commissionRate??db.settings.commissionDefault)||0)/100)),0);const due=trips.filter(t=>t.paymentMethod!=='cash').reduce((n,t)=>n+Math.max(0,(Number(t.fare)||0)-(Number(t.commission)||Math.round((Number(t.fare)||0)*(Number(t.commissionRate??db.settings.commissionDefault)||0)/100))),0);const paid=db.driverPayments.filter(p=>p.driverId===driverId).reduce((n,p)=>n+(Number(p.amount)||0),0);return {trips,fare,commission,share:fare-commission,due,paid,balance:due-paid};}
-    function setHeader(){const route=parseRoute();const titles={'dashboard':['داشبورد','نمای کلی عملکرد آژانس شما'],'drivers':['رانندگان و خودروها','مدیریت رانندگان، خودروها و وضعیت سرویس'],'addresses':['آدرس‌ها و مناطق','ثبت مبدأها، مقصدهای پرتکرار و تعرفه پایه'],'subscribers':['مشترکین','مدیریت حساب، اعتبار و پرداخت مشترکین'],'trips':['سفرها','ثبت و پیگیری سفرهای روزانه'],'accounting':['حسابداری و گزارش‌ها','صورتحساب‌ها، درآمد، کمیسیون و هزینه‌های آژانس'],'backup':['پشتیبان‌گیری','نسخه امن از اطلاعات محلی آژانس'],'sync':['همگام‌سازی و اپراتورها','همگام‌سازی محلی بین پنجره‌ها، صندوق شیفت و عملکرد اپراتورها'],'settings':['تنظیمات','مشخصات شرکت، هویت بصری و اپلیکیشن'],'tutorial':['راهنمای استفاده','راهنمای گام‌به‌گام گردش‌کار اپراتور'],'about':['درباره کارن‌سافت','سامانه سبک و آفلاین‌محور برای مدیریت تاکسی تلفنی']};const subTitles={'trips/queue':'صف انتظار','trips/new':'ثبت سفر جدید','trips/list':'لیست سفرها','drivers/vehicles':'مدیریت خودروها','accounting/drivers':'صورتحساب راننده','accounting/revenue':'گزارش درآمد','accounting/commission':'گزارش کمیسیون','accounting/subscribers':'حساب مشترکین','accounting/expenses':'هزینه‌ها'};const title=subTitles[route.key]||titles[route.page]?.[0]||titles.dashboard[0];$('#top-title').textContent=title;$('#top-subtitle').textContent=titles[route.page]?.[1]||titles.dashboard[1];$('#top-operator').textContent=getOperator().name;const shift=$('#shift-action');if(shift){const on=!!currentShift();shift.innerHTML=`<i class="fa-solid ${on?'fa-stop':'fa-play'}"></i>`;shift.title=on?'پایان شیفت فعال':'شروع شیفت';shift.setAttribute('aria-label',shift.title);}$$('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.route===route.page||el.dataset.route==='trips'&&route.page==='trips'||el.dataset.route==='accounting'&&route.page==='accounting'));$$('.nav-sub button').forEach(el=>el.classList.toggle('active',el.dataset.route===route.key));updateOperatorChrome();}
+    function setHeader(){const route=parseRoute();const titles={'dashboard':['داشبورد','نمای کلی عملکرد آژانس شما'],'drivers':['رانندگان و خودروها','مدیریت رانندگان، خودروها و وضعیت سرویس'],'addresses':['آدرس‌ها و مناطق','ثبت مبدأها، مقصدهای پرتکرار و تعرفه پایه'],'subscribers':['مشترکین','مدیریت حساب، اعتبار و پرداخت مشترکین'],'trips':['سفرها','ثبت و پیگیری سفرهای روزانه'],'accounting':['حسابداری و گزارش‌ها','صورتحساب‌ها، درآمد، کمیسیون و هزینه‌های آژانس'],'backup':['پشتیبان‌گیری','نسخه امن از اطلاعات محلی آژانس'],'sync':['همگام‌سازی ابری و آفلاین','ذخیرهٔ دوگانه روی دستگاه و سرور با همگام‌سازی خودکار'],'settings':['تنظیمات','اشتراک، مشخصات شرکت، لوگوی فاکتور و اپلیکیشن'],'tutorial':['راهنمای استفاده','راهنمای گام‌به‌گام گردش‌کار آژانس'],'about':['درباره کارن‌سافت','سامانه اشتراکی آفلاین و ابری مدیریت تاکسی تلفنی']};const subTitles={'trips/queue':'صف انتظار','trips/new':'ثبت سفر جدید','trips/list':'لیست سفرها','drivers/vehicles':'مدیریت خودروها','accounting/drivers':'صورتحساب راننده','accounting/revenue':'گزارش درآمد','accounting/commission':'گزارش کمیسیون','accounting/subscribers':'حساب مشترکین','accounting/expenses':'هزینه‌ها'};const title=subTitles[route.key]||titles[route.page]?.[0]||titles.dashboard[0];$('#top-title').textContent=title;$('#top-subtitle').textContent=titles[route.page]?.[1]||titles.dashboard[1];$$('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.route===route.page||el.dataset.route==='trips'&&route.page==='trips'||el.dataset.route==='accounting'&&route.page==='accounting'));$$('.nav-sub button').forEach(el=>el.classList.toggle('active',el.dataset.route===route.key));updateOperatorChrome();updateCloudSyncChrome();}
     function parseRoute(){let raw=decodeURIComponent((location.hash||'#dashboard').slice(1));if(raw==='trips-new')raw='trips/new';if(raw==='queue')raw='trips/queue';if(raw==='trips')raw='trips/queue';if(raw==='accounting')raw='accounting/revenue';const parts=raw.split('/');const allowed=['dashboard','drivers','addresses','subscribers','trips','accounting','backup','sync','settings','tutorial','about'];if(!allowed.includes(parts[0]))return {page:'dashboard',key:'dashboard'};return {page:parts[0],key:parts.length>1?`${parts[0]}/${parts[1]}`:parts[0]};}
     function navTo(route){const needed=requiredCapability(routeOf(route));if(needed&&!requireCap(needed))return;const target=`#${route}`;if(location.hash===target)renderApp();else location.hash=route;if($('#sidebar').classList.contains('open'))$('#sidebar').classList.remove('open');}
     function pageHeading(title,subtitle='',actions=''){return `<div class="page-heading"><div><h1>${title}</h1>${subtitle?`<p>${subtitle}</p>`:''}</div>${actions?`<div class="heading-actions">${actions}</div>`:''}</div>`;}
@@ -1849,7 +1870,7 @@
     function accountingSubscribers(){return `<div class="grid grid-3" style="margin-bottom:15px">${statCard('مطالبات باز',money(db.subscribers.reduce((n,s)=>n+Math.max(0,subscriberBalance(s.id)),0)),'مجموع مانده مثبت','fa-file-invoice-dollar','var(--orange)','var(--gold-soft)')}${statCard('مشترکین بدهکار',fmtNumber(db.subscribers.filter(s=>subscriberBalance(s.id)>0).length),'دارای مانده مثبت','fa-user-clock','var(--blue)','var(--blue-soft)')}${statCard('وصولی کل',money(db.subscriberPayments.reduce((n,p)=>n+(Number(p.amount)||0),0)),'پرداخت‌های ثبت‌شده','fa-wallet','var(--green)','var(--green-soft)')}</div><section class="card card-pad">${db.subscribers.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>مشترک</th><th>سفر اعتباری</th><th>جمع صورتحساب</th><th>پرداخت‌شده</th><th>مانده</th><th>عملیات</th></tr></thead><tbody>${db.subscribers.map(s=>{const trips=db.trips.filter(t=>t.status==='completed'&&t.customerType==='subscriber'&&t.subscriberId===s.id);const charges=trips.reduce((n,t)=>n+(Number(t.fare)||0)+tripTax(t),0),paid=db.subscriberPayments.filter(p=>p.subscriberId===s.id).reduce((n,p)=>n+(Number(p.amount)||0),0),balance=charges-paid;return `<tr><td class="table-primary">${esc(s.name)}</td><td>${fmtNumber(trips.length)}</td><td>${money(charges)}</td><td>${money(paid)}</td><td class="${balance>0?'amount-negative':'amount-positive'}">${money(balance)}</td><td><div class="table-actions"><button class="btn btn-small btn-success" data-action="subscriber-payment" data-id="${esc(s.id)}">ثبت پرداخت</button><button class="btn btn-small" data-action="subscriber-invoice" data-id="${esc(s.id)}"><i class="fa-solid fa-print"></i> صورتحساب</button></div></td></tr>`;}).join('')}</tbody></table></div>`:emptyState('مشترکی ثبت نشده','مشترکین را ثبت کنید تا مانده حساب آن‌ها در این بخش قابل پیگیری باشد.',`<button class="btn btn-primary btn-small" data-route="subscribers">مدیریت مشترکین</button>`)}</section>`;}
     function accountingExpenses(){const __range=reportRange();const __inRange=x=>inRange(x.date,__range);const rangeExpenses=db.expenses.filter(__inRange);const sum=rangeExpenses.reduce((n,x)=>n+(Number(x.amount)||0),0);return `<div class="grid grid-3" style="margin-bottom:15px">${statCard('مجموع هزینه‌های بازه',money(sum),`${esc(__range.label)}`,'fa-receipt','var(--red)','var(--red-soft)')}${statCard('تعداد ثبت‌های بازه',fmtNumber(rangeExpenses.length),`از ${fmtNumber(db.expenses.length)} هزینهٔ ثبت‌شده`,'fa-list')}${statCard('هزینه امروز',money(db.expenses.filter(e=>e.date===jalaliToday()).reduce((n,e)=>n+(Number(e.amount)||0),0)),'تاریخ شمسی جاری','fa-calendar-day','var(--blue)','var(--blue-soft)')}</div><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">دفتر هزینه‌ها</h2><div class="card-hint">ثبت و پیگیری پرداخت‌های آژانس</div></div><button class="btn btn-primary btn-small" data-action="add-expense"><i class="fa-solid fa-plus"></i> هزینه جدید</button></div>${db.expenses.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>عنوان</th><th>دسته‌بندی</th><th>تاریخ</th><th>پرداخت‌کننده</th><th>مبلغ</th><th>عملیات</th></tr></thead><tbody>${[...db.expenses].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=>`<tr><td class="table-primary">${esc(x.title)}</td><td>${esc(x.category||'عمومی')}</td><td>${formatDate(x.date)}</td><td>${esc(x.paidBy||'آژانس')}</td><td class="amount-negative">${money(x.amount)}</td><td><button class="btn btn-small btn-danger" data-action="delete-expense" data-id="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`:emptyState('هزینه‌ای ثبت نشده','هزینه‌های جاری آژانس مانند سوخت، تعمیرات یا اجاره را ثبت کنید.',`<button class="btn btn-primary btn-small" data-action="add-expense">ثبت هزینه</button>`)}</section>`;}
     /* ═══════════════ فاز ۵: چند اپراتور، همگام‌سازی محلی، صندوق شیفت و عملکرد اپراتورها ═══════════════ */
-    const SYNC_COLLECTIONS=['drivers','vehicles','addresses','subscribers','subscriberPayments','driverPayments','trips','expenses','operators','closes','invoices','archives','shifts'];
+    const SYNC_COLLECTIONS=['drivers','vehicles','addresses','subscribers','subscriberPayments','driverPayments','trips','expenses','closes','invoices','archives','shifts'];
     const SYNC_CHANNEL_NAME='karnsoft-taxi-local-sync',SYNC_STAMP_KEY='taxi_sync_stamp_v1';
     const SYNC_STRATEGIES={newer:'جدیدترین تغییر برنده (پیشنهادی)',incoming:'نسخهٔ بستهٔ ورودی برنده',addOnly:'فقط افزودن رکوردهای تازه'};
     let syncChannel=null;
@@ -1899,13 +1920,41 @@
         if(info.log.length>200)info.log.length=200;
       }catch(_){/* ثبت گزارش همگام‌سازی نباید مانع ذخیره شود */}
     }
+    const CLOUD_SYNC_COLLECTIONS=['drivers','vehicles','addresses','subscribers','subscriberPayments','driverPayments','trips','expenses','closes','invoices','archives','shifts'];
+    let cloudSyncTimer=null,cloudSyncInFlight=null,cloudMutationSeq=0;
+    function recordTombstonesFromDiff(before,after,atIso){
+      if(!after.meta||typeof after.meta!=='object')after.meta={};
+      if(!after.meta.tombstones||typeof after.meta.tombstones!=='object')after.meta.tombstones={};
+      let deleted=0;
+      for(const col of CLOUD_SYNC_COLLECTIONS){
+        const afterIds=new Set((after[col]||[]).map(item=>item&&item.id).filter(Boolean));
+        if(after.meta.tombstones[col]){
+          for(const id of afterIds)delete after.meta.tombstones[col][id];
+        }
+        for(const prev of before[col]||[]){
+          if(prev&&prev.id&&!afterIds.has(prev.id)){
+            if(!after.meta.tombstones[col])after.meta.tombstones[col]={};
+            after.meta.tombstones[col][prev.id]=atIso;
+            deleted++;
+          }
+        }
+      }
+      return deleted;
+    }
     function trackChanges(before,action){
       try{
         const summary=stampChanges(before,db,getOperator());
-        const settingsChanged=JSON.stringify(before.settings)!==JSON.stringify(db.settings);
+        const deleted=recordTombstonesFromDiff(before,db,summary.at);
+        const stripLocalSettings=s=>{const c={...(s||{})};delete c.security;delete c.reportRange;return JSON.stringify(c);};
+        const settingsChanged=stripLocalSettings(before.settings)!==stripLocalSettings(db.settings);
         if(settingsChanged)db.settingsUpdatedAt=summary.at;
-        if(summary.changed||settingsChanged)pushSyncLog(action,{...summary,detail:!summary.changed&&settingsChanged?'تنظیمات سامانه':''});
-        return {...summary,settingsChanged};
+        if(summary.changed||deleted||settingsChanged){
+          cloudMutationSeq++;
+          syncInfo().dirty=true;
+          pushSyncLog(action,{...summary,changed:summary.changed+deleted,detail:!summary.changed&&settingsChanged?'تنظیمات و هویت بصری آژانس':''});
+          scheduleCloudSync(1200);
+        }
+        return {...summary,deleted,settingsChanged};
       }catch(_){return {changed:0,byCollection:{}};}
     }
     function notifyPeers(reason){
@@ -1961,10 +2010,195 @@
       ui.pendingPeerUpdate=ui.pendingPeerUpdate||null;
       ui.syncImport=ui.syncImport||null;
       ui.syncReport=ui.syncReport||null;
+      ui.cloudSync=ui.cloudSync||{status:'idle',error:'',lastAttemptAt:''};
       rebindSyncChannel();
       window.addEventListener('storage',event=>{if(event.key===dbKey()&&event.newValue)adoptExternalChange('پنجرهٔ دیگر');});
-      window.addEventListener('focus',()=>{ui.pendingPeerUpdate=null;refreshSyncPanel();});
+      window.addEventListener('focus',()=>{ui.pendingPeerUpdate=null;refreshSyncPanel();if(canCloudSync())scheduleCloudSync(400);});
+      window.addEventListener('online',()=>{updateCloudSyncChrome();if(canCloudSync())scheduleCloudSync(300);});
+      window.addEventListener('offline',()=>updateCloudSyncChrome());
+      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&canCloudSync())scheduleCloudSync(500);});
       setInterval(()=>{peerList();refreshSyncPanel();},5000);
+      setInterval(()=>{if(canCloudSync()&&navigator.onLine!==false)runCloudSync({manual:false}).catch(()=>{});},45000);
+    }
+    function canCloudSync(){
+      return isStoreAccount()&&Number(accountState?.user?.store_id)>0&&typeof window.fetch==='function'&&/^https?:$/.test(location.protocol);
+    }
+    function hasLocalAgencyData(state=db){
+      if(CLOUD_SYNC_COLLECTIONS.some(col=>Array.isArray(state[col])&&state[col].length>0))return true;
+      if(state.settingsUpdatedAt)return true;
+      if(state.settings?.logo?.data)return true;
+      return false;
+    }
+    function buildCloudSyncPayload(state=db){
+      const settings={...(state.settings||{})};
+      delete settings.security;
+      delete settings.reportRange;
+      const out={settings,settingsUpdatedAt:state.settingsUpdatedAt||'',meta:{counters:{...(state.meta?.counters||{})},invoiceSeq:{...(state.meta?.invoiceSeq||{})},tombstones:{...(state.meta?.tombstones||{})}}};
+      for(const col of CLOUD_SYNC_COLLECTIONS)out[col]=Array.isArray(state[col])?state[col]:[];
+      return out;
+    }
+    function applyCloudPayloadToLocal(serverData,{revision=0,syncedAt=''}={}){
+      if(!serverData||typeof serverData!=='object')return false;
+      const mergedTombs={};
+      const localTombs=db.meta?.tombstones||{};
+      const remoteTombs=serverData.meta?.tombstones||{};
+      for(const col of CLOUD_SYNC_COLLECTIONS){
+        const tMap={};
+        for(const src of [localTombs[col]||{},remoteTombs[col]||{}]){
+          for(const [id,iso] of Object.entries(src||{})){
+            const ts=Date.parse(iso)||0;
+            if(!tMap[id]||ts>=(Date.parse(tMap[id])||0))tMap[id]=iso;
+          }
+        }
+        const byId=new Map();
+        for(const item of Array.isArray(db[col])?db[col]:[]){if(item&&item.id)byId.set(String(item.id),item);}
+        for(const item of Array.isArray(serverData[col])?serverData[col]:[]){
+          if(!item||!item.id)continue;
+          const id=String(item.id),cur=byId.get(id);
+          if(!cur){byId.set(id,clone(item));continue;}
+          const cTs=recordStamp(cur),sTs=recordStamp(item);
+          if(sTs>cTs||(sTs===cTs&&(Number(item.rev)||0)>(Number(cur.rev)||0)))byId.set(id,clone(item));
+        }
+        const nextList=[];
+        for(const [id,rec] of byId.entries()){
+          if(tMap[id]){
+            if((Date.parse(tMap[id])||0)>=recordStamp(rec))continue;
+            delete tMap[id];
+          }
+          nextList.push(rec);
+        }
+        db[col]=nextList;
+        if(Object.keys(tMap).length)mergedTombs[col]=tMap;
+      }
+      const sStamp=Date.parse(serverData.settingsUpdatedAt||'')||0;
+      const lStamp=Date.parse(db.settingsUpdatedAt||'')||0;
+      if(serverData.settings&&typeof serverData.settings==='object'&&(sStamp>lStamp||(!lStamp&&Object.keys(serverData.settings).length))){
+        const keepSec=db.settings.security;
+        const keepTheme=db.settings.theme;
+        const keepRange=db.settings.reportRange;
+        db.settings={...db.settings,...clone(serverData.settings),security:keepSec,theme:serverData.settings.theme||keepTheme,reportRange:keepRange};
+        if(Object.prototype.hasOwnProperty.call(serverData.settings,'logo'))db.settings.logo=serverData.settings.logo?clone(serverData.settings.logo):null;
+        db.settingsUpdatedAt=serverData.settingsUpdatedAt||new Date().toISOString();
+      }
+      if(!db.meta||typeof db.meta!=='object')db.meta={};
+      db.meta.tombstones=mergedTombs;
+      db.meta.counters=db.meta.counters||{};
+      for(const k of ['trip','subscriber','driver','vehicle','expense']){
+        db.meta.counters[k]=Math.max(Number(db.meta.counters[k])||0,Number(serverData.meta?.counters?.[k])||0);
+      }
+      db.meta.invoiceSeq=db.meta.invoiceSeq||{};
+      for(const [k,v] of Object.entries(serverData.meta?.invoiceSeq||{})){
+        db.meta.invoiceSeq[k]=Math.max(Number(db.meta.invoiceSeq[k])||0,Number(v)||0);
+      }
+      const sInfo=syncInfo();
+      if(revision>0)sInfo.serverRevision=Number(revision)||sInfo.serverRevision;
+      if(syncedAt)sInfo.lastServerSyncAt=syncedAt;
+      syncDriverStatuses();
+      if(db.settings.logo?.data)cacheLogoInWorker(db.settings.logo.data);
+      return true;
+    }
+    function updateCloudSyncChrome(){
+      const pill=$('#cloud-sync-pill'),icon=$('#cloud-sync-icon'),label=$('#cloud-sync-label');
+      if(!pill||!icon||!label)return;
+      const sInfo=syncInfo();
+      const online=navigator.onLine!==false;
+      const st=ui.cloudSync?.status||'idle';
+      pill.classList.remove('synced','pending','syncing','offline');
+      if(st==='syncing'){
+        pill.classList.add('syncing');
+        icon.className='fa-solid fa-arrows-rotate fa-spin';
+        label.textContent='در حال سینک…';
+        pill.title='در حال همگام‌سازی داده‌ها با سرور';
+      }else if(!online){
+        pill.classList.add('offline');
+        icon.className='fa-solid fa-cloud-bolt';
+        label.textContent=sInfo.dirty?'آفلاین · ذخیره در دستگاه':'حالت آفلاین';
+        pill.title='داده‌ها روی دستگاه ذخیره شده‌اند و به محض اتصال اینترنت با سرور سینک می‌شوند';
+      }else if(sInfo.dirty){
+        pill.classList.add('pending');
+        icon.className='fa-solid fa-cloud-arrow-up';
+        label.textContent='آمادهٔ سینک ابری';
+        pill.title='تغییرات جدید آمادهٔ ارسال خودکار به سرور است (برای سینک فوری کلیک کنید)';
+      }else{
+        pill.classList.add('synced');
+        icon.className='fa-solid fa-cloud';
+        label.textContent=sInfo.lastServerSyncAt?'همگام با سرور':'ذخیرهٔ آفلاین و ابری';
+        pill.title=sInfo.lastServerSyncAt?`آخرین سینک با سرور: ${isoToJalali(sInfo.lastServerSyncAt,true)}`:'همگام‌سازی خودکار با سرور فعال است';
+      }
+    }
+    function scheduleCloudSync(delayMs=1200){
+      if(!canCloudSync())return;
+      if(cloudSyncTimer)clearTimeout(cloudSyncTimer);
+      cloudSyncTimer=setTimeout(()=>{
+        cloudSyncTimer=null;
+        const runner=()=>{runCloudSync({manual:false}).catch(()=>{});};
+        if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(runner,{timeout:2500});
+        else runner();
+      },Math.max(50,Number(delayMs)||1000));
+    }
+    async function runCloudSync({manual=false,forcePush=false}={}){
+      if(!canCloudSync()){
+        if(manual)toast('همگام‌سازی ابری فقط پس از ورود به حساب آژانس روی سرور فعال است.','info');
+        return {ok:false,reason:'not_eligible'};
+      }
+      if(navigator.onLine===false&&!manual){
+        updateCloudSyncChrome();
+        return {ok:false,reason:'offline'};
+      }
+      if(cloudSyncInFlight)return cloudSyncInFlight;
+      cloudSyncInFlight=(async()=>{
+        if(!ui.cloudSync)ui.cloudSync={status:'idle',error:'',lastAttemptAt:''};
+        ui.cloudSync.status='syncing';
+        ui.cloudSync.lastAttemptAt=new Date().toISOString();
+        updateCloudSyncChrome();
+        try{
+          const sInfo=syncInfo();
+          const shouldPush=(sInfo.dirty||forcePush||(sInfo.serverRevision===0&&hasLocalAgencyData(db)))&&subscriptionWritable();
+          if(shouldPush){
+            const seqBefore=cloudMutationSeq;
+            const res=await apiFetch('/api/sync',{method:'POST',body:{base_revision:sInfo.serverRevision||0,data:buildCloudSyncPayload(db)}});
+            if(res&&res.data){
+              applyCloudPayloadToLocal(res.data,{revision:res.revision,syncedAt:res.synced_at||new Date().toISOString()});
+              if(cloudMutationSeq===seqBefore)syncInfo().dirty=false;
+              DB.save(db);
+            }
+            ui.cloudSync.status='idle';ui.cloudSync.error='';
+            updateCloudSyncChrome();
+            if(isStoreAccount()&&!ui.locked)renderApp();
+            if(manual)toast('تمام اطلاعات آژانس با سرور همگام‌سازی شد.');
+            if(syncInfo().dirty)scheduleCloudSync(1500);
+            return {ok:true,mode:'push',revision:res?.revision||0};
+          }
+          const qs=sInfo.serverRevision>0?`?since_revision=${encodeURIComponent(String(sInfo.serverRevision))}`:'';
+          const pulled=await apiFetch(`/api/sync${qs}`,{method:'GET'});
+          if(pulled&&pulled.empty&&hasLocalAgencyData(db)&&subscriptionWritable()){
+            cloudSyncInFlight=null;
+            return runCloudSync({manual,forcePush:true});
+          }
+          if(pulled&&!pulled.empty&&!pulled.unchanged&&pulled.data){
+            applyCloudPayloadToLocal(pulled.data,{revision:pulled.revision,syncedAt:pulled.synced_at||new Date().toISOString()});
+            DB.save(db);
+            if(isStoreAccount()&&!ui.locked)renderApp();
+          }else if(pulled&&pulled.synced_at){
+            syncInfo().lastServerSyncAt=pulled.synced_at;
+            if(pulled.revision)syncInfo().serverRevision=Number(pulled.revision)||syncInfo().serverRevision;
+            DB.save(db);
+          }
+          ui.cloudSync.status='idle';ui.cloudSync.error='';
+          updateCloudSyncChrome();
+          if(manual)toast(pulled?.unchanged?'اطلاعات این دستگاه با سرور کاملاً یکسان و به‌روز است.':'آخرین اطلاعات آژانس از سرور دریافت و همگام شد.');
+          return {ok:true,mode:'pull',revision:pulled?.revision||0};
+        }catch(error){
+          ui.cloudSync.status='error';
+          ui.cloudSync.error=error?.message||'خطا در ارتباط با سرور';
+          updateCloudSyncChrome();
+          if(manual)toast(error?.network?'سرور در دسترس نیست؛ داده‌ها به‌صورت آفلاین روی دستگاه محفوظ است.':(error?.message||'همگام‌سازی با سرور ناموفق بود.'),'error');
+          return {ok:false,error:ui.cloudSync.error};
+        }finally{
+          cloudSyncInFlight=null;
+        }
+      })();
+      return cloudSyncInFlight;
     }
     /* ---------- حل تضاد و ادغام دو پایگاه‌داده (همگام‌سازی فایلی) ---------- */
     function mergeDecision(current,record,strategy){
@@ -2166,44 +2400,50 @@
       return `<div class="table-wrap"><table class="data-table"><thead><tr><th>رویداد</th><th>اپراتور</th><th>رکورد</th><th>زمان</th></tr></thead><tbody>${rows.map(entry=>`<tr><td class="table-primary">${esc(entry.action)}${entry.detail?`<div class="small muted">${esc(entry.detail)}</div>`:''}</td><td>${esc(entry.operator||'—')}</td><td>${fmtNumber(entry.changed||0)}</td><td class="nowrap small">${esc(String(entry.at||'').slice(11,16))} · ${formatDate(String(entry.at||'').slice(0,10))}</td></tr>`).join('')}</tbody></table></div>`;
     }
     function pageSync(){
-      const info=syncInfo(),shift=currentShift(),cash=shiftCash(shift),activity=operatorActivity(),report=ui.syncReport;
+      const info=syncInfo(),shift=currentShift(),cash=shiftCash(shift),report=ui.syncReport;
+      const lastServer=info.lastServerSyncAt?isoToJalali(info.lastServerSyncAt,true):'هنوز انجام نشده';
       const lastExport=info.lastExportAt?`${formatDate(String(info.lastExportAt).slice(0,10))}`:'—';
       const lastMerge=info.lastMergeAt?`${formatDate(String(info.lastMergeAt).slice(0,10))}`:'—';
-      const admin=can('sync.manage');
-      return `${pageHeading('همگام‌سازی و اپراتورها','چند اپراتور روی این دستگاه کار می‌کنند؛ پنجره‌ها به‌صورت زنده هم‌گام می‌شوند و برای دستگاه دیگر بستهٔ همگام‌سازی بسازید.',admin?`<button class="btn btn-primary" data-action="sync-export"><i class="fa-solid fa-share-nodes"></i> ساخت بستهٔ همگام‌سازی</button>`:'')}<div class="grid grid-2">
-        <section class="card card-pad"><div class="card-head"><div><h2 class="card-title">وضعیت همگام‌سازی این دستگاه</h2><div class="card-hint">بدون سرور؛ ارتباط بین پنجره‌های همین مرورگر</div></div><span class="stat-icon"><i class="fa-solid fa-arrows-rotate"></i></span></div>
+      const online=navigator.onLine!==false;
+      const syncBadge=ui.cloudSync?.status==='syncing'?'<span class="badge blue">در حال همگام‌سازی…</span>':!online?'<span class="badge gold">آفلاین · ذخیره در دستگاه</span>':info.dirty?'<span class="badge gold">در نوبت ارسال خودکار</span>':'<span class="badge green">همگام با سرور</span>';
+      return `${pageHeading('همگام‌سازی ابری و آفلاین','اطلاعات آژانس هم‌زمان روی حافظهٔ آفلاین همین دستگاه و سرور ذخیره می‌شود و در هر فرصت اتصال، خودکار سینک می‌گردد.',`<div class="row wrap"><button class="btn btn-primary" data-action="cloud-sync-now"><i class="fa-solid fa-cloud-arrow-up"></i> همگام‌سازی فوری با سرور</button><button class="btn" data-action="sync-export"><i class="fa-solid fa-file-export"></i> خروجی بستهٔ محلی</button></div>`)}
+      <div class="grid grid-3" style="margin-bottom:15px">
+        ${statCard('وضعیت همگام‌سازی سرور',info.dirty?'تغییرات در صف ارسال':'به‌روز و یکپارچه',`آخرین سینک ابری: ${lastServer}`,'fa-cloud-arrow-up',info.dirty?'var(--orange)':'var(--green)',info.dirty?'var(--gold-soft)':'var(--green-soft)')}
+        ${statCard('نسخهٔ ابری سرور',`Rev ${fmtNumber(info.serverRevision||0)}`,online?'اتصال اینترنت برقرار است':'آفلاین — ثبت بدون وقفه ادامه دارد','fa-server','var(--blue)','var(--blue-soft)')}
+        ${statCard('حافظهٔ آفلاین دستگاه',`${fmtNumber(CLOUD_SYNC_COLLECTIONS.reduce((s,k)=>s+(db[k]?.length||0),0))} رکورد`,'IndexedDB + LocalStorage فعال','fa-hard-drive')}
+      </div>
+      <div class="grid grid-2">
+        <section class="card card-pad"><div class="card-head"><div><h2 class="card-title">همگام‌سازی خودکار سرور و دستگاه</h2><div class="card-hint">کارکرد بدون قطعی در حالت آفلاین و ارسال خودکار به سرور</div></div>${syncBadge}</div>
           <div id="sync-status" class="row wrap" style="gap:8px;margin-bottom:12px"></div>
+          <div class="info-box" style="margin-bottom:12px"><i class="fa-solid fa-shield-halved"></i><span>هر سفر، راننده، مشترک، پرداخت، لوگو یا تنظیماتی که ثبت می‌کنید بلافاصله به صورت <b>آفلاین</b> در دستگاه ذخیره می‌شود و هر زمان اینترنت برقرار باشد، خودکار با سرور سینک می‌گردد.</span></div>
           <div class="table-wrap"><table class="data-table"><tbody>
-            <tr><td>نام دستگاه</td><td>${esc(info.deviceName)}</td></tr>
+            <tr><td>آخرین سینک موفق با سرور</td><td><b>${esc(lastServer)}</b></td></tr>
+            <tr><td>نسخهٔ داده روی سرور</td><td class="ltr">Revision #${esc(String(info.serverRevision||0))}</td></tr>
+            <tr><td>وضعیت تغییرات محلی</td><td>${info.dirty?'<span class="badge gold">تغییر جدید در انتظار سینک</span>':'<span class="badge green">تمام تغییرات روی سرور ذخیره شده است</span>'}</td></tr>
+            <tr><td>نام این دستگاه</td><td>${esc(info.deviceName)}</td></tr>
             <tr><td>شناسهٔ دستگاه</td><td class="ltr">${esc(info.deviceId)}</td></tr>
-            <tr><td>همگام‌سازی زنده</td><td>${info.live?'<span class="badge green">فعال</span>':'<span class="badge gray">غیرفعال</span>'}</td></tr>
-            <tr><td>آخرین ساخت بسته</td><td>${esc(lastExport)}</td></tr>
-            <tr><td>آخرین ادغام</td><td>${esc(lastMerge)}</td></tr>
-            <tr><td>تغییرات ثبت‌شده</td><td>${fmtNumber(db.sync.log.length)}</td></tr>
           </tbody></table></div>
-          <div class="form-actions" style="margin-top:12px"><button class="btn btn-small" data-action="sync-refresh"><i class="fa-solid fa-rotate"></i> به‌روزرسانی از پنجرهٔ دیگر</button><button class="btn btn-small" data-action="sync-broadcast"><i class="fa-solid fa-tower-broadcast"></i> اعلام تغییرات</button></div>
-          ${admin?`<form data-form="sync-settings" class="stack" style="margin-top:14px;gap:10px"><div class="field" style="margin:0"><label for="sync-device-name">نام این دستگاه</label><input id="sync-device-name" name="deviceName" maxlength="60" value="${esc(info.deviceName)}"></div><label class="security-toggle"><input type="checkbox" name="live" ${info.live?'checked':''}><span><b>همگام‌سازی زنده</b><small>به‌روزرسانی خودکار از پنجره‌های دیگر همین مرورگر</small></span></label><button type="submit" class="btn btn-small btn-primary">ذخیرهٔ تنظیمات همگام‌سازی</button></form>`:''}
+          <div class="form-actions" style="margin-top:12px"><button class="btn btn-primary btn-small" data-action="cloud-sync-now"><i class="fa-solid fa-rotate"></i> همگام‌سازی فوری با سرور</button><button class="btn btn-small" data-action="sync-refresh"><i class="fa-solid fa-window-restore"></i> همگام‌سازی تب‌های مرورگر</button></div>
+          <form data-form="sync-settings" class="stack" style="margin-top:14px;gap:10px"><div class="field" style="margin:0"><label for="sync-device-name">نام نمایشی این دستگاه</label><input id="sync-device-name" name="deviceName" maxlength="60" value="${esc(info.deviceName)}"></div><label class="security-toggle"><input type="checkbox" name="live" ${info.live?'checked':''}><span><b>همگام‌سازی زنده بین تب‌ها</b><small>به‌روزرسانی خودکار بین پنجره‌های باز همین مرورگر</small></span></label><button type="submit" class="btn btn-small">ذخیرهٔ نام دستگاه</button></form>
         </section>
-        <section class="card card-pad"><div class="card-head"><div><h2 class="card-title">صندوق شیفت جاری</h2><div class="card-hint">${shift?`شیفت ${esc(shift.operatorName||'')} از ساعت ${esc(shift.startTime||'—')}`:'شیفتی باز نیست'}</div></div><span class="stat-icon"><i class="fa-solid fa-cash-register"></i></span></div>
-          ${statCard('مبلغ موردانتظار صندوق',money(cash.total),`${fmtNumber(cash.trips)} سفر تکمیل‌شده در شیفت`,'fa-coins')}
+        <section class="card card-pad"><div class="card-head"><div><h2 class="card-title">صندوق روزانه / شیفت کاری</h2><div class="card-hint">${shift?`شیفت فعال از ساعت ${esc(shift.startTime||'—')}`:'در حال حاضر شیفتی باز نیست'}</div></div><span class="stat-icon"><i class="fa-solid fa-cash-register"></i></span></div>
+          ${statCard('مبلغ موردانتظار صندوق',money(cash.total),`${fmtNumber(cash.trips)} سفر تکمیل‌شده در این نوبت`,'fa-coins')}
           <div class="table-wrap" style="margin-top:12px"><table class="data-table"><tbody>
             <tr><td>کمیسیون نقدی</td><td class="nowrap">${money(cash.commissionCash)}</td></tr>
             <tr><td>کرایهٔ کارتی</td><td class="nowrap">${money(cash.cardFare)}</td></tr>
             <tr><td>دریافت مشترکین</td><td class="nowrap">${money(cash.received)}</td></tr>
             <tr><td>پرداخت رانندگان / هزینه‌ها</td><td class="nowrap amount-negative">${money(cash.paidDrivers+cash.expenses)}</td></tr>
+            <tr><td>آخرین خروجی / ادغام فایل</td><td>${esc(lastExport)} / ${esc(lastMerge)}</td></tr>
           </tbody></table></div>
-          <div class="form-actions" style="margin-top:12px">${shift?`<button class="btn btn-primary btn-small" data-action="shift-close"><i class="fa-solid fa-lock"></i> بستن شیفت و تحویل صندوق</button>`:`<button class="btn btn-primary btn-small" data-action="shift"><i class="fa-solid fa-play"></i> شروع شیفت</button>`}</div>
+          <div class="form-actions" style="margin-top:12px">${shift?`<button class="btn btn-primary btn-small" data-action="shift-close"><i class="fa-solid fa-lock"></i> بستن نوبت و ثبت صندوق</button>`:`<button class="btn btn-primary btn-small" data-action="shift"><i class="fa-solid fa-play"></i> شروع نوبت صندوق</button>`}</div>
         </section>
       </div>
-      ${admin?`<section class="card card-pad" style="margin-top:15px"><div class="card-head"><div><h2 class="card-title">ادغام با دستگاه دیگر (همگام‌سازی فایلی)</h2><div class="card-hint">بستهٔ ساخته‌شده را در دستگاه/دفتر دیگر باز کنید و همان‌جا ادغام کنید</div></div><span class="stat-icon"><i class="fa-solid fa-code-merge"></i></span></div>
-        <div class="grid grid-2"><div><div class="field"><label for="sync-file">انتخاب فایل بستهٔ همگام‌سازی (JSON)</label><input type="file" id="sync-file" accept=".json,application/json"></div><div class="info-box"><i class="fa-solid fa-circle-info"></i><span>حتماً پیش از ادغام، بسته را بررسی کنید: پیش‌نمایش تعداد رکوردهای تازه، به‌روزرسانی‌ها و تضادها نمایش داده می‌شود و پیش از اعمال، عکس فوری ساخته می‌شود.</span></div></div>
-        <div><div class="card-title" style="font-size:13px">آخرین گزارش ادغام</div><div class="small muted" style="margin-bottom:8px">${report?`از ${esc(report.source)} · ${fmtNumber(report.added)} افزوده · ${fmtNumber(report.updated)} به‌روزشده · ${fmtNumber(report.conflicts)} تضاد · ${syncStrategyLabel(report.strategy)}`:'هنوز ادغامی انجام نشده است.'}</div>${report?summaryRows(report,{preview:true}):''}</div></div>
-      </section>`:''}
-      <section class="card card-pad" style="margin-top:15px"><div class="card-head"><div><h2 class="card-title">عملکرد اپراتورها</h2><div class="card-hint">۳۰ روز گذشته بر پایهٔ سفرها، پرداخت‌ها و هزینه‌های ثبت‌شده</div></div><span class="stat-icon"><i class="fa-solid fa-users-gear"></i></span></div>
-        <div class="table-wrap"><table class="data-table"><thead><tr><th>اپراتور</th><th>نقش</th><th>سفر ثبت‌شده</th><th>تکمیل‌شده</th><th>کرایه</th><th>کمیسیون</th><th>دریافتی مشترکین</th><th>صندوق تخمینی</th><th>آخرین فعالیت</th></tr></thead><tbody>${activity.map(row=>`<tr><td class="table-primary">${esc(row.operator.name)}${row.operator.id===getOperator().id?' <span class="badge gold">شما</span>':''}</td><td>${esc(roleOf(row.operator))}</td><td>${fmtNumber(row.trips)}</td><td>${fmtNumber(row.completed)}</td><td>${money(row.fare)}</td><td>${money(row.commission)}</td><td>${money(row.collected)}</td><td class="${row.cash>=0?'amount-positive':'amount-negative'}">${money(row.cash)}</td><td class="nowrap small">${row.lastActivity?`${esc(String(row.lastActivity).slice(11,16))} · ${formatDate(String(row.lastActivity).slice(0,10))}`:'—'}</td></tr>`).join('')}</tbody></table></div>
+      <section class="card card-pad" style="margin-top:15px"><div class="card-head"><div><h2 class="card-title">ادغام آفلاین با فایل JSON</h2><div class="card-hint">در صورت نبود اینترنت برای مدت طولانی، می‌توانید فایل بستهٔ همگام‌سازی را دستی نیز ادغام کنید</div></div><span class="stat-icon"><i class="fa-solid fa-code-merge"></i></span></div>
+        <div class="grid grid-2"><div><div class="field"><label for="sync-file">انتخاب فایل بستهٔ همگام‌سازی (JSON)</label><input type="file" id="sync-file" accept=".json,application/json"></div><div class="info-box"><i class="fa-solid fa-circle-info"></i><span>پیش از ادغام فایل، پیش‌نمایش تعداد رکوردهای تازه و به‌روزرسانی‌ها نمایش داده می‌شود و یک عکس فوری ایمنی ساخته می‌شود.</span></div></div>
+        <div><div class="card-title" style="font-size:13px">آخرین گزارش ادغام فایلی</div><div class="small muted" style="margin-bottom:8px">${report?`از ${esc(report.source)} · ${fmtNumber(report.added)} افزوده · ${fmtNumber(report.updated)} به‌روزشده · ${fmtNumber(report.conflicts)} تضاد · ${syncStrategyLabel(report.strategy)}`:'هنوز ادغام فایلی انجام نشده است.'}</div>${report?summaryRows(report,{preview:true}):''}</div></div>
       </section>
-      <section class="card card-pad" style="margin-top:15px"><div class="card-head"><div><h2 class="card-title">شیفت‌ها و تحویل صندوق</h2><div class="card-hint">اختلاف = مبلغ شمارش‌شده − مبلغ موردانتظار</div></div></div>${shiftsTable()}</section>
-      ${admin?`<section class="card card-pad" style="margin-top:15px"><div class="card-head"><div><h2 class="card-title">گزارش تغییرات محلی</h2><div class="card-hint">هر ذخیره‌سازی با نام اپراتور و تعداد رکوردهای تغییر‌یافته</div></div></div>${syncLogRows()}</section>`:''}`;
+      <section class="card card-pad" style="margin-top:15px"><div class="card-head"><div><h2 class="card-title">تاریخچه نوبت‌های صندوق</h2><div class="card-hint">اختلاف = مبلغ شمارش‌شده − مبلغ موردانتظار</div></div></div>${shiftsTable()}</section>
+      <section class="card card-pad" style="margin-top:15px"><div class="card-head"><div><h2 class="card-title">گزارش تغییرات اخیر</h2><div class="card-hint">فهرست آخرین عملیات ذخیره‌شده</div></div></div>${syncLogRows()}</section>`;
     }
     function handleSyncForm(form,kind,fd,val){
       if(kind==='sync-settings'){
@@ -2312,15 +2552,15 @@
     /* ═══════════════ فاز ۷: احراز هویت سرور، اشتراک آفلاین‌محور و پنل مدیریت کل ═══════════════ */
     const READONLY_ALLOWED_ACTIONS=new Set([
       'toggle-sidebar','theme','quick-search','quick-open','skip-to-content','close-modal',
-      'operator-menu','select-operator','lock-now','pin-key','lock-pick','lock-back','lock-switch','lock-recover','lock-export','lock-reset','lock-code-done',
+      'lock-now','pin-key','lock-back','lock-recover','lock-export','lock-reset','lock-code-done',
       'backup','backup-encrypted','export-trips','export-accounting','export-range','export-year','sync-export','snapshot-download','mirror-download',
-      'print-trip','subscriber-invoice','driver-statement','reprint-invoice','print-settlement','print-mode','print-document',
+      'print-trip','subscriber-invoice','driver-statement','reprint-invoice','print-settlement','print-mode','print-document','preview-logo-invoice',
       'trip-page','range-preset','calendar-toggle','calendar-month','choose-date','calendar-today','calendar-close',
       'show-audit','copy-text','sms-preview','install','dismiss-install','update-pwa','clear-cache',
-      'account-menu','auth-refresh','auth-logout','auth-logout-now','goto-backup'
+      'account-menu','auth-refresh','auth-logout','auth-logout-now','goto-backup','cloud-sync-now'
     ]);
-    const READONLY_ALLOWED_FORMS=new Set(['encrypted-backup','operator-pin','report-range','auth-login']);
-    let cachedCsrfToken='',authLoginError='',authLoginBusy=false;
+    const READONLY_ALLOWED_FORMS=new Set(['encrypted-backup','report-range','auth-login']);
+    let cachedCsrfToken='',authLoginError='',authLoginBusy=false,authRefreshBusy=false;
     const mgr={tab:'dashboard',loading:false,error:'',dashboard:null,stores:[],storeFilter:'active',storeQuery:'',subscribers:[],subFilter:'',subQuery:'',plans:[],orders:[],orderFilter:'',coupons:[],managers:[],audit:[],auditAction:'',auditQuery:''};
     function readCookie(name){
       try{
@@ -2337,19 +2577,22 @@
       }catch(_){}
       return cachedCsrfToken;
     }
-    async function apiFetch(path,{method='GET',body=null,_retried=false}={}){
+    async function apiFetch(path,{method='GET',body=null,noStore=false,_retried=false}={}){
       const cleanPath=String(path||'');
       if(!cleanPath.startsWith('/api/'))throw new Error('مسیر API معتبر نیست.');
       const upper=String(method||'GET').toUpperCase();
       if(!['GET','HEAD'].includes(upper))await ensureCsrfToken(false);
       const headers={'Accept':'application/json','X-Requested-With':'XMLHttpRequest'};
+      if(noStore){headers['Cache-Control']='no-cache, no-store';headers['Pragma']='no-cache';}
       const xsrf=readCookie('XSRF-TOKEN');
       if(xsrf)headers['X-XSRF-TOKEN']=xsrf;
       if(cachedCsrfToken)headers['X-CSRF-TOKEN']=cachedCsrfToken;
       if(body!==null)headers['Content-Type']='application/json';
       let res;
       try{
-        res=await fetch(cleanPath,{method:upper,headers,body:body!==null?JSON.stringify(body):undefined,credentials:'same-origin'});
+        const fetchOpts={method:upper,headers,body:body!==null?JSON.stringify(body):undefined,credentials:'same-origin'};
+        if(noStore)fetchOpts.cache='no-store';
+        res=await fetch(cleanPath,fetchOpts);
       }catch(_){
         const netErr=new Error('اتصال به سرور برقرار نشد.');
         netErr.network=true;
@@ -2357,7 +2600,7 @@
       }
       if(res.status===419&&!_retried){
         await ensureCsrfToken(true);
-        return apiFetch(cleanPath,{method:upper,body,_retried:true});
+        return apiFetch(cleanPath,{method:upper,body,noStore,_retried:true});
       }
       const data=await res.json().catch(()=>({}));
       if(!res.ok){
@@ -2482,17 +2725,85 @@
       renderAuthGate();
       if(isStoreAccount())renderApp();
     }
+    function subscriptionCountdownParts(info=subscriptionInfo()){
+      if(!info||info.isLifetime){
+        return {mode:'lifetime',totalMs:Infinity,days:null,hours:0,minutes:0,seconds:0,percent:100};
+      }
+      const expMs=Date.parse(info.expiresAt||'');
+      if(!Number.isFinite(expMs)||!info.writable){
+        return {mode:'expired',totalMs:0,days:0,hours:0,minutes:0,seconds:0,percent:0};
+      }
+      const offset=Number(accountState?.serverOffsetMs)||0;
+      const liveNow=Date.now()+offset;
+      const effectiveNow=info.clockRolledBack?Math.max(liveNow,Number(accountState?.maxSeenAt)||0):liveNow;
+      const remainMs=Math.max(0,expMs-effectiveNow);
+      if(remainMs<=0){
+        return {mode:'expired',totalMs:0,days:0,hours:0,minutes:0,seconds:0,percent:0};
+      }
+      const days=Math.floor(remainMs/86400000);
+      const hours=Math.floor((remainMs%86400000)/3600000);
+      const minutes=Math.floor((remainMs%3600000)/60000);
+      const seconds=Math.floor((remainMs%60000)/1000);
+      const lic=accountState?.user?.store?.license||null;
+      const startMs=Date.parse(lic?.starts_at||'');
+      const spanMs=(Number.isFinite(startMs)&&expMs>startMs)?(expMs-startMs):(365*86400000);
+      const percent=Math.max(2,Math.min(100,Math.round((remainMs/Math.max(86400000,spanMs))*100)));
+      return {mode:days<=7?'warn':'active',totalMs:remainMs,days,hours,minutes,seconds,percent};
+    }
+    function subscriptionCountdownHtml(info=subscriptionInfo()){
+      const cd=subscriptionCountdownParts(info);
+      if(cd.mode==='lifetime'){
+        return `<div class="countdown-box is-lifetime" id="sub-countdown-box"><div class="countdown-head"><strong><i class="fa-solid fa-infinity text-gold"></i> روزشمار اعتبار اشتراک</strong><span class="badge green">اشتراک مادام‌العمر · بدون محدودیت زمانی</span></div><div class="countdown-bar"><span style="width:100%"></span></div></div>`;
+      }
+      const barCls=cd.mode==='expired'?'danger':cd.mode==='warn'?'warn':'';
+      return `<div class="countdown-box ${cd.mode==='expired'?'is-expired':''}" id="sub-countdown-box">
+        <div class="countdown-head">
+          <strong><i class="fa-solid fa-hourglass-half text-gold"></i> روزشمار ماندهٔ اعتبار اشتراک</strong>
+          <span class="small muted">سررسید دقیق: <b>${esc(isoToJalali(info.expiresAt,true))}</b></span>
+        </div>
+        <div class="countdown-grid" role="timer" aria-label="روزشمار مانده اعتبار اشتراک">
+          <div class="countdown-unit"><span class="countdown-value" id="cd-days">${fmtNumber(cd.days)}</span><span class="countdown-label">روز مانده</span></div>
+          <div class="countdown-unit"><span class="countdown-value" id="cd-hours">${toPersian(pad2(cd.hours))}</span><span class="countdown-label">ساعت</span></div>
+          <div class="countdown-unit"><span class="countdown-value" id="cd-minutes">${toPersian(pad2(cd.minutes))}</span><span class="countdown-label">دقیقه</span></div>
+          <div class="countdown-unit"><span class="countdown-value" id="cd-seconds">${toPersian(pad2(cd.seconds))}</span><span class="countdown-label">ثانیه</span></div>
+        </div>
+        <div class="countdown-bar ${barCls}"><span id="cd-bar" style="width:${cd.percent}%"></span></div>
+      </div>`;
+    }
+    function tickSubscriptionCountdown(){
+      const box=$('#sub-countdown-box');
+      if(!box||!isStoreAccount())return;
+      const info=subscriptionInfo();
+      const cd=subscriptionCountdownParts(info);
+      if(cd.mode==='lifetime')return;
+      const d=$('#cd-days',box),h=$('#cd-hours',box),m=$('#cd-minutes',box),s=$('#cd-seconds',box),b=$('#cd-bar',box);
+      if(d)d.textContent=fmtNumber(cd.days);
+      if(h)h.textContent=toPersian(pad2(cd.hours));
+      if(m)m.textContent=toPersian(pad2(cd.minutes));
+      if(s)s.textContent=toPersian(pad2(cd.seconds));
+      if(b)b.style.width=`${cd.percent}%`;
+      box.classList.toggle('is-expired',cd.mode==='expired');
+    }
+    function renewalResultHtml(){
+      const r=ui.renewalCheckResult;
+      if(!r)return '';
+      return `<div class="renewal-result ${esc(r.type)}" id="renewal-check-result" role="status"><i class="fa-solid ${esc(r.icon||'fa-circle-info')}"></i><div><strong>${esc(r.title)}</strong><div>${esc(r.detail)}</div><div class="small muted" style="margin-top:2px">زمان استعلام آنلاین از سرور: ${esc(isoToJalali(r.checkedAt,true))}</div></div></div>`;
+    }
     function updateSubscriptionChrome(){
       const info=subscriptionInfo();
       const pill=$('#account-pill'),dot=$('#account-dot'),label=$('#account-label');
       if(pill&&dot&&label){
         dot.className=`sub-dot ${info.badgeClass==='red'?'danger':info.badgeClass==='gold'?'warn':''}`;
-        label.textContent=info.label;
+        label.textContent=info.userName?`${info.userName} · ${info.label}`:info.label;
         pill.title=`${info.agencyName||''} · ${info.planName||''} · ${info.label}`;
       }
+      const sbName=$('#sidebar-user-name'),sbEmail=$('#sidebar-user-email');
+      if(sbName)sbName.textContent=info.agencyName||info.userName||'حساب آژانس';
+      if(sbEmail)sbEmail.textContent=info.userEmail||'—';
       document.body.classList.toggle('is-readonly',isStoreAccount()&&!info.writable);
       const ver=$('#sidebar-version');
       if(ver)ver.textContent=`نسخه ${toPersian(APP_VERSION)}`;
+      updateCloudSyncChrome();
     }
     function applyReadonlyLocks(root=document){
       const ro=isStoreAccount()&&!subscriptionWritable();
@@ -2507,21 +2818,25 @@
       if(!isStoreAccount())return '';
       const info=subscriptionInfo();
       if(!info.writable){
-        return `<div class="sub-banner" id="subscription-banner" role="status"><div class="sub-banner-main"><i class="fa-solid fa-lock"></i><div><strong>حالت فقط‌خواندنی و پشتیبان‌گیری (${esc(info.label)})</strong><div>${esc(info.message)}</div></div></div><div class="row wrap"><button class="btn btn-small" data-action="auth-refresh"><i class="fa-solid fa-rotate"></i> بررسی تمدید</button><button class="btn btn-small btn-primary" data-action="backup"><i class="fa-solid fa-download"></i> دریافت پشتیبان JSON</button></div></div>`;
+        return `<div class="sub-banner" id="subscription-banner" role="status"><div class="sub-banner-main"><i class="fa-solid fa-lock"></i><div><strong>حالت فقط‌خواندنی و پشتیبان‌گیری (${esc(info.label)})</strong><div>${esc(info.message)}</div></div></div><div class="row wrap"><button class="btn btn-small btn-primary" data-action="auth-refresh" ${authRefreshBusy?'disabled':''}><i class="fa-solid ${authRefreshBusy?'fa-spinner fa-spin':'fa-rotate'}"></i> ${authRefreshBusy?'در حال استعلام…':'بررسی تمدید'}</button><button class="btn btn-small" data-action="backup"><i class="fa-solid fa-download"></i> دریافت پشتیبان JSON</button></div></div>`;
       }
       if(info.expiringSoon){
-        return `<div class="sub-banner warn" id="subscription-banner" role="status"><div class="sub-banner-main"><i class="fa-solid fa-hourglass-half"></i><div><strong>یادآور تمدید اشتراک (${esc(info.planName)})</strong><div>${esc(info.message)}</div></div></div><div class="row wrap"><button class="btn btn-small" data-action="auth-refresh"><i class="fa-solid fa-rotate"></i> بروزرسانی وضعیت</button></div></div>`;
+        return `<div class="sub-banner warn" id="subscription-banner" role="status"><div class="sub-banner-main"><i class="fa-solid fa-hourglass-half"></i><div><strong>یادآور تمدید اشتراک (${esc(info.planName)})</strong><div>${esc(info.message)}</div></div></div><div class="row wrap"><button class="btn btn-small" data-action="auth-refresh" ${authRefreshBusy?'disabled':''}><i class="fa-solid ${authRefreshBusy?'fa-spinner fa-spin':'fa-rotate'}"></i> بررسی تمدید</button></div></div>`;
       }
       return '';
     }
     function subscriptionSettingsCard(){
       if(!isStoreAccount())return '';
       const info=subscriptionInfo();
-      return `<section class="card card-pad" style="margin-bottom:16px" id="subscription-settings-card"><div class="card-head"><div><h2 class="card-title"><i class="fa-solid fa-id-badge text-gold"></i> حساب کاربری و اشتراک آژانس</h2><div class="card-hint">احراز هویت سرور با عملکرد آفلاین داده‌های عملیاتی روی همین دستگاه</div></div><span class="badge ${info.badgeClass}">${esc(info.label)}</span></div><div class="grid grid-4" style="margin-bottom:13px"><div class="onboarding-step"><div class="small muted">آژانس و کاربر</div><strong>${esc(info.agencyName)}</strong><div class="small muted ltr">${esc(info.userEmail||'—')}</div></div><div class="onboarding-step"><div class="small muted">پلن اشتراک</div><strong>${esc(info.planName)}</strong><div class="small muted">${info.maxUsers?`سقف کاربران: ${fmtNumber(info.activeUsers)} از ${fmtNumber(info.maxUsers)}`:'بدون محدودیت کاربر'}</div></div><div class="onboarding-step"><div class="small muted">اعتبار اشتراک</div><strong>${info.isLifetime?'مادام‌العمر':info.daysRemaining?`${fmtNumber(info.daysRemaining)} روز مانده`:'پایان‌یافته'}</strong><div class="small muted">سررسید: ${esc(info.expiresJalali)}</div></div><div class="onboarding-step"><div class="small muted">آخرین بررسی آنلاین</div><strong>${esc(info.lastVerifiedLabel)}</strong><div class="small muted">${navigator.onLine?'آنلاین':'آفلاین · معتبر از حافظهٔ دستگاه'}</div></div></div>${!info.writable?`<div class="info-box danger-box" style="margin-bottom:12px"><i class="fa-solid fa-lock"></i><span>${esc(info.message)}</span></div>`:''}<div class="row wrap"><button type="button" class="btn btn-primary btn-small" data-action="auth-refresh"><i class="fa-solid fa-rotate"></i> بررسی آنلاین وضعیت اشتراک</button><button type="button" class="btn btn-small" data-action="backup"><i class="fa-solid fa-download"></i> دانلود پشتیبان داده‌ها</button><button type="button" class="btn btn-danger btn-small" data-action="auth-logout"><i class="fa-solid fa-right-from-bracket"></i> خروج از حساب کاربری</button></div></section>`;
+      const sInfo=syncInfo();
+      const lastSyncLabel=sInfo.lastServerSyncAt?isoToJalali(sInfo.lastServerSyncAt,true):'در نوبت سینک خودکار';
+      return `<section class="card card-pad" style="margin-bottom:16px" id="subscription-settings-card"><div class="card-head"><div><h2 class="card-title"><i class="fa-solid fa-id-badge text-gold"></i> حساب کاربری، اشتراک و همگام‌سازی ابری</h2><div class="card-hint">استعلام آنلاین تمدید اشتراک، روزشمار اعتبار باقی‌مانده و وضعیت سینک سرور</div></div><span class="badge ${info.badgeClass}">${esc(info.label)}</span></div>${renewalResultHtml()}${subscriptionCountdownHtml(info)}<div class="grid grid-4" style="margin-bottom:13px"><div class="onboarding-step"><div class="small muted">آژانس و کاربر</div><strong>${esc(info.agencyName)}</strong><div class="small muted ltr">${esc(info.userEmail||'—')}</div></div><div class="onboarding-step"><div class="small muted">پلن اشتراک</div><strong>${esc(info.planName)}</strong><div class="small muted">حالت تک‌کاربره اختصاصی</div></div><div class="onboarding-step"><div class="small muted">همگام‌سازی ابری سرور</div><strong>${sInfo.dirty?'در انتظار ارسال':sInfo.lastServerSyncAt?'همگام با سرور':'آمادهٔ اتصال'}</strong><div class="small muted">آخرین سینک: ${esc(lastSyncLabel)}</div></div><div class="onboarding-step"><div class="small muted">آخرین استعلام اشتراک</div><strong>${esc(info.lastVerifiedLabel)}</strong><div class="small muted">${navigator.onLine?'آنلاین':'آفلاین · معتبر از حافظهٔ دستگاه'}</div></div></div>${!info.writable?`<div class="info-box danger-box" style="margin-bottom:12px"><i class="fa-solid fa-lock"></i><span>${esc(info.message)}</span></div>`:''}<div class="row wrap"><button type="button" class="btn btn-primary btn-small" data-action="auth-refresh" ${authRefreshBusy?'disabled':''}><i class="fa-solid ${authRefreshBusy?'fa-spinner fa-spin':'fa-rotate'}"></i> ${authRefreshBusy?'در حال استعلام از سرور…':'بررسی تمدید اشتراک'}</button><button type="button" class="btn btn-small" data-action="cloud-sync-now"><i class="fa-solid fa-cloud-arrow-up"></i> همگام‌سازی فوری با سرور</button><button type="button" class="btn btn-small" data-action="backup"><i class="fa-solid fa-download"></i> دانلود پشتیبان داده‌ها</button><button type="button" class="btn btn-danger btn-small" data-action="auth-logout"><i class="fa-solid fa-right-from-bracket"></i> خروج از حساب کاربری</button></div></section>`;
     }
     function openAccountModal(){
       const info=subscriptionInfo();
-      openModal('وضعیت حساب و اشتراک آژانس',`<div class="between" style="margin-bottom:12px"><div><strong>${esc(info.agencyName)}</strong><div class="small muted ltr">${esc(info.userEmail)}</div></div><span class="badge ${info.badgeClass}">${esc(info.label)}</span></div><div class="grid grid-2" style="margin-bottom:12px"><div class="onboarding-step"><div class="small muted">پلن فعال</div><strong>${esc(info.planName)}</strong></div><div class="onboarding-step"><div class="small muted">سررسید اعتبار</div><strong>${esc(info.expiresJalali)}</strong>${info.daysRemaining?`<div class="small muted">${fmtNumber(info.daysRemaining)} روز باقی‌مانده</div>`:''}</div></div>${info.message?`<div class="info-box ${info.writable?'warn-box':'danger-box'}" style="margin-bottom:12px"><i class="fa-solid ${info.writable?'fa-clock':'fa-lock'}"></i><span>${esc(info.message)}</span></div>`:'<div class="info-box" style="margin-bottom:12px"><i class="fa-solid fa-shield-halved"></i><span>برنامه پس از ورود بدون نیاز به اینترنت کار می‌کند و سفرها و حسابداری فقط در حافظهٔ همین مرورگر ذخیره می‌شوند.</span></div>'}<div class="small muted" style="margin-bottom:14px">آخرین همگام‌سازی وضعیت اشتراک: <b>${esc(info.lastVerifiedLabel)}</b></div><div class="form-actions"><button type="button" class="btn" data-action="close-modal">بستن</button><button type="button" class="btn" data-action="goto-backup"><i class="fa-solid fa-box-archive"></i> پشتیبان‌گیری</button><button type="button" class="btn btn-primary" data-action="auth-refresh"><i class="fa-solid fa-rotate"></i> بررسی آنلاین اشتراک</button><button type="button" class="btn btn-danger" data-action="auth-logout"><i class="fa-solid fa-right-from-bracket"></i> خروج</button></div>`);
+      const cd=subscriptionCountdownParts(info);
+      const remainText=info.isLifetime?'مادام‌العمر':info.writable?`${fmtNumber(cd.days)} روز و ${fmtNumber(cd.hours)} ساعت مانده`:'پایان‌یافته (نیازمند تمدید)';
+      openModal('حساب کاربری و وضعیت اشتراک',`<div class="between" style="margin-bottom:12px"><div><strong>${esc(info.agencyName)}</strong><div class="small muted ltr">${esc(info.userEmail)}</div></div><span class="badge ${info.badgeClass}">${esc(info.label)}</span></div>${renewalResultHtml()}<div class="grid grid-2" style="margin-bottom:12px"><div class="onboarding-step"><div class="small muted">پلن فعال</div><strong>${esc(info.planName)}</strong><div class="small muted">${esc(remainText)}</div></div><div class="onboarding-step"><div class="small muted">سررسید اعتبار</div><strong>${esc(info.expiresJalali)}</strong><div class="small muted">آخرین استعلام: ${esc(info.lastVerifiedLabel)}</div></div></div>${info.message?`<div class="info-box ${info.writable?'warn-box':'danger-box'}" style="margin-bottom:12px"><i class="fa-solid ${info.writable?'fa-clock':'fa-lock'}"></i><span>${esc(info.message)}</span></div>`:'<div class="info-box" style="margin-bottom:12px"><i class="fa-solid fa-cloud-arrow-up"></i><span>داده‌های آژانس هم به‌صورت آفلاین روی این دستگاه و هم روی سرور ذخیره و خودکار سینک می‌شوند.</span></div>'}<div class="form-actions"><button type="button" class="btn" data-action="close-modal">بستن</button><button type="button" class="btn" data-action="cloud-sync-now"><i class="fa-solid fa-cloud-arrow-up"></i> سینک با سرور</button><button type="button" class="btn btn-primary" data-action="auth-refresh" ${authRefreshBusy?'disabled':''}><i class="fa-solid ${authRefreshBusy?'fa-spinner fa-spin':'fa-rotate'}"></i> بررسی تمدید</button><button type="button" class="btn btn-danger" data-action="auth-logout"><i class="fa-solid fa-right-from-bracket"></i> خروج از حساب</button></div>`);
     }
     function renderLoginScreen(){
       const root=$('#account-root');
@@ -2529,7 +2844,7 @@
       document.body.classList.add('is-gated');
       document.body.classList.remove('is-locked','is-readonly');
       $('#lock-root').replaceChildren();
-      root.innerHTML=`<div class="auth-screen"><section class="auth-card" role="dialog" aria-labelledby="auth-login-title"><div class="auth-brand"><div class="brand-icon">${defaultMark()}</div><div><h1 id="auth-login-title">ورود به تاکسی کارن</h1><p>سامانه اشتراکی و آفلاین‌محور مدیریت آژانس تاکسی تلفنی</p></div></div>${authLoginError?`<div class="info-box danger-box" style="margin-bottom:13px" id="auth-login-error"><i class="fa-solid fa-circle-exclamation"></i><span>${esc(authLoginError)}</span></div>`:''}<form data-form="auth-login" id="auth-login-form"><div class="field"><label for="auth-email">ایمیل حساب کاربری *</label><input id="auth-email" name="email" type="email" dir="ltr" required autocomplete="username" placeholder="agency@example.com" ${authLoginBusy?'disabled':''}></div><div class="field"><label for="auth-password">رمز عبور *</label><input id="auth-password" name="password" type="password" dir="ltr" required autocomplete="current-password" placeholder="••••••••" ${authLoginBusy?'disabled':''}></div><label class="row small" style="margin:10px 0 14px;cursor:pointer"><input type="checkbox" name="remember" checked> <span>حفظ نشست برای استفادهٔ آفلاین روی این دستگاه</span></label><button type="submit" class="btn btn-primary btn-block" ${authLoginBusy?'disabled':''}><i class="fa-solid ${authLoginBusy?'fa-spinner fa-spin':'fa-right-to-bracket'}"></i> ${authLoginBusy?'در حال بررسی حساب…':'ورود به سامانه'}</button></form><div class="info-box" style="margin-top:14px"><i class="fa-solid fa-wifi"></i><span>پس از یک بار ورود آنلاین، تاکسی کارن کاملاً <b>آفلاین</b> کار می‌کند و تمام سفرها، رانندگان و حساب‌ها فقط روی همین دستگاه ذخیره می‌شوند.</span></div><div class="auth-foot"><span>ساخت و تمدید اشتراک آژانس‌ها توسط مدیریت سامانه انجام می‌شود.</span><button type="button" class="icon-button" data-action="theme" title="تغییر پوسته" style="width:32px;height:32px"><i class="fa-solid fa-sun"></i></button></div></section></div>`;
+      root.innerHTML=`<div class="auth-screen"><section class="auth-card" role="dialog" aria-labelledby="auth-login-title"><div class="auth-brand"><div class="brand-icon">${defaultMark()}</div><div><h1 id="auth-login-title">ورود به تاکسی کارن</h1><p>سامانه اشتراکی، آفلاین و ابری مدیریت آژانس تاکسی تلفنی</p></div></div>${authLoginError?`<div class="info-box danger-box" style="margin-bottom:13px" id="auth-login-error"><i class="fa-solid fa-circle-exclamation"></i><span>${esc(authLoginError)}</span></div>`:''}<form data-form="auth-login" id="auth-login-form"><div class="field"><label for="auth-email">ایمیل حساب کاربری *</label><input id="auth-email" name="email" type="email" dir="ltr" required autocomplete="username" placeholder="agency@example.com" ${authLoginBusy?'disabled':''}></div><div class="field"><label for="auth-password">رمز عبور *</label><input id="auth-password" name="password" type="password" dir="ltr" required autocomplete="current-password" placeholder="••••••••" ${authLoginBusy?'disabled':''}></div><label class="row small" style="margin:10px 0 14px;cursor:pointer"><input type="checkbox" name="remember" checked> <span>حفظ نشست برای استفادهٔ آفلاین روی این دستگاه</span></label><button type="submit" class="btn btn-primary btn-block" ${authLoginBusy?'disabled':''}><i class="fa-solid ${authLoginBusy?'fa-spinner fa-spin':'fa-right-to-bracket'}"></i> ${authLoginBusy?'در حال بررسی حساب…':'ورود به سامانه'}</button></form><div class="info-box" style="margin-top:14px"><i class="fa-solid fa-cloud-arrow-up"></i><span>پس از ورود، اطلاعات شما هم به‌صورت <b>آفلاین</b> در دستگاه کار می‌کند و هم در هر فرصت اتصال، به‌صورت خودکار با سرور سینک می‌شود.</span></div><div class="auth-foot"><span>ساخت و تمدید اشتراک آژانس‌ها توسط مدیریت سامانه انجام می‌شود.</span><button type="button" class="icon-button" data-action="theme" title="تغییر پوسته" style="width:32px;height:32px"><i class="fa-solid fa-sun"></i></button></div></section></div>`;
       setTheme();
     }
     async function accountLogin(email,password,remember=true){
@@ -2538,9 +2853,12 @@
         const data=await apiFetch('/api/login',{method:'POST',body:{email:String(email||'').trim().toLowerCase(),password:String(password||''),remember:!!remember}});
         if(!data||!data.user)throw new Error('پاسخ سرور معتبر نیست.');
         const nowIso=new Date().toISOString();
-        authLoginBusy=false;authLoginError='';
-        setAccountStateForApp({user:data.user,loggedInAt:nowIso,lastVerifiedAt:nowIso,maxSeenAt:Date.now()},{seedAgency:true});
+        const serverMs=Date.parse(data.server_time||'');
+        const serverOffsetMs=Number.isFinite(serverMs)?(serverMs-Date.now()):0;
+        authLoginBusy=false;authLoginError='';ui.renewalCheckResult=null;
+        setAccountStateForApp({user:data.user,loggedInAt:nowIso,lastVerifiedAt:nowIso,maxSeenAt:Date.now(),serverOffsetMs},{seedAgency:true});
         toast(`خوش آمدید، ${data.user.name||data.user.email}`);
+        if(canCloudSync())runCloudSync({manual:false}).catch(()=>{});
         return data.user;
       }catch(error){
         authLoginBusy=false;
@@ -2551,8 +2869,15 @@
     }
     async function refreshAccount({manual=false}={}){
       if(!accountAuthenticated())return null;
+      const before=isStoreAccount()?subscriptionInfo():null;
+      if(manual){
+        authRefreshBusy=true;
+        if(isStoreAccount())renderApp();
+      }
       try{
-        const data=await apiFetch('/api/me',{method:'GET'});
+        const path=manual?`/api/me?_t=${Date.now()}`:'/api/me';
+        const data=await apiFetch(path,{method:'GET',noStore:true});
+        authRefreshBusy=false;
         if(!data||!data.user)return null;
         if(data.user.is_active===false){
           authLoginError='این حساب کاربری غیرفعال شده است. اطلاعات آفلاین شما روی دستگاه محفوظ است.';
@@ -2560,31 +2885,83 @@
           return null;
         }
         const nowIso=new Date().toISOString();
-        const next={...accountState,user:data.user,lastVerifiedAt:nowIso,maxSeenAt:Math.max(Number(accountState?.maxSeenAt)||0,Date.now())};
+        const serverMs=Date.parse(data.server_time||'');
+        const serverOffsetMs=Number.isFinite(serverMs)?(serverMs-Date.now()):(Number(accountState?.serverOffsetMs)||0);
+        const next={...accountState,user:data.user,lastVerifiedAt:nowIso,maxSeenAt:Math.max(Number(accountState?.maxSeenAt)||0,Date.now()),serverOffsetMs};
         saveAccountState(next);
+        const after=isStoreAccount()?subscriptionInfo():null;
+        if(manual&&before&&after){
+          const beforeExp=Date.parse(before.expiresAt||'')||0;
+          const afterExp=Date.parse(after.expiresAt||'')||0;
+          const wasRenewed=(!before.writable&&after.writable)||(!before.isLifetime&&after.isLifetime)||(after.writable&&afterExp>beforeExp+60000);
+          if(wasRenewed){
+            ui.renewalCheckResult={
+              type:'renewed',
+              icon:'fa-circle-check',
+              title:'تمدید اشتراک شما در سرور تأیید و فعال شد!',
+              detail:after.isLifetime?'اشتراک شما به حالت مادام‌العمر ارتقا یافت و ثبت اطلاعات باز شد.':`اعتبار جدید آژانس تا تاریخ ${after.expiresJalali} (${fmtNumber(after.daysRemaining)} روز باقی‌مانده) فعال شد و قفل ثبت سفر برداشته شد.`,
+              checkedAt:nowIso
+            };
+            toast(ui.renewalCheckResult.title,'success');
+          }else if(after.writable){
+            const cd=subscriptionCountdownParts(after);
+            ui.renewalCheckResult={
+              type:'active',
+              icon:'fa-circle-check',
+              title:'استعلام آنلاین از سرور انجام شد — اشتراک شما فعال است',
+              detail:after.isLifetime?'اشتراک این آژانس مادام‌العمر و فعال است.':`در حال حاضر ${fmtNumber(cd.days)} روز و ${fmtNumber(cd.hours)} ساعت از اعتبار اشتراک باقی مانده است (سررسید: ${after.expiresJalali}).`,
+              checkedAt:nowIso
+            };
+            toast(`اشتراک فعال است (${after.isLifetime?'مادام‌العمر':`${fmtNumber(cd.days)} روز مانده`}).`,'success');
+          }else{
+            ui.renewalCheckResult={
+              type:'expired',
+              icon:'fa-clock-rotate-left',
+              title:'استعلام آنلاین انجام شد — هنوز تمدیدی در سرور ثبت نشده است',
+              detail:`وضعیت فعلی در سرور همچنان «${after.label}» است. پس از ثبت تمدید توسط مدیریت، با زدن همین دکمه اعتبار جدید بلافاصله فعال می‌شود.`,
+              checkedAt:nowIso
+            };
+            toast('استعلام انجام شد: هنوز تمدید جدیدی برای این حساب ثبت نشده است.','error');
+          }
+        }
         renderAuthGate();
-        if(isStoreAccount())renderApp();
-        if(manual){
-          closeModal();
-          toast('وضعیت حساب و اشتراک از سرور به‌روزرسانی شد.');
+        if(isStoreAccount()){
+          renderApp();
+          if($('#modal-root .modal'))openAccountModal();
+          if(after?.writable&&canCloudSync())runCloudSync({manual:false}).catch(()=>{});
         }
         return data.user;
       }catch(error){
+        authRefreshBusy=false;
         if(error&&error.status===401){
           authLoginError='نشست کاربری شما منقضی شده است؛ لطفاً دوباره وارد شوید. اطلاعات آفلاین شما محفوظ است.';
           setAccountStateForApp(null);
           return null;
         }
-        if(manual)toast('سرور در دسترس نیست؛ برنامه با آخرین وضعیت ذخیره‌شده به‌صورت آفلاین به کار ادامه می‌دهد.','info');
+        if(manual){
+          ui.renewalCheckResult={
+            type:'offline',
+            icon:'fa-wifi',
+            title:'عدم دسترسی به سرور برای بررسی تمدید',
+            detail:'اتصال اینترنت یا سرور در دسترس نیست؛ برنامه با آخرین وضعیت ذخیره‌شده کار می‌کند. پس از اتصال اینترنت دوباره تلاش کنید.',
+            checkedAt:new Date().toISOString()
+          };
+          if(isStoreAccount())renderApp();
+          toast('سرور در دسترس نیست؛ اتصال اینترنت را بررسی کرده و دوباره «بررسی تمدید» را بزنید.','error');
+        }
         return accountState?.user||null;
       }
     }
     function confirmAccountLogout(){
-      confirmDialog('خروج از حساب کاربری','با خروج از حساب، اطلاعات محلی آژانس روی این دستگاه دست‌نخورده باقی می‌ماند، اما برای ورود مجدد به اینترنت نیاز خواهید داشت.',()=>accountLogout(),'خروج از حساب');
+      const dirtyNote=syncInfo().dirty?' (تغییرات محلی روی این دستگاه محفوظ می‌ماند)':'';
+      confirmDialog('خروج از حساب کاربری',`آیا می‌خواهید از حساب کاربری خود خارج شوید؟${dirtyNote} اطلاعات ذخیره‌شده روی دستگاه پاک نمی‌شود و برای ورود مجدد به اینترنت نیاز خواهید داشت.`,()=>accountLogout(),'خروج از حساب');
     }
     async function accountLogout(){
+      if(canCloudSync()&&syncInfo().dirty&&subscriptionWritable()&&navigator.onLine!==false){
+        try{await runCloudSync({manual:false});}catch(_){}
+      }
       try{await apiFetch('/api/logout',{method:'POST'});}catch(_){}
-      cachedCsrfToken='';authLoginError='';
+      cachedCsrfToken='';authLoginError='';ui.renewalCheckResult=null;
       closeModal();
       setAccountStateForApp(null);
       toast('از حساب کاربری خارج شدید.','info');
@@ -2807,7 +3184,7 @@
           const pwd=String(fd.get('password')||'');
           if(pwd)body.password=pwd;
           if(id){body.is_active=val('is_active')!=='false';await apiFetch(`/api/manager/stores/${id}`,{method:'PUT',body});toast('اطلاعات آژانس به‌روزرسانی شد.');}
-          else{body.plan_name=val('plan_name')||'آژانس حرفه‌ای';body.days=Math.max(1,Number(val('days'))||365);body.max_users=Math.max(1,Number(val('max_users'))||3);body.is_lifetime=val('is_lifetime')==='true';await apiFetch('/api/manager/stores',{method:'POST',body});toast('آژانس جدید ایجاد و اشتراک فعال شد.');}
+          else{body.plan_name=val('plan_name')||'آژانس حرفه‌ای';body.days=Math.max(1,Number(val('days'))||365);body.max_users=Math.max(1,Number(val('max_users'))||1);body.is_lifetime=val('is_lifetime')==='true';await apiFetch('/api/manager/stores',{method:'POST',body});toast('آژانس جدید ایجاد و اشتراک فعال شد.');}
           closeModal();loadManagerTab('stores');return true;
         }
         if(kind==='mgr-license'){
@@ -2888,12 +3265,13 @@
       if(isStoreAccount())reloadStoreWorkspace({seedAgency:false});
       renderAuthGate();
       if(accountAuthenticated()&&typeof window.fetch==='function'&&/^https?:$/.test(location.protocol)){
-        refreshAccount({manual:false}).catch(()=>{});
+        refreshAccount({manual:false}).then(()=>{if(canCloudSync())runCloudSync({manual:false}).catch(()=>{});}).catch(()=>{});
       }
       window.addEventListener('online',()=>{if(accountAuthenticated())refreshAccount({manual:false}).catch(()=>{});});
+      setInterval(tickSubscriptionCountdown,1000);
     }
-    function pageBackup(){const last=db.auditLog[0];return `${pageHeading('پشتیبان‌گیری و بازیابی','پشتیبان رمزگذاری‌نشده یا رمزگذاری‌شده (AES-GCM) بگیرید؛ یادآور دوره‌ای و عکس فوری هم در دسترس است.',`<button class="btn btn-primary" data-action="backup"><i class="fa-solid fa-download"></i> دریافت نسخه پشتیبان</button>`)}<div class="grid grid-2"><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">نسخه پشتیبان کامل</h2><div class="card-hint">تنظیمات، لوگو، سفرها، پرداخت‌ها و گزارش‌ها</div></div><span class="stat-icon"><i class="fa-solid fa-shield-halved"></i></span></div><div class="info-box"><i class="fa-solid fa-database"></i><span>داده‌ها فقط در مرورگر و دستگاه فعلی ذخیره می‌شوند. برای انتقال به دستگاه دیگر، فایل JSON را دریافت و سپس بازیابی کنید.</span></div><div class="between" style="margin-top:16px"><span class="muted small">حجم تقریبی داده‌ها</span><strong>${fmtNumber(new Blob([JSON.stringify(db)]).size)} بایت</strong></div><div class="between" style="margin-top:9px"><span class="muted small">آخرین رویداد</span><strong class="small">${last?`${esc(last.action)} · ${formatDate(last.date)}`:'هنوز رویدادی ثبت نشده'}</strong></div><button class="btn btn-primary btn-block" style="margin-top:16px" data-action="backup"><i class="fa-solid fa-file-arrow-down"></i> دانلود پشتیبان JSON</button></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">بازیابی اطلاعات</h2><div class="card-hint">نسخه پشتیبان معتبر کارن‌سافت (JSON)</div></div><span class="stat-icon"><i class="fa-solid fa-arrow-rotate-left"></i></span></div><div class="field"><label for="backup-file">انتخاب فایل پشتیبان</label><input type="file" id="backup-file" accept=".json,application/json"></div><div class="info-box warn-box"><i class="fa-solid fa-triangle-exclamation"></i><span>بازیابی، اطلاعات فعلی روی همین دستگاه را با محتوای فایل جایگزین می‌کند. پیش از ادامه، از داده‌های کنونی نسخه بگیرید.</span></div><button class="btn btn-block" style="margin-top:14px" data-action="restore" id="restore-button" disabled><i class="fa-solid fa-upload"></i> بررسی و بازیابی فایل</button></section></div><section class="card card-pad" style="margin-top:16px"><div class="card-head"><div><h2 class="card-title">پاک‌سازی اطلاعات عملیاتی</h2><div class="card-hint">تنظیمات شرکت و لوگو حفظ می‌شوند</div></div><span class="stat-icon" style="color:var(--red);background:var(--red-soft)"><i class="fa-solid fa-trash-can"></i></span></div><p class="small muted">این کار سفرها، پرداخت‌ها، رانندگان، خودروها، مشترکین، آدرس‌ها، هزینه‌ها و تاریخچه رویدادها را حذف می‌کند و قابل بازگشت نیست.</p><button class="btn btn-danger" data-action="clear-data"><i class="fa-solid fa-triangle-exclamation"></i> پاک‌کردن همه اطلاعات عملیاتی</button></section>${durabilityPanels()}`;}
-    function pageSettings(){const logo=db.settings.logo;const installed=isStandalone();const reg=ui.swRegistration;const pwaText=installed?'در حال اجرا به‌عنوان اپلیکیشن':ui.installPrompt?'آماده نصب روی این دستگاه':'برای نصب از منوی مرورگر استفاده کنید';const lastAudit=db.auditLog.slice(0,5);return `${pageHeading('تنظیمات سامانه','اطلاعات این بخش در چاپ فاکتور و محاسبه کرایه به‌کار می‌رود.')}${subscriptionSettingsCard()}<div class="grid grid-2"><div class="settings-col"><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">اطلاعات شرکت</h2><div class="card-hint">در سربرگ فاکتور و صورتحساب چاپ می‌شود</div></div><span class="stat-icon"><i class="fa-solid fa-building"></i></span></div><form data-form="settings-company"><div class="field"><label for="company-name">نام آژانس / شرکت</label><input id="company-name" name="companyName" maxlength="100" required value="${esc(db.settings.companyName)}"></div><div class="form-grid"><div class="field"><label for="company-phone">تلفن</label><input id="company-phone" name="phone" inputmode="tel" maxlength="30" value="${esc(db.settings.phone)}" placeholder="۰۲۱-۱۲۳۴۵۶۷۸"></div><div class="field"><label for="company-email">ایمیل</label><input id="company-email" name="email" type="email" maxlength="100" value="${esc(db.settings.email)}" placeholder="info@example.ir"></div></div><div class="field"><label for="company-address">آدرس</label><textarea id="company-address" name="address" maxlength="250" placeholder="نشانی آژانس برای درج در چاپ">${esc(db.settings.address)}</textarea></div><div class="field"><label for="tax-rate">درصد مالیات (اختیاری)</label><div class="inline-field"><input id="tax-rate" name="taxRate" type="number" min="0" max="100" step="0.1" value="${esc(db.settings.taxRate)}"><span class="input-suffix">٪</span></div></div><div class="form-actions"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> ذخیره اطلاعات شرکت</button></div></form></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">نرخ‌ها و کمیسیون</h2><div class="card-hint">برآورد بدون نقشه؛ اپراتور می‌تواند مبلغ را دستی تغییر دهد</div></div><span class="stat-icon"><i class="fa-solid fa-calculator"></i></span></div><form data-form="settings-rates"><div class="form-grid"><div class="field"><label>کرایه پایه (تومان)</label><input name="baseFare" inputmode="numeric" value="${esc(db.settings.baseFare)}"></div><div class="field"><label>نرخ هر کیلومتر (تومان)</label><input name="farePerKm" inputmode="numeric" value="${esc(db.settings.farePerKm)}"></div><div class="field"><label>ضریب شب</label><input name="nightRateMultiplier" type="number" min="1" step="0.05" value="${esc(db.settings.nightRateMultiplier)}"></div><div class="field"><label>ضریب جمعه</label><input name="holidayRateMultiplier" type="number" min="1" step="0.05" value="${esc(db.settings.holidayRateMultiplier)}"></div><div class="field"><label>کمیسیون پیش‌فرض راننده</label><div class="inline-field"><input name="commissionDefault" type="number" min="0" max="100" step="0.1" value="${esc(db.settings.commissionDefault)}"><span class="input-suffix">٪</span></div></div></div><div class="form-actions"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> ذخیره نرخ‌ها</button></div></form></section></div><div class="settings-col"><section class="card card-pad settings-logo-card"><div class="card-head"><div><h2 class="card-title"><i class="fa-solid fa-palette"></i> هویت بصری آژانس</h2><div class="card-hint">لوگو در سربرگ برنامه، صفحه درباره و چاپ‌ها استفاده می‌شود</div></div><span class="badge gold">لوگو</span></div><div class="logo-uploader"><div class="logo-preview" id="logo-preview">${logo&&logo.data?`<img src="${esc(logo.data)}" alt="پیش‌نمایش لوگو">`:defaultMark()}</div><div><div class="row wrap"><label class="btn btn-primary file-button"><i class="fa-solid fa-cloud-arrow-up"></i> آپلود لوگو<input type="file" id="logo-file" accept="image/png,image/jpeg,image/svg+xml"></label><button class="btn btn-danger" data-action="remove-logo" ${logo?'':'disabled'}><i class="fa-solid fa-trash"></i> حذف لوگو</button></div><ul class="logo-help"><li>فرمت مجاز: PNG، JPG یا SVG</li><li>حداکثر حجم فایل: ۵۰۰ کیلوبایت</li><li>ابعاد پیشنهادی: مربعی، ۵۱۲×۵۱۲ پیکسل</li><li>فایل بزرگ‌تر از ۲۰۰ کیلوبایت فشرده و محدود به ۵۱۲ پیکسل می‌شود.</li></ul>${logo?`<div class="field-help">${esc(logo.originalName||'لوگو')} · ${fmtNumber(logo.size||0)} بایت · بارگذاری ${formatDate(logo.uploadedAt||'')}</div>`:''}</div></div><div class="info-box warn-box" style="margin-top:16px"><i class="fa-solid fa-print"></i><span>این لوگو در فاکتور مشترک، صورتحساب راننده و رسید سفر درج می‌شود. در نصب PWA، آیکون ثابت کارن‌سافت برای سازگاری مرورگر حفظ شده است.</span></div></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">اپلیکیشن و نصب آفلاین</h2><div class="card-hint">PWA · نسخه ${APP_VERSION}</div></div><span class="stat-icon"><i class="fa-solid fa-mobile-screen-button"></i></span></div><div class="pwa-status"><span class="pwa-status-icon"><i class="fa-solid ${installed?'fa-circle-check':'fa-mobile-screen-button'}"></i></span><span><strong>${installed?'نصب‌شده · حالت مستقل':pwaText}</strong><small>${navigator.onLine?'اتصال اینترنت برقرار است':'آفلاین · داده‌های محلی در دسترس‌اند'}</small></span></div><div class="row wrap"><button class="btn btn-primary btn-small" data-action="install"><i class="fa-solid fa-download"></i> نصب برنامه</button><button class="btn btn-small" data-action="update-pwa"><i class="fa-solid fa-rotate"></i> بررسی به‌روزرسانی</button><button class="btn btn-small" data-action="clear-cache"><i class="fa-solid fa-broom"></i> پاک‌کردن کش</button></div><div class="field-help" style="margin-top:11px">در iPhone/iPad: دکمهٔ Share در Safari و سپس «Add to Home Screen» را انتخاب کنید. برای نصب و Service Worker، سایت باید روی HTTPS یا localhost اجرا شود.</div></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">اپراتورها و رویدادها</h2><div class="card-hint">ثبت محلی تغییر اپراتور و شروع/پایان شیفت</div></div><button class="btn btn-small" data-action="add-operator"><i class="fa-solid fa-user-plus"></i> اپراتور</button></div><div class="between small"><span class="muted">اپراتور جاری</span><strong>${esc(getOperator().name)} · ${esc(getOperator().role||'اپراتور')}</strong></div><div class="separator"></div>${lastAudit.length?lastAudit.map(a=>`<div class="between small" style="margin:7px 0"><span>${esc(a.action)} <span class="muted">${esc(a.operatorName||'')}</span></span><span class="muted nowrap">${formatDate(a.date)} ${esc(a.time||'')}</span></div>`).join(''):'<div class="small muted">هنوز رویدادی ثبت نشده است.</div>'}<button class="text-link small" style="margin-top:9px" data-action="show-audit">مشاهده تاریخچه رویدادها</button></section></div></div>${securityPanel()}${dispatchPanel()}${smsPanel()}${accessibilityCard()}`;}
+    function pageBackup(){const last=db.auditLog[0];return `${pageHeading('پشتیبان‌گیری و بازیابی','پشتیبان رمزگذاری‌نشده یا رمزگذاری‌شده (AES-GCM) بگیرید؛ همگام‌سازی ابری و عکس فوری هم فعال است.',`<button class="btn btn-primary" data-action="backup"><i class="fa-solid fa-download"></i> دریافت نسخه پشتیبان</button>`)}<div class="grid grid-2"><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">نسخه پشتیبان کامل</h2><div class="card-hint">تنظیمات، لوگو، سفرها، پرداخت‌ها و گزارش‌ها</div></div><span class="stat-icon"><i class="fa-solid fa-shield-halved"></i></span></div><div class="info-box"><i class="fa-solid fa-database"></i><span>داده‌ها هم به‌صورت آفلاین در مرورگر این دستگاه و هم روی سرور نگهداری می‌شوند. علاوه بر سینک ابری، می‌توانید فایل پشتیبان JSON مستقل نیز دریافت کنید.</span></div><div class="between" style="margin-top:16px"><span class="muted small">حجم تقریبی داده‌ها</span><strong>${fmtNumber(new Blob([JSON.stringify(db)]).size)} بایت</strong></div><div class="between" style="margin-top:9px"><span class="muted small">آخرین رویداد</span><strong class="small">${last?`${esc(last.action)} · ${formatDate(last.date)}`:'هنوز رویدادی ثبت نشده'}</strong></div><button class="btn btn-primary btn-block" style="margin-top:16px" data-action="backup"><i class="fa-solid fa-file-arrow-down"></i> دانلود پشتیبان JSON</button></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">بازیابی اطلاعات</h2><div class="card-hint">نسخه پشتیبان معتبر کارن‌سافت (JSON)</div></div><span class="stat-icon"><i class="fa-solid fa-arrow-rotate-left"></i></span></div><div class="field"><label for="backup-file">انتخاب فایل پشتیبان</label><input type="file" id="backup-file" accept=".json,application/json"></div><div class="info-box warn-box"><i class="fa-solid fa-triangle-exclamation"></i><span>بازیابی، اطلاعات فعلی را با محتوای فایل جایگزین کرده و در اتصال بعدی با سرور نیز همگام می‌شود.</span></div><button class="btn btn-block" style="margin-top:14px" data-action="restore" id="restore-button" disabled><i class="fa-solid fa-upload"></i> بررسی و بازیابی فایل</button></section></div><section class="card card-pad" style="margin-top:16px"><div class="card-head"><div><h2 class="card-title">پاک‌سازی اطلاعات عملیاتی</h2><div class="card-hint">تنظیمات شرکت و لوگو حفظ می‌شوند</div></div><span class="stat-icon" style="color:var(--red);background:var(--red-soft)"><i class="fa-solid fa-trash-can"></i></span></div><p class="small muted">این کار سفرها، پرداخت‌ها، رانندگان، خودروها، مشترکین، آدرس‌ها، هزینه‌ها و تاریخچه رویدادها را حذف می‌کند و قابل بازگشت نیست.</p><button class="btn btn-danger" data-action="clear-data"><i class="fa-solid fa-triangle-exclamation"></i> پاک‌کردن همه اطلاعات عملیاتی</button></section>${durabilityPanels()}`;}
+    function pageSettings(){const logo=db.settings.logo;const installed=isStandalone();const pwaText=installed?'در حال اجرا به‌عنوان اپلیکیشن':ui.installPrompt?'آماده نصب روی این دستگاه':'برای نصب از منوی مرورگر استفاده کنید';const lastAudit=db.auditLog.slice(0,5);return `${pageHeading('تنظیمات سامانه','مدیریت اشتراک، اطلاعات آژانس، لوگوی اختصاصی فاکتورها و نرخ‌های کرایه.')}${subscriptionSettingsCard()}<div class="grid grid-2"><div class="settings-col"><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">اطلاعات آژانس</h2><div class="card-hint">در سربرگ فاکتور مشترک، صورتحساب راننده و رسید سفر چاپ می‌شود</div></div><span class="stat-icon"><i class="fa-solid fa-building"></i></span></div><form data-form="settings-company"><div class="field"><label for="company-name">نام آژانس / شرکت</label><input id="company-name" name="companyName" maxlength="100" required value="${esc(db.settings.companyName)}"></div><div class="form-grid"><div class="field"><label for="company-phone">تلفن</label><input id="company-phone" name="phone" inputmode="tel" maxlength="30" value="${esc(db.settings.phone)}" placeholder="۰۲۱-۱۲۳۴۵۶۷۸"></div><div class="field"><label for="company-email">ایمیل</label><input id="company-email" name="email" type="email" maxlength="100" value="${esc(db.settings.email)}" placeholder="info@example.ir"></div></div><div class="field"><label for="company-address">آدرس</label><textarea id="company-address" name="address" maxlength="250" placeholder="نشانی آژانس برای درج در سربرگ فاکتور">${esc(db.settings.address)}</textarea></div><div class="field"><label for="tax-rate">درصد مالیات (اختیاری)</label><div class="inline-field"><input id="tax-rate" name="taxRate" type="number" min="0" max="100" step="0.1" value="${esc(db.settings.taxRate)}"><span class="input-suffix">٪</span></div></div><div class="form-actions"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> ذخیره اطلاعات آژانس</button></div></form></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">نرخ‌ها و کمیسیون</h2><div class="card-hint">برآورد خودکار کرایه؛ مبلغ هر سفر به‌صورت دستی نیز قابل تغییر است</div></div><span class="stat-icon"><i class="fa-solid fa-calculator"></i></span></div><form data-form="settings-rates"><div class="form-grid"><div class="field"><label>کرایه پایه (تومان)</label><input name="baseFare" inputmode="numeric" value="${esc(db.settings.baseFare)}"></div><div class="field"><label>نرخ هر کیلومتر (تومان)</label><input name="farePerKm" inputmode="numeric" value="${esc(db.settings.farePerKm)}"></div><div class="field"><label>ضریب شب</label><input name="nightRateMultiplier" type="number" min="1" step="0.05" value="${esc(db.settings.nightRateMultiplier)}"></div><div class="field"><label>ضریب جمعه</label><input name="holidayRateMultiplier" type="number" min="1" step="0.05" value="${esc(db.settings.holidayRateMultiplier)}"></div><div class="field"><label>کمیسیون پیش‌فرض راننده</label><div class="inline-field"><input name="commissionDefault" type="number" min="0" max="100" step="0.1" value="${esc(db.settings.commissionDefault)}"><span class="input-suffix">٪</span></div></div></div><div class="form-actions"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> ذخیره نرخ‌ها</button></div></form></section></div><div class="settings-col"><section class="card card-pad settings-logo-card"><div class="card-head"><div><h2 class="card-title"><i class="fa-solid fa-palette"></i> لوگوی اختصاصی آژانس (ویژهٔ فاکتورها)</h2><div class="card-hint">لوگوی شخصی آژانس شما در سربرگ تمام فاکتورها، صورتحساب‌ها و رسیدها درج و در سرور همگام می‌شود</div></div><span class="badge gold">لوگوی فاکتور</span></div><div class="logo-uploader"><div class="logo-preview" id="logo-preview">${logo&&logo.data?`<img src="${esc(logo.data)}" alt="پیش‌نمایش لوگوی آژانس">`:defaultMark()}</div><div><div class="row wrap"><label class="btn btn-primary file-button"><i class="fa-solid fa-cloud-arrow-up"></i> انتخاب لوگوی آژانس<input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"></label><button type="button" class="btn" data-action="preview-logo-invoice"><i class="fa-solid fa-file-invoice"></i> پیش‌نمایش در فاکتور</button><button type="button" class="btn btn-danger" data-action="remove-logo" ${logo?'':'disabled'}><i class="fa-solid fa-trash"></i> حذف لوگو</button></div><ul class="logo-help"><li>فرمت‌های مجاز: PNG (با حفظ شفافیت)، JPG، WEBP، GIF یا SVG</li><li>حجم فایل انتخابی: تا ۱۰ مگابایت (بهینه‌سازی و تنظیم خودکار ابعاد برای چاپ تمیز)</li><li>لوگوی ذخیره‌شده به‌صورت خودکار با سرور سینک شده و روی همهٔ دستگاه‌ها نمایش داده می‌شود.</li></ul>${logo?`<div class="field-help">${esc(logo.originalName||'لوگو')} · ${fmtNumber(logo.size||0)} بایت · بارگذاری ${formatDate(logo.uploadedAt||'')}</div>`:''}</div></div><div class="info-box" style="margin-top:16px"><i class="fa-solid fa-print"></i><span>لوگوی آژانس شما در فاکتور رسمی مشترک، صورتحساب راننده، رسید تسویه و رسید سفر چاپ می‌شود.</span></div></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">اپلیکیشن و کارکرد آفلاین</h2><div class="card-hint">PWA · نسخه ${APP_VERSION}</div></div><span class="stat-icon"><i class="fa-solid fa-mobile-screen-button"></i></span></div><div class="pwa-status"><span class="pwa-status-icon"><i class="fa-solid ${installed?'fa-circle-check':'fa-mobile-screen-button'}"></i></span><span><strong>${installed?'نصب‌شده · حالت مستقل':pwaText}</strong><small>${navigator.onLine?'آنلاین · سینک خودکار با سرور فعال است':'آفلاین · تمام داده‌ها در حافظهٔ دستگاه در دسترس‌اند'}</small></span></div><div class="row wrap"><button class="btn btn-primary btn-small" data-action="install"><i class="fa-solid fa-download"></i> نصب برنامه</button><button class="btn btn-small" data-action="update-pwa"><i class="fa-solid fa-rotate"></i> بررسی به‌روزرسانی</button><button class="btn btn-small" data-action="clear-cache"><i class="fa-solid fa-broom"></i> پاک‌کردن کش</button></div></section><section class="card card-pad"><div class="card-head"><div><h2 class="card-title">رویدادهای اخیر آژانس</h2><div class="card-hint">ثبت خودکار آخرین عملیات انجام‌شده</div></div><span class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></span></div>${lastAudit.length?lastAudit.map(a=>`<div class="between small" style="margin:7px 0"><span>${esc(a.action)}</span><span class="muted nowrap">${formatDate(a.date)} ${esc(a.time||'')}</span></div>`).join(''):'<div class="small muted">هنوز رویدادی ثبت نشده است.</div>'}<button class="text-link small" style="margin-top:9px" data-action="show-audit">مشاهده تاریخچه کامل رویدادها</button></section></div></div>${securityPanel()}${dispatchPanel()}${accessibilityCard()}`;}
     function pageTutorial(){const steps=[['۰۱','اطلاعات پایه را آماده کنید','در تنظیمات، مشخصات شرکت، تعرفه‌ها و لوگوی قابل چاپ را وارد کنید. سپس رانندگان، خودروها، آدرس‌ها و مشترکین را بسازید.'],['۰۲','سفر را در چند ثانیه ثبت کنید','نام مسافر، تلفن، مبدأ و مقصد را وارد کنید. در جزئیات پیشرفته، تاریخ شمسی، مسافت تقریبی، مشتری اعتباری یا روش پرداخت را انتخاب کنید.'],['۰۳','راننده را تخصیص دهید','در صف انتظار، سامانه راننده آزاد با کمترین تعداد سفر امروز را پیشنهاد می‌کند. انتخاب نهایی در اختیار اپراتور است.'],['۰۴','سفر را تا پایان پیگیری کنید','پس از تخصیص، سفر را «شروع» و پس از پایان «تکمیل» کنید. وضعیت راننده آزاد/مشغول خودکار به‌روز می‌شود.'],['۰۵','حسابداری و چاپ','پرداخت مشترک و تسویه راننده را ثبت کنید. صورتحساب‌ها و رسیدها پیش‌نمایش چاپ دارند؛ از پنجره چاپ مرورگر گزینهٔ «ذخیره به‌صورت PDF» نیز در دسترس است.'],['۰۶','از اطلاعات نسخه پشتیبان بگیرید','اطلاعات فقط روی همین مرورگر است. از بخش پشتیبان‌گیری فایل JSON بگیرید و آن را در محل امن نگهداری کنید.']];return `${pageHeading('راهنمای سریع اپراتور','گردش‌کار پیشنهادی کارن‌سافت؛ بدون نقشه و ردیابی زنده.') }<div class="onboarding-grid">${steps.map(([n,title,copy])=>`<article class="onboarding-step"><div class="step-number">${n}</div><strong>${title}</strong><p>${copy}</p></article>`).join('')}</div><div class="info-box warn-box" style="margin-top:15px"><i class="fa-solid fa-circle-info"></i><span>این برنامه یک ابزار محلی تک‌دستگاهی است؛ قفل ورود با PIN و نقش‌ها دسترسی روزمره روی همین دستگاه را محدود می‌کنند، اما جایگزین سامانهٔ سرورمحور، همگام‌سازی چندکاربره یا احراز هویت سازمانی نیستند.</span></div>`;}
     function pageAbout(){return `${pageHeading('درباره کارن‌سافت','سامانه اشتراکی مدیریت تاکسی تلفنی، با ورود آنلاین و عملکرد کاملاً آفلاین عملیات آژانس.') }<section class="card card-pad"><div class="company-summary">${logoMarkup()}<div><h1 style="font-size:23px;margin:0">کارن‌سافت</h1><div class="muted">سامانه مدیریت تاکسی تلفنی</div><div class="small text-gold" style="margin-top:5px">نسخه ${APP_VERSION} · اشتراکی و آفلاین‌محور</div></div></div><div class="separator"></div><div class="grid grid-3"><div class="onboarding-step"><strong><i class="fa-solid fa-lock text-gold"></i> حریم داده محلی</strong><p>سفرها، رانندگان، مشترکین و حسابداری آژانس فقط در حافظهٔ همین مرورگر ذخیره می‌شوند و به سرور ارسال نمی‌شوند.</p></div><div class="onboarding-step"><strong><i class="fa-solid fa-id-badge text-gold"></i> اشتراک هوشمند</strong><p>احراز هویت و اعتبار اشتراک آژانس از سرور بررسی می‌شود و پس از انقضا، مشاهدهٔ اطلاعات و پشتیبان‌گیری باز می‌ماند.</p></div><div class="onboarding-step"><strong><i class="fa-solid fa-wifi text-gold"></i> کار آفلاین</strong><p>پس از ورود اولیه، برنامه بدون اینترنت نیز سفرها و صورتحساب‌ها را مدیریت و چاپ می‌کند.</p></div></div><div class="info-box warn-box" style="margin-top:16px"><i class="fa-solid fa-circle-exclamation"></i><span>داده‌های عملیاتی هر آژانس به‌صورت مجزا روی مرورگر همان دستگاه نگهداری می‌شوند؛ تهیهٔ منظم فایل پشتیبان JSON یا پشتیبان رمزگذاری‌شده توصیه می‌شود.</span></div></section>`;}
     function renderApp(){try{setTheme();if(!isStoreAccount()){renderAuthGate();return;}renderAuthGate();setHeader();const route=parseRoute();const deniedCap=requiredCapability(route);const denied=!!deniedCap&&!can(deniedCap);let html='';if(denied)html=permissionCard(deniedCap);else if(route.page==='dashboard')html=pageDashboard();else if(route.page==='drivers')html=pageDrivers(route.key);else if(route.page==='addresses')html=pageAddresses();else if(route.page==='subscribers')html=pageSubscribers();else if(route.page==='trips')html=pageTrips(route.key);else if(route.page==='accounting')html=pageAccounting(route.key);else if(route.page==='backup')html=pageBackup();else if(route.page==='sync')html=pageSync();else if(route.page==='settings')html=pageSettings();else if(route.page==='tutorial')html=pageTutorial();else html=pageAbout();$('#app-root').innerHTML=subscriptionBannerHtml()+html;applyNavPermissions();applyActionPermissions();applyReadonlyLocks();syncLockState();if(ui.locked&&!$('.lock-screen'))renderLockScreen();if(!denied&&(route.page==='dashboard'||route.key==='accounting/revenue'))requestAnimationFrame(()=>drawCharts(route.page==='dashboard'));if(route.page==='settings')updatePwaStatus();
@@ -2932,7 +3310,7 @@
     function openTripReceipt(id,options={}){const t=db.trips.find(x=>x.id===id);if(!t)return;let number=options.reprint||t.receiptNumber||'';if(!number){number=issueInvoice('trip',{person:t.passengerName,amount:Number(t.fare)||0,refId:t.id});if(subscriptionWritable())transact('ثبت شمارهٔ رسید سفر',state=>{const item=state.trips.find(x=>x.id===id);if(item)item.receiptNumber=number;return true;},{audit:false,render:false});}showPrintPreview({kind:'trip',title:'رسید سفر',number,trip:t});}
     function printRows(doc){if(doc.kind==='settlement'){const rows=doc.payments||[];return rows.length?rows.map((p,i)=>`<tr><td>${fmtNumber(i+1)}</td><td>${esc(driverName(p.driverId))}</td><td>${fmtNumber(p.amount)}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center">پرداختی ثبت نشده است.</td></tr>';}if(doc.kind==='subscriber')return doc.trips.length?doc.trips.map((t,i)=>`<tr><td>${fmtNumber(i+1)}</td><td>${formatDate(t.date)}</td><td>${esc(t.time||'—')}</td><td>${esc(driverName(t.driverId))}</td><td>${esc(t.origin)}</td><td>${esc(t.destination)}</td><td>${fmtNumber(t.fare)}</td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center">سفر تکمیل‌شده‌ای ثبت نشده است.</td></tr>';if(doc.kind==='driver'){const trips=[...doc.trips].sort((a,b)=>String(a.date).localeCompare(String(b.date)));let lastCompany='';return trips.length?trips.map((t,i)=>{const subscriber=subscriberById(t.subscriberId);const company=t.customerType==='subscriber'&&subscriber?.type==='legal'?(subscriber.company||subscriber.name):'';const group=company&&company!==lastCompany?`<tr><td colspan="7" style="background:#f4f1e5;font-weight:bold">سفرهای حقوقی · ${esc(company)}</td></tr>`:'';lastCompany=company;const commission=Number(t.commission)||0;return `${group}<tr><td>${fmtNumber(i+1)}</td><td>${formatDate(t.date)}</td><td>${esc(t.passengerName||'—')}</td><td>${esc(t.origin)} ← ${esc(t.destination)}</td><td>${fmtNumber(t.fare)}</td><td>${fmtNumber(commission)}</td><td>${fmtNumber((Number(t.fare)||0)-commission)}</td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center">سفر تکمیل‌شده‌ای ثبت نشده است.</td></tr>';}const t=doc.trip;return `<tr><td>۱</td><td>${formatDate(t.date)}</td><td>${esc(t.time||'—')}</td><td>${esc(driverName(t.driverId))}</td><td>${esc(t.origin)}</td><td>${esc(t.destination)}</td><td>${fmtNumber(t.fare)}</td></tr>`;}
     // ساخت سند مستقل چاپ با سربرگ شرکت، لوگوی ذخیره‌شده و جدول‌های مالی.
-    function printDocHtml(doc,mode='formal'){ const person=doc.person||{};const t=doc.trip;const displayName=doc.kind==='trip'?t.passengerName:person.name;const phone=doc.kind==='trip'?t.phone:person.phone;const info=doc.kind==='settlement'?`<div class="print-section"><div class="print-section-title">اطلاعات تسویه</div><div class="print-kv"><div><span>شمارهٔ سند:</span> ${esc(doc.number||'—')}</div><div><span>روش پرداخت:</span> ${esc(doc.method||'نقدی')}</div><div><span>تعداد رانندگان:</span> ${fmtNumber((doc.payments||[]).length)}</div><div><span>تاریخ:</span> ${formatDate(jalaliToday())}</div></div></div>`:doc.kind==='subscriber'?`<div class="print-section"><div class="print-section-title">اطلاعات مشترک</div><div class="print-kv"><div><span>نام:</span> ${esc(person.name||'—')}</div><div><span>تلفن:</span> ${esc(person.phone||'—')}</div><div><span>نوع:</span> ${person.type==='legal'?'حقوقی':'حقیقی'}</div><div><span>اعتبار اشتراک:</span> ${person.expiry?formatDate(person.expiry):'—'}</div></div></div>`:doc.kind==='driver'?`<div class="print-section"><div class="print-section-title">اطلاعات راننده</div><div class="print-kv"><div><span>نام راننده:</span> ${esc(person.name||'—')}</div><div><span>تلفن:</span> ${esc(person.phone||'—')}</div><div><span>خودرو:</span> ${esc(vehicleById(person.vehicleId)?.plate||'—')}</div><div><span>درصد کمیسیون:</span> ${fmtNumber(person.commission??db.settings.commissionDefault)}٪</div></div></div>`:`<div class="print-section"><div class="print-section-title">اطلاعات سفر</div><div class="print-kv"><div><span>مسافر:</span> ${esc(t.passengerName||'—')}</div><div><span>تلفن:</span> ${esc(t.phone||'—')}</div><div><span>راننده:</span> ${esc(driverName(t.driverId))}</div><div><span>وضعیت:</span> ${esc(tripStatusLabel(t.status))}</div><div><span>مبدأ:</span> ${esc(t.origin)}</div><div><span>مقصد:</span> ${esc(t.destination)}</div>${tripStops(t).length?`<div><span>مقصدهای میانی:</span> ${esc(tripStops(t).join('، '))}</div>`:''}<div><span>نوع سفر:</span> ${esc(tripKindLabel(t.tripKind))}</div>${t.cancelFee?`<div><span>جریمهٔ لغو:</span> ${fmtNumber(t.cancelFee)} تومان</div>`:''}</div></div>`;const headers=doc.kind==='settlement'?'<th>ردیف</th><th>راننده</th><th>مبلغ (تومان)</th>':doc.kind==='driver'?'<th>ردیف</th><th>تاریخ</th><th>مسافر</th><th>مسیر</th><th>کرایه</th><th>کمیسیون</th><th>سهم راننده</th>':'<th>ردیف</th><th>تاریخ</th><th>ساعت</th><th>راننده</th><th>مبدأ</th><th>مقصد</th><th>کرایه (تومان)</th>';let totals='';if(doc.kind==='subscriber')totals=`<div class="print-totals"><div class="print-total-line"><span>جمع کل صورتحساب</span><b>${fmtNumber(doc.charges)} تومان</b></div>${doc.tax?`<div class="print-total-line"><span>جمع کرایه</span><b>${fmtNumber(doc.fareTotal)} تومان</b></div><div class="print-total-line"><span>مالیات (${fmtNumber(db.settings.taxRate)}٪)</span><b>${fmtNumber(doc.tax)} تومان</b></div>`:''}<div class="print-total-line"><span>پرداخت‌شده</span><b>${fmtNumber(doc.paid)} تومان</b></div><div class="print-total-line strong"><span>مانده حساب</span><b>${fmtNumber(doc.balance)} تومان</b></div></div>`;else if(doc.kind==='driver')totals=`<div class="print-totals"><div class="print-total-line"><span>مجموع کرایه</span><b>${fmtNumber(doc.charges)} تومان</b></div><div class="print-total-line"><span>مجموع کمیسیون</span><b>${fmtNumber(doc.commission)} تومان</b></div><div class="print-total-line"><span>سهم راننده</span><b>${fmtNumber(doc.share)} تومان</b></div><div class="print-total-line"><span>طلب از آژانس (وصول آژانس)</span><b>${fmtNumber(doc.due)} تومان</b></div><div class="print-total-line"><span>پرداخت‌شده</span><b>${fmtNumber(doc.paid)} تومان</b></div><div class="print-total-line strong"><span>مانده طلب</span><b>${fmtNumber(doc.balance)} تومان</b></div></div>`;else if(doc.kind==='settlement')totals=`<div class="print-totals"><div class="print-total-line"><span>تعداد رانندگان</span><b>${fmtNumber((doc.payments||[]).length)} نفر</b></div><div class="print-total-line strong"><span>جمع پرداختی</span><b>${fmtNumber(doc.charges)} تومان</b></div></div>`;else totals=`<div class="print-totals"><div class="print-total-line"><span>کرایه سفر</span><b>${fmtNumber(t.fare)} تومان</b></div><div class="print-total-line"><span>روش پرداخت</span><b>${esc(t.paymentMethod==='subscriber'?'اعتباری مشترک':t.paymentMethod==='card'?'کارت / آژانس':'نقدی به راننده')}</b></div></div>`;const simple=mode==='simple';return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>${esc(doc.title)} ${esc(doc.number)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vazirmatn@33.003/Vazirmatn-font-face.css"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:BNazanin,Vazirmatn,Tahoma,serif;font-size:11pt;line-height:1.75;color:#111;background:#fff;margin:0}.paper{width:100%;${simple?'border:0':''}}.head{display:flex;align-items:center;gap:15px;border-bottom:${mode==='simple'?'1px':'2px'} solid #D4AF37;padding-bottom:10px}.logo{width:80px;height:80px;object-fit:contain;flex:none}.fallback{width:80px;height:80px;display:grid;place-items:center;background:#10172e;color:#D4AF37;border-radius:8px;font-family:BTitr,'B Titr',serif;font-weight:bold;text-align:center}.co{font-size:18pt;font-weight:900;margin:0}.sub{font-size:9pt;color:#555}.contact{font-size:9pt;margin-top:4px;display:flex;gap:16px;flex-wrap:wrap}.title-row{display:flex;justify-content:space-between;align-items:flex-start;margin:13px 0}.title{font-size:15pt;font-weight:900}.meta{font-size:9pt}.section,.print-section{border:1px solid #ccc;margin:10px 0;break-inside:avoid}.st,.print-section-title{background:#f2f0e8;padding:5px 8px;font-weight:bold;border-bottom:1px solid #ccc}.kv,.print-kv{display:grid;grid-template-columns:1fr 1fr;padding:8px;gap:5px}.kv span{color:#555}.tbl{width:100%;border-collapse:collapse;font-size:8.5pt}.tbl th,.tbl td{border:1px solid #ccc;padding:5px;text-align:right}.tbl th{background:#f4f4f4}.totals,.print-totals{width:62%;margin:9px 0 0 auto;border:1px solid #ccc;padding:7px}.line,.print-total-line{display:flex;justify-content:space-between;padding:2px}.strong{border-top:1px solid #ccc;margin-top:4px;padding-top:5px;font-weight:bold}.sign{display:grid;grid-template-columns:1fr 1fr;gap:35px;text-align:center;margin-top:22px}.sign div{border-top:1px dashed #777;padding-top:5px;min-height:38px}.foot{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #ccc;color:#555;font-size:8pt;margin-top:15px;padding-top:5px}.water{position:fixed;top:42%;left:15%;font-size:38pt;font-weight:bold;color:rgba(0,0,0,.055);transform:rotate(-25deg);pointer-events:none}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><main class="paper">${mode==='stamp'?'<div class="water">مهر و امضا</div>':''}<header class="head">${db.settings.logo?.data?`<img class="logo" src="${esc(db.settings.logo.data)}" alt="لوگو">`:'<div class="fallback">کارن‌<br>سافت</div>'}<div><h1 class="co">${esc(db.settings.companyName||'کارن‌سافت')}</h1><div class="sub">سامانه مدیریت تاکسی تلفنی</div><div class="contact">${db.settings.phone?`<span>تلفن: ${esc(db.settings.phone)}</span>`:''}${db.settings.address?`<span>آدرس: ${esc(db.settings.address)}</span>`:''}${db.settings.email?`<span>${esc(db.settings.email)}</span>`:''}</div></div></header><div class="title-row"><div><div class="title">${esc(doc.title)}</div><div class="meta">شماره: ${esc(doc.number)}</div></div><div class="meta">تاریخ صدور: ${formatDate(jalaliToday())}</div></div>${info}<section class="section"><div class="st">${doc.kind==='driver'?'جزئیات سفرها':doc.kind==='subscriber'?'لیست سفرهای تکمیل‌شده':'جزئیات رسید'}</div><table class="tbl"><thead><tr>${headers}</tr></thead><tbody>${printRows(doc)}</tbody></table></section>${totals}<div class="sign"><div>مهر و امضای آژانس</div><div>${doc.kind==='subscriber'?'امضای مشترک':'امضای راننده'}</div></div><footer class="foot"><span>تاریخ چاپ: ${formatDate(jalaliToday())}</span><span>این سند توسط سامانه کارن‌سافت صادر شده است.</span></footer></main></body></html>`;}
+    function printDocHtml(doc,mode='formal'){ const person=doc.person||{};const t=doc.trip;const displayName=doc.kind==='trip'?t.passengerName:person.name;const phone=doc.kind==='trip'?t.phone:person.phone;const info=doc.kind==='settlement'?`<div class="print-section"><div class="print-section-title">اطلاعات تسویه</div><div class="print-kv"><div><span>شمارهٔ سند:</span> ${esc(doc.number||'—')}</div><div><span>روش پرداخت:</span> ${esc(doc.method||'نقدی')}</div><div><span>تعداد رانندگان:</span> ${fmtNumber((doc.payments||[]).length)}</div><div><span>تاریخ:</span> ${formatDate(jalaliToday())}</div></div></div>`:doc.kind==='subscriber'?`<div class="print-section"><div class="print-section-title">اطلاعات مشترک</div><div class="print-kv"><div><span>نام:</span> ${esc(person.name||'—')}</div><div><span>تلفن:</span> ${esc(person.phone||'—')}</div><div><span>نوع:</span> ${person.type==='legal'?'حقوقی':'حقیقی'}</div><div><span>اعتبار اشتراک:</span> ${person.expiry?formatDate(person.expiry):'—'}</div></div></div>`:doc.kind==='driver'?`<div class="print-section"><div class="print-section-title">اطلاعات راننده</div><div class="print-kv"><div><span>نام راننده:</span> ${esc(person.name||'—')}</div><div><span>تلفن:</span> ${esc(person.phone||'—')}</div><div><span>خودرو:</span> ${esc(vehicleById(person.vehicleId)?.plate||'—')}</div><div><span>درصد کمیسیون:</span> ${fmtNumber(person.commission??db.settings.commissionDefault)}٪</div></div></div>`:`<div class="print-section"><div class="print-section-title">اطلاعات سفر</div><div class="print-kv"><div><span>مسافر:</span> ${esc(t.passengerName||'—')}</div><div><span>تلفن:</span> ${esc(t.phone||'—')}</div><div><span>راننده:</span> ${esc(driverName(t.driverId))}</div><div><span>وضعیت:</span> ${esc(tripStatusLabel(t.status))}</div><div><span>مبدأ:</span> ${esc(t.origin)}</div><div><span>مقصد:</span> ${esc(t.destination)}</div>${tripStops(t).length?`<div><span>مقصدهای میانی:</span> ${esc(tripStops(t).join('، '))}</div>`:''}<div><span>نوع سفر:</span> ${esc(tripKindLabel(t.tripKind))}</div>${t.cancelFee?`<div><span>جریمهٔ لغو:</span> ${fmtNumber(t.cancelFee)} تومان</div>`:''}</div></div>`;const headers=doc.kind==='settlement'?'<th>ردیف</th><th>راننده</th><th>مبلغ (تومان)</th>':doc.kind==='driver'?'<th>ردیف</th><th>تاریخ</th><th>مسافر</th><th>مسیر</th><th>کرایه</th><th>کمیسیون</th><th>سهم راننده</th>':'<th>ردیف</th><th>تاریخ</th><th>ساعت</th><th>راننده</th><th>مبدأ</th><th>مقصد</th><th>کرایه (تومان)</th>';let totals='';if(doc.kind==='subscriber')totals=`<div class="print-totals"><div class="print-total-line"><span>جمع کل صورتحساب</span><b>${fmtNumber(doc.charges)} تومان</b></div>${doc.tax?`<div class="print-total-line"><span>جمع کرایه</span><b>${fmtNumber(doc.fareTotal)} تومان</b></div><div class="print-total-line"><span>مالیات (${fmtNumber(db.settings.taxRate)}٪)</span><b>${fmtNumber(doc.tax)} تومان</b></div>`:''}<div class="print-total-line"><span>پرداخت‌شده</span><b>${fmtNumber(doc.paid)} تومان</b></div><div class="print-total-line strong"><span>مانده حساب</span><b>${fmtNumber(doc.balance)} تومان</b></div></div>`;else if(doc.kind==='driver')totals=`<div class="print-totals"><div class="print-total-line"><span>مجموع کرایه</span><b>${fmtNumber(doc.charges)} تومان</b></div><div class="print-total-line"><span>مجموع کمیسیون</span><b>${fmtNumber(doc.commission)} تومان</b></div><div class="print-total-line"><span>سهم راننده</span><b>${fmtNumber(doc.share)} تومان</b></div><div class="print-total-line"><span>طلب از آژانس (وصول آژانس)</span><b>${fmtNumber(doc.due)} تومان</b></div><div class="print-total-line"><span>پرداخت‌شده</span><b>${fmtNumber(doc.paid)} تومان</b></div><div class="print-total-line strong"><span>مانده طلب</span><b>${fmtNumber(doc.balance)} تومان</b></div></div>`;else if(doc.kind==='settlement')totals=`<div class="print-totals"><div class="print-total-line"><span>تعداد رانندگان</span><b>${fmtNumber((doc.payments||[]).length)} نفر</b></div><div class="print-total-line strong"><span>جمع پرداختی</span><b>${fmtNumber(doc.charges)} تومان</b></div></div>`;else totals=`<div class="print-totals"><div class="print-total-line"><span>کرایه سفر</span><b>${fmtNumber(t.fare)} تومان</b></div><div class="print-total-line"><span>روش پرداخت</span><b>${esc(t.paymentMethod==='subscriber'?'اعتباری مشترک':t.paymentMethod==='card'?'کارت / آژانس':'نقدی به راننده')}</b></div></div>`;const simple=mode==='simple';const brandShort=esc(String(db.settings.companyName||'آژانس').slice(0,18));return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>${esc(doc.title)} ${esc(doc.number)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vazirmatn@33.003/Vazirmatn-font-face.css"><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font-family:BNazanin,Vazirmatn,Tahoma,serif;font-size:11pt;line-height:1.75;color:#111;background:#fff;margin:0}.paper{width:100%;${simple?'border:0':''}}.head{display:flex;align-items:center;gap:15px;border-bottom:${mode==='simple'?'1px':'2px'} solid #D4AF37;padding-bottom:10px}.logo{width:84px;height:84px;object-fit:contain;flex:none;border-radius:8px}.fallback{width:84px;height:84px;padding:6px;display:grid;place-items:center;background:#10172e;color:#D4AF37;border-radius:8px;font-family:BTitr,'B Titr',serif;font-size:10pt;line-height:1.35;font-weight:bold;text-align:center}.co{font-size:18pt;font-weight:900;margin:0}.sub{font-size:9pt;color:#555}.contact{font-size:9pt;margin-top:4px;display:flex;gap:16px;flex-wrap:wrap}.title-row{display:flex;justify-content:space-between;align-items:flex-start;margin:13px 0}.title{font-size:15pt;font-weight:900}.meta{font-size:9pt}.section,.print-section{border:1px solid #ccc;margin:10px 0;break-inside:avoid}.st,.print-section-title{background:#f2f0e8;padding:5px 8px;font-weight:bold;border-bottom:1px solid #ccc}.kv,.print-kv{display:grid;grid-template-columns:1fr 1fr;padding:8px;gap:5px}.kv span{color:#555}.tbl{width:100%;border-collapse:collapse;font-size:8.5pt}.tbl th,.tbl td{border:1px solid #ccc;padding:5px;text-align:right}.tbl th{background:#f4f4f4}.totals,.print-totals{width:62%;margin:9px 0 0 auto;border:1px solid #ccc;padding:7px}.line,.print-total-line{display:flex;justify-content:space-between;padding:2px}.strong{border-top:1px solid #ccc;margin-top:4px;padding-top:5px;font-weight:bold}.sign{display:grid;grid-template-columns:1fr 1fr;gap:35px;text-align:center;margin-top:22px}.sign div{border-top:1px dashed #777;padding-top:5px;min-height:38px}.foot{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #ccc;color:#555;font-size:8pt;margin-top:15px;padding-top:5px}.water{position:fixed;top:42%;left:15%;font-size:38pt;font-weight:bold;color:rgba(0,0,0,.055);transform:rotate(-25deg);pointer-events:none}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><main class="paper">${mode==='stamp'?'<div class="water">مهر و امضا</div>':''}<header class="head">${db.settings.logo?.data?`<img class="logo" src="${esc(db.settings.logo.data)}" alt="لوگوی ${esc(db.settings.companyName||'آژانس')}">`:`<div class="fallback">${brandShort}</div>`}<div><h1 class="co">${esc(db.settings.companyName||'آژانس تاکسی')}</h1><div class="sub">خدمات حمل‌ونقل و تاکسی تلفنی</div><div class="contact">${db.settings.phone?`<span>تلفن: ${esc(db.settings.phone)}</span>`:''}${db.settings.address?`<span>آدرس: ${esc(db.settings.address)}</span>`:''}${db.settings.email?`<span>${esc(db.settings.email)}</span>`:''}</div></div></header><div class="title-row"><div><div class="title">${esc(doc.title)}</div><div class="meta">شماره: ${esc(doc.number)}</div></div><div class="meta">تاریخ صدور: ${formatDate(jalaliToday())}</div></div>${info}<section class="section"><div class="st">${doc.kind==='driver'?'جزئیات سفرها':doc.kind==='subscriber'?'لیست سفرهای تکمیل‌شده':'جزئیات رسید'}</div><table class="tbl"><thead><tr>${headers}</tr></thead><tbody>${printRows(doc)}</tbody></table></section>${totals}<div class="sign"><div>مهر و امضای ${esc(db.settings.companyName||'آژانس')}</div><div>${doc.kind==='subscriber'?'امضای مشترک':'امضای راننده / مسافر'}</div></div><footer class="foot"><span>تاریخ چاپ: ${formatDate(jalaliToday())}</span><span>صادرشده در ${esc(db.settings.companyName||'سامانه تاکسی کارن')}</span></footer></main></body></html>`;}
     function showPrintPreview(doc){ui.printContext={doc,mode:'formal'};openModal('پیش‌نمایش چاپ',`<div class="print-options"><button class="btn btn-small active" data-action="print-mode" data-mode="formal">فاکتور رسمی</button><button class="btn btn-small" data-action="print-mode" data-mode="simple">چاپ ساده</button><button class="btn btn-small" data-action="print-mode" data-mode="stamp">با مهر</button></div><div class="print-preview-shell"><iframe class="print-preview-frame" id="print-preview-frame" title="پیش‌نمایش سند چاپی" sandbox="allow-same-origin" srcdoc="${esc(printDocHtml(doc,'formal'))}"></iframe></div><div class="preview-actions"><span class="small muted">برای PDF در پنجرهٔ چاپ مرورگر، مقصد «ذخیره به‌صورت PDF» را انتخاب کنید.</span><div class="row"><button class="btn" data-action="close-modal">بستن</button><button class="btn btn-primary" data-action="print-document"><i class="fa-solid fa-print"></i> چاپ / ذخیره PDF</button></div></div>`,{wide:true});}
     function performPrint(){if(!ui.printContext)return;const frame=document.createElement('iframe');let printed=false;frame.setAttribute('aria-hidden','true');frame.style.cssText='position:fixed;width:0;height:0;border:0;right:0;bottom:0;visibility:hidden';frame.onload=()=>{if(printed)return;printed=true;setTimeout(()=>{try{frame.contentWindow.focus();frame.contentWindow.print();}catch(_){toast('چاپ را از پنجرهٔ پیش‌نمایش مرورگر انجام دهید.','error');}setTimeout(()=>frame.remove(),1500);},250);};document.body.appendChild(frame);frame.srcdoc=printDocHtml(ui.printContext.doc,ui.printContext.mode);setTimeout(()=>{if(!printed&&frame.isConnected){printed=true;try{frame.contentWindow.focus();frame.contentWindow.print();}catch(_){toast('چاپ را از پنجرهٔ پیش‌نمایش مرورگر انجام دهید.','error');}setTimeout(()=>frame.remove(),1500);}},2000);}
     function exportCSV(kind='trips'){let rows=[];let filename='taxi-export.csv';if(kind==='trips'){filename='taxi-trips.csv';rows=[['شماره','نام مسافر','تلفن','مبدأ','مقصد','راننده','تاریخ شمسی','وضعیت','روش پرداخت','کرایه','کمیسیون'],...db.trips.map(t=>[tripCode(t),t.passengerName,t.phone,t.origin,t.destination,driverName(t.driverId),t.date,tripStatusLabel(t.status),t.paymentMethod,t.fare,t.commission||0])];}else{filename='taxi-accounting.csv';rows=[['نوع','نام','تاریخ','مبلغ','توضیحات'],...db.subscriberPayments.map(p=>['دریافت مشترک',subscriberName(p.subscriberId),p.date,p.amount,p.note||'']),...db.driverPayments.map(p=>['پرداخت راننده',driverName(p.driverId),p.date,p.amount,p.note||'']),...db.expenses.map(p=>['هزینه',p.title,p.date,p.amount,p.note||''])];}const csv='\uFEFF'+rows.map(row=>row.map(cell=>`"${String(cell??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');downloadBlob(csv,filename,'text/csv;charset=utf-8');toast('فایل CSV آماده شد.');}
@@ -2956,10 +3334,11 @@
     function fileToDataURL(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('خواندن فایل لوگو ممکن نشد.'));reader.readAsDataURL(file);});}
     function utf8Base64(text){const bytes=new TextEncoder().encode(text);let binary='';bytes.forEach(b=>binary+=String.fromCharCode(b));return btoa(binary);}
     function sanitizeSvg(svgText){const parsed=new DOMParser().parseFromString(svgText,'image/svg+xml');const svg=parsed.documentElement;if(svg.nodeName.toLowerCase()!=='svg'||parsed.querySelector('parsererror'))throw new Error('ساختار فایل SVG معتبر نیست.');parsed.querySelectorAll('script,foreignObject,iframe,object,embed,audio,video').forEach(n=>n.remove());[svg,...parsed.querySelectorAll('*')].forEach(el=>Array.from(el.attributes||[]).forEach(attr=>{const name=attr.name.toLowerCase(),value=attr.value.trim().toLowerCase();if(name.startsWith('on')||name==='style'&&value.includes('javascript:')||(['href','xlink:href'].includes(name)&&!value.startsWith('#')&&!value.startsWith('data:image/')))el.removeAttribute(attr.name);}));return new XMLSerializer().serializeToString(svg);}
-    // فشرده‌سازی لوگوی بزرگ با canvas، محدودیت ۵۱۲ پیکسل و کیفیت JPEG برابر ۰٫۸۵.
-    async function compressImage(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file);const image=new Image();image.onload=()=>{try{const scale=Math.min(1,512/Math.max(image.naturalWidth,image.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));const context=canvas.getContext('2d');context.fillStyle='#ffffff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{URL.revokeObjectURL(url);if(!blob){reject(new Error('فشرده‌سازی تصویر انجام نشد.'));return;}resolve(blob);},'image/jpeg',.85);}catch(error){URL.revokeObjectURL(url);reject(error);}};image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('فایل تصویر قابل خواندن نیست.'));};image.src=url;});}
-    async function handleLogoFile(file){if(!file)return;const ext=String(file.name||'').toLowerCase().split('.').pop();const mime=file.type||({png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',svg:'image/svg+xml'}[ext]||'');const allowed=['image/png','image/jpeg','image/svg+xml'];if(!allowed.includes(mime)){toast('فقط فایل PNG، JPG یا SVG قابل بارگذاری است.','error');return;}if(file.size>500*1024){toast('حجم لوگو نباید بیشتر از ۵۰۰ کیلوبایت باشد.','error');return;}const uploadButton=$('.file-button');uploadButton?.classList.add('is-loading');const uploadInput=$('#logo-file');if(uploadInput)uploadInput.disabled=true;toast('لوگو در حال آماده‌سازی است…','info');try{let data,finalSize=file.size;if(mime==='image/svg+xml'){const text=await file.text(),safe=sanitizeSvg(text);data=`data:image/svg+xml;base64,${utf8Base64(safe)}`;finalSize=new Blob([safe]).size;}else if(file.size>200*1024){const compressed=await compressImage(file);data=await fileToDataURL(compressed);finalSize=compressed.size;}else data=await fileToDataURL(file);const logo={data,uploadedAt:jalaliToday(),originalName:String(file.name||'logo').slice(0,100),size:finalSize};const ok=transact('بارگذاری لوگوی آژانس',state=>{state.settings.logo=logo;return true;},{message:'لوگوی آژانس ذخیره شد.'});if(ok){cacheLogoInWorker(data);}}catch(error){toast(error.message||'بارگذاری لوگو ناموفق بود. فایل دیگری انتخاب کنید.','error');}finally{const button=$('.file-button');button?.classList.remove('is-loading');const input=$('#logo-file');if(input)input.disabled=false;}}
-    function removeLogo(){confirmDialog('حذف لوگوی آژانس','لوگوی بارگذاری‌شده حذف و نشان پیش‌فرض کارن‌سافت جایگزین شود؟',()=>transact('حذف لوگوی آژانس',state=>{state.settings.logo=null;return true;},{message:'لوگوی پیش‌فرض کارن‌سافت فعال شد.'}),'حذف لوگو');}
+    // فشرده‌سازی هوشمند لوگوی آژانس با حفظ شفافیت PNG/WEBP و محدودیت ۳۶۰ پیکسل.
+    async function compressImage(file,mime='image/png'){const probe=document.createElement('canvas');const probeCtx=typeof probe.getContext==='function'?probe.getContext('2d'):null;if(!probeCtx)return file;return new Promise((resolve,reject)=>{let settled=false;const url=URL.createObjectURL(file);const finish=(fn,val)=>{if(settled)return;settled=true;clearTimeout(timer);URL.revokeObjectURL(url);fn(val);};const timer=setTimeout(()=>finish(resolve,file),3000);const image=new Image();image.onload=()=>{try{const scale=Math.min(1,360/Math.max(image.naturalWidth||1,image.naturalHeight||1));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round((image.naturalWidth||256)*scale));canvas.height=Math.max(1,Math.round((image.naturalHeight||256)*scale));const context=canvas.getContext('2d');if(!context){finish(resolve,file);return;}const keepAlpha=mime==='image/png'||mime==='image/webp'||mime==='image/gif';const outMime=keepAlpha?'image/png':'image/jpeg';if(!keepAlpha){context.fillStyle='#ffffff';context.fillRect(0,0,canvas.width,canvas.height);}context.drawImage(image,0,0,canvas.width,canvas.height);if(typeof canvas.toBlob==='function'){canvas.toBlob(blob=>finish(resolve,blob||file),outMime,keepAlpha?undefined:.86);}else finish(resolve,file);}catch(error){finish(reject,error);}};image.onerror=()=>finish(reject,new Error('فایل تصویر قابل خواندن نیست.'));image.src=url;});}
+    async function handleLogoFile(file){if(!file)return false;const ext=String(file.name||'').toLowerCase().split('.').pop();const mime=file.type||({png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',gif:'image/gif',svg:'image/svg+xml'}[ext]||'');const allowed=['image/png','image/jpeg','image/webp','image/gif','image/svg+xml'];if(!allowed.includes(mime)){toast('فرمت لوگو باید PNG، JPG، WEBP، GIF یا SVG باشد.','error');return false;}if(file.size>10*1024*1024){toast('حجم فایل انتخابی نباید بیشتر از ۱۰ مگابایت باشد.','error');return false;}const uploadButton=$('.file-button');uploadButton?.classList.add('is-loading');const uploadInput=$('#logo-file');if(uploadInput)uploadInput.disabled=true;toast('لوگوی آژانس در حال آماده‌سازی است…','info');try{let data,finalSize=file.size;if(mime==='image/svg+xml'){const text=await file.text(),safe=sanitizeSvg(text);data=`data:image/svg+xml;base64,${utf8Base64(safe)}`;finalSize=new Blob([safe]).size;}else if(file.size>90*1024||mime==='image/webp'){try{const compressed=await compressImage(file,mime);data=await fileToDataURL(compressed);finalSize=compressed.size||file.size;}catch(_){if(file.size<=2*1024*1024){data=await fileToDataURL(file);finalSize=file.size;}else throw new Error('فشرده‌سازی تصویر لوگو انجام نشد.');}}else data=await fileToDataURL(file);const logo={data,uploadedAt:jalaliToday(),originalName:String(file.name||'logo').slice(0,100),size:finalSize};const ok=transact('بارگذاری لوگوی آژانس',state=>{state.settings.logo=logo;return true;},{message:'لوگوی شخصی آژانس ذخیره شد و روی فاکتورها فعال گردید.'});if(ok){cacheLogoInWorker(data);}return ok;}catch(error){toast(error.message||'بارگذاری لوگو ناموفق بود. فایل دیگری انتخاب کنید.','error');return false;}finally{const button=$('.file-button');button?.classList.remove('is-loading');const input=$('#logo-file');if(input)input.disabled=false;}}
+    function previewLogoInvoice(){showPrintPreview({kind:'subscriber',title:'پیش‌نمایش فاکتور رسمی آژانس',number:`INV-${jalaliParts(jalaliToday()).y}-SAMPLE`,person:{name:'مشترک نمونه',phone:'۰۹۱۲۰۰۰۰۰۰۰',type:'legal',expiry:jalaliToday()},trips:[{date:jalaliToday(),time:nowTime(),driverId:'',origin:'مبدأ نمونه',destination:'مقصد نمونه',fare:Number(db.settings.baseFare)||150000}],fareTotal:Number(db.settings.baseFare)||150000,tax:0,charges:Number(db.settings.baseFare)||150000,paid:0,balance:Number(db.settings.baseFare)||150000});}
+    function removeLogo(){confirmDialog('حذف لوگوی آژانس','لوگوی اختصاصی آژانس حذف شود؟',()=>transact('حذف لوگوی آژانس',state=>{state.settings.logo=null;return true;},{message:'لوگوی آژانس حذف شد.'}),'حذف لوگو');}
     function demoData(){if(db.trips.length||db.drivers.length||db.subscribers.length){toast('داده نمونه فقط در پایگاه خالی قابل افزودن است.','error');return;}transact('افزودن داده نمایشی',state=>{state.drivers=[{id:'demo-d1',name:'آرمان رضایی',phone:'۰۹۱۲۱۲۳۴۵۶۷',license:'۴۵۸۲۱',commission:15,vehicleId:'demo-v1',status:'available'},{id:'demo-d2',name:'سعید احمدی',phone:'۰۹۱۲۳۴۵۶۷۸۹',license:'۳۷۹۱۰',commission:12,vehicleId:'demo-v2',status:'available'},{id:'demo-d3',name:'مهدی کریمی',phone:'۰۹۳۵۱۲۳۴۵۶۷',license:'۶۲۱۴۰',commission:15,vehicleId:'',status:'available'}];state.vehicles=[{id:'demo-v1',plate:'ایران ۱۱ · ۱۲۳ الف ۴۵',model:'پژو ۲۰۷',color:'سفید',driverId:'demo-d1',active:true},{id:'demo-v2',plate:'ایران ۲۲ · ۴۵۶ ب ۶۷',model:'سمند سورن',color:'نقره‌ای',driverId:'demo-d2',active:true}];state.drivers[0].vehicleId='demo-v1';state.drivers[1].vehicleId='demo-v2';state.addresses=[{id:'demo-a1',title:'میدان ونک',detail:'تهران، میدان ونک',surcharge:0},{id:'demo-a2',title:'فرودگاه مهرآباد',detail:'تهران، فرودگاه مهرآباد',surcharge:0},{id:'demo-a3',title:'میدان آزادی',detail:'تهران، میدان آزادی',surcharge:0}];state.subscribers=[{id:'demo-s1',name:'مریم حسینی',phone:'۰۹۱۲۳۴۵۶۷۸۰',type:'individual',company:'',expiry:jalaliDaysAgo(-120),active:true},{id:'demo-s2',name:'شرکت نمونه پارس',phone:'۰۲۱۸۸۸۸۱۲۳۴',type:'legal',company:'شرکت نمونه پارس',expiry:jalaliDaysAgo(-180),active:true}];const yesterday=jalaliDaysAgo(1),today=jalaliToday();state.trips=[{id:'demo-t1',code:'TRP-0001',passengerName:'علی محمدی',phone:'۰۹۱۲۲۲۲۲۲۲۲',origin:'میدان ونک',destination:'فرودگاه مهرآباد',driverId:'demo-d1',customerType:'regular',subscriberId:'',date:yesterday,time:'08:35',fare:185000,paymentMethod:'cash',priority:'normal',status:'completed',commissionRate:15,commission:27750,createdAt:new Date(Date.now()-86400000).toISOString(),operatorId:'op-1',manualFare:false},{id:'demo-t2',code:'TRP-0002',passengerName:'مریم حسینی',phone:'۰۹۱۲۳۴۵۶۷۸۰',origin:'میدان آزادی',destination:'میدان ونک',driverId:'demo-d2',customerType:'subscriber',subscriberId:'demo-s1',date:yesterday,time:'11:10',fare:210000,paymentMethod:'subscriber',priority:'normal',status:'completed',commissionRate:12,commission:25200,createdAt:new Date(Date.now()-75000000).toISOString(),operatorId:'op-1',manualFare:false},{id:'demo-t3',code:'TRP-0003',passengerName:'رضا نادری',phone:'۰۹۱۲۸۸۸۸۸۸۸',origin:'میدان ونک',destination:'میدان آزادی',driverId:'',customerType:'regular',subscriberId:'',date:today,time:nowTime(),fare:120000,paymentMethod:'cash',priority:'urgent',status:'pending',commissionRate:15,commission:0,createdAt:new Date().toISOString(),operatorId:'op-1',manualFare:false}];return true;},{message:'اطلاعات نمایشی اضافه شد؛ حالا می‌توانید گردش‌کار را آزمایش کنید.'});}
     function saveForm(form,kind){const fd=new FormData(form),id=form.dataset.id;const val=(key)=>String(fd.get(key)||'').trim();if(handleSecurityForm(form,kind,fd,val))return;
     if(handleDurabilityForm(form,kind,fd,val))return;
@@ -2967,20 +3346,22 @@
     if(handleRangeForm(form,kind,fd,val))return;
     if(handleSyncForm(form,kind,fd,val))return;
     if(handleDispatchForm(form,kind,fd))return;if(kind==='trip-note'){const note=String(fd.get('note')||'').slice(0,240);closeModal();transact('ثبت یادداشت سفر',state=>{const trip=state.trips.find(item=>item.id===id);if(!trip)return false;trip.note=note;return true;},{message:note?'یادداشت سفر ذخیره شد.':'یادداشت سفر پاک شد.'});return;}if(kind==='settings-company'){transact('ذخیره اطلاعات شرکت',state=>{state.settings.companyName=val('companyName');state.settings.phone=val('phone');state.settings.address=val('address');state.settings.email=val('email');state.settings.taxRate=Math.min(100,parseAmount(fd.get('taxRate')));return true;},{message:'اطلاعات شرکت ذخیره شد.'});return;}if(kind==='settings-rates'){transact('ذخیره نرخ‌ها',state=>{state.settings.baseFare=parseAmount(fd.get('baseFare'));state.settings.farePerKm=parseAmount(fd.get('farePerKm'));state.settings.nightRateMultiplier=Math.max(1,Number(fd.get('nightRateMultiplier'))||1);state.settings.holidayRateMultiplier=Math.max(1,Number(fd.get('holidayRateMultiplier'))||1);state.settings.commissionDefault=Math.min(100,Math.max(0,Number(fd.get('commissionDefault'))||0));return true;},{message:'نرخ‌ها به‌روزرسانی شد.'});return;}if(kind==='trip'){handleTripSubmit(form);return;}if(kind==='driver'){transact(id?'ویرایش راننده':'ثبت راننده',state=>{const d=state.drivers.find(x=>x.id===id)||{id:makeId('DRV')};Object.assign(d,{name:val('name'),phone:val('phone'),license:val('license'),commission:Math.min(100,Number(fd.get('commission'))||0),vehicleId:val('vehicleId'),status:val('status')==='off'?'off':val('status')==='rest'?'rest':'available',shiftFrom:val('shiftFrom'),shiftTo:val('shiftTo'),restFrom:val('restFrom'),restTo:val('restTo')});if(!state.drivers.some(x=>x.id===d.id))state.drivers.push(d);state.vehicles.forEach(v=>{if(v.driverId===d.id&&v.id!==d.vehicleId)v.driverId='';});const v=state.vehicles.find(x=>x.id===d.vehicleId);if(v)v.driverId=d.id;return true;},{message:'پرونده راننده ذخیره شد.'});closeModal();return;}if(kind==='vehicle'){transact(id?'ویرایش خودرو':'ثبت خودرو',state=>{const v=state.vehicles.find(x=>x.id===id)||{id:makeId('VEH')};Object.assign(v,{plate:val('plate'),model:val('model'),color:val('color'),driverId:val('driverId'),active:val('active')!=='false',note:val('note')});if(!state.vehicles.some(x=>x.id===v.id))state.vehicles.push(v);state.drivers.forEach(d=>{if(d.vehicleId===v.id)d.vehicleId='';});const driver=state.drivers.find(d=>d.id===v.driverId);if(driver)driver.vehicleId=v.id;return true;},{message:'اطلاعات خودرو ذخیره شد.'});closeModal();return;}if(kind==='address'){transact(id?'ویرایش آدرس':'ثبت آدرس',state=>{const a=state.addresses.find(x=>x.id===id)||{id:makeId('ADR')};Object.assign(a,{title:val('title'),detail:val('detail'),surcharge:parseAmount(fd.get('surcharge')),lat:Number(toEnglish(val('lat')))||0,lng:Number(toEnglish(val('lng')))||0});if(!state.addresses.some(x=>x.id===a.id))state.addresses.push(a);return true;},{message:'آدرس ذخیره شد.'});closeModal();return;}if(kind==='subscriber'){transact(id?'ویرایش مشترک':'ثبت مشترک',state=>{const s=state.subscribers.find(x=>x.id===id)||{id:makeId('SUB')};const expiry=val('expiry');if(expiry&&!validJalaliDate(toEnglish(expiry).replaceAll('/','-')))throw new Error('تاریخ اعتبار باید شمسی و معتبر باشد.');Object.assign(s,{name:val('name'),phone:val('phone'),type:val('type')||'individual',company:val('company'),expiry:expiry?toEnglish(expiry).replaceAll('/','-'):'',active:val('active')!=='false'});if(!state.subscribers.some(x=>x.id===s.id))state.subscribers.push(s);return true;},{message:'اطلاعات مشترک ذخیره شد.'});closeModal();return;}if(kind==='subscriber-payment'||kind==='driver-payment'){const amount=parseAmount(fd.get('amount'));if(amount<=0){toast('مبلغ پرداخت باید بیشتر از صفر باشد.','error');return;}const date=toEnglish(val('date')||jalaliToday()).replaceAll('/','-');if(!validJalaliDate(date)){toast('تاریخ پرداخت معتبر نیست.','error');return;}if(!closedGuard(date,'تاریخ این پرداخت'))return;transact(kind==='subscriber-payment'?'ثبت دریافت مشترک':'ثبت پرداخت راننده',state=>{const payment={id:makeId(kind==='subscriber-payment'?'SP':'DP'),subscriberId:kind==='subscriber-payment'?id:undefined,driverId:kind==='driver-payment'?id:undefined,amount,date,method:val('method'),note:val('note'),createdAt:new Date().toISOString(),operatorId:getOperator().id};state[kind==='subscriber-payment'?'subscriberPayments':'driverPayments'].unshift(payment);return true;},{message:'پرداخت با موفقیت ثبت شد.'});closeModal();return;}if(kind==='expense'){const amount=parseAmount(fd.get('amount'));if(!amount){toast('مبلغ هزینه باید بیشتر از صفر باشد.','error');return;}const date=toEnglish(val('date')||jalaliToday()).replaceAll('/','-');if(!validJalaliDate(date)){toast('تاریخ هزینه معتبر نیست.','error');return;}if(!closedGuard(date,'تاریخ این هزینه'))return;transact('ثبت هزینه',state=>{state.expenses.unshift({id:makeId('EXP'),title:val('title'),category:val('category'),amount,date,paidBy:val('paidBy'),note:val('note'),operatorId:getOperator().id,createdAt:new Date().toISOString()});return true;},{message:'هزینه ثبت شد.'});closeModal();return;}if(kind==='operator'){const guards=securityActive();transact('افزودن اپراتور',state=>{const operator={id:makeId('OP'),name:val('name'),role:ROLE_LIST.includes(val('role'))?val('role'):ROLE_OPERATOR,active:true};state.operators.push(operator);if(!guards)state.meta.currentOperatorId=operator.id;return true;},{message:guards?'اپراتور جدید افزوده شد؛ برای ورود او PIN تعیین کنید.':'اپراتور جدید افزوده و انتخاب شد.'});closeModal();renderApp();return;}if(kind==='cancel-trip'){const reason=val('reason');if(!reason){toast('دلیل لغو را وارد کنید.','error');return;}const fee=Math.max(0,parseAmount(fd.get('fee')));closeModal();updateTripStatus(id,'cancelled',reason,fee);}}
-    function processFileInput(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const text=String(reader.result);if(isEncryptedBackup(text)){promptEncryptedRestore(text);return;}const parsed=JSON.parse(text);const normalized=validateBackup(parsed);confirmDialog('بازیابی نسخه پشتیبان','تمام اطلاعات فعلی با نسخه پشتیبان انتخاب‌شده جایگزین می‌شود. ادامه می‌دهید؟',()=>{takeSnapshot('قبل از بازیابی نسخه پشتیبان');if(DB.replace(normalized)){ui.locked=false;ui.sessionVerified=false;logAudit('بازیابی نسخه پشتیبان');persistSilent();renderApp();toast('اطلاعات با موفقیت بازیابی شد.');}},'بازیابی اطلاعات');}catch(_){toast('فایل انتخاب‌شده پشتیبان معتبر کارن‌سافت نیست.','error');}};reader.onerror=()=>toast('خواندن فایل پشتیبان ناموفق بود.','error');reader.readAsText(file);}
+    function processFileInput(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const text=String(reader.result);if(isEncryptedBackup(text)){promptEncryptedRestore(text);return;}const parsed=JSON.parse(text);const normalized=validateBackup(parsed);confirmDialog('بازیابی نسخه پشتیبان','تمام اطلاعات فعلی با نسخه پشتیبان انتخاب‌شده جایگزین می‌شود. ادامه می‌دهید؟',()=>{takeSnapshot('قبل از بازیابی نسخه پشتیبان');normalized.sync=normalized.sync||{};normalized.sync.dirty=true;if(DB.replace(normalized)){cloudMutationSeq++;ui.locked=false;ui.sessionVerified=false;logAudit('بازیابی نسخه پشتیبان');persistSilent();renderApp();scheduleCloudSync(800);toast('اطلاعات با موفقیت بازیابی شد.');}},'بازیابی اطلاعات');}catch(_){toast('فایل انتخاب‌شده پشتیبان معتبر کارن‌سافت نیست.','error');}};reader.onerror=()=>toast('خواندن فایل پشتیبان ناموفق بود.','error');reader.readAsText(file);}
     function deleteRecord(kind,id){const labels={driver:'راننده',vehicle:'خودرو',address:'آدرس',subscriber:'مشترک',expense:'هزینه'};confirmDialog(`حذف ${labels[kind]||'مورد'}`,`آیا از حذف این ${labels[kind]||'مورد'} مطمئن هستید؟ این کار قابل بازگشت نیست.`,()=>{transact(`حذف ${labels[kind]||'مورد'}`,state=>{const mapping={driver:'drivers',vehicle:'vehicles',address:'addresses',subscriber:'subscribers',expense:'expenses'};const key=mapping[kind];state[key]=state[key].filter(x=>x.id!==id);if(kind==='driver')state.vehicles.forEach(v=>{if(v.driverId===id)v.driverId='';});if(kind==='vehicle')state.drivers.forEach(d=>{if(d.vehicleId===id)d.vehicleId='';});return true;},{message:`${labels[kind]||'مورد'} حذف شد.`});});}
     function showAudit(){const rows=db.auditLog.slice(0,100);openModal('تاریخچه رویدادها',rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>رویداد</th><th>اپراتور</th><th>تاریخ و ساعت</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.action)}${r.details?`<div class="table-secondary">${esc(r.details)}</div>`:''}</td><td>${esc(r.operatorName||'—')}</td><td class="nowrap">${formatDate(r.date)} · ${esc(r.time||'')}</td></tr>`).join('')}</tbody></table></div>`:emptyState('تاریخچه خالی است','رویدادهای مهم سامانه پس از انجام عملیات ثبت می‌شوند.'),{wide:true});}
     function showQueuePriority(id){transact('تغییر اولویت سفر',state=>{const t=state.trips.find(x=>x.id===id);if(!t)return false;t.priority=t.priority==='urgent'?'normal':'urgent';return true;},{message:'اولویت سفر به‌روز شد.'});}
     function handleClick(event){const route=event.target.closest('[data-route]');if(route){if(!isStoreAccount())return;navTo(route.dataset.route);return;}const actionEl=event.target.closest('[data-action]');if(!actionEl)return;const {action,id}=actionEl.dataset;if(action==='close-modal'){const pending=!!(ui.pendingSecurity||ui.pendingPin);ui.pendingSecurity=null;ui.pendingPin=null;ui.pendingSwitch=null;closeModal();if(pending&&isStoreAccount())renderApp();return;}if(action==='theme'){if(!isStoreAccount()){const next=document.documentElement.dataset.theme==='light'?'dark':'light';db.settings.theme=next;setTheme();}else transact('تغییر پوسته',state=>{state.settings.theme=state.settings.theme==='light'?'dark':'light';return true;},{message:`پوسته ${db.settings.theme==='light'?'روشن':'تیره'} فعال شد.`,audit:false,allowReadonly:true});return;}if(action==='auth-logout'){confirmAccountLogout();return;}if(action==='auth-refresh'){refreshAccount({manual:true});return;}if(action==='account-menu'){openAccountModal();return;}if(action==='goto-backup'){closeModal();navTo('backup');return;}if(isManagerAccount()&&action&&action.startsWith('mgr-')){handleManagerAction(action,id,actionEl);return;}if(!isStoreAccount())return;if(ui.locked&&!['pin-key','lock-pick','lock-back','lock-switch','lock-recover','lock-export','lock-reset','lock-code-done','close-modal'].includes(action))return;if(!subscriptionWritable()&&!READONLY_ALLOWED_ACTIONS.has(action)){toast(subscriptionBlockMessage(),'error');return;}if(ACTION_CAPS[action]&&!requireCap(ACTION_CAPS[action]))return;switch(action){case 'new-trip':navTo('trips/new');break;case 'toggle-sidebar':$('#sidebar').classList.toggle('open');break;case 'shift':startOrEndShift();break;
       case 'shift-close':closeShiftForm();break;
       case 'sync-export':exportSyncBundle();break;
+      case 'cloud-sync-now':runCloudSync({manual:true});break;
+      case 'preview-logo-invoice':previewLogoInvoice();break;
       case 'sync-refresh':adoptExternalChange('به‌روزرسانی دستی');break;
       case 'sync-broadcast':{notifyPeers('اعلام تغییرات');toast('تغییرات برای پنجره‌های دیگر اعلام شد.','info');break;}
       case 'repeat-trip':repeatTrip(id);break;
       case 'trip-note':openTripNote(id);break;
       case 'quick-search':openQuickSearch();break;
       case 'quick-open':quickOpen(actionEl.dataset.kind,id);break;
-      case 'skip-to-content':{const main=$('#app-root');main.focus();main.scrollIntoView({block:'start'});break;}case 'operator-menu':openOperatorModal();break;case 'close-modal':{const pending=!!(ui.pendingSecurity||ui.pendingPin);ui.pendingSecurity=null;ui.pendingPin=null;ui.pendingSwitch=null;closeModal();if(pending)renderApp();break;}case 'add-driver':openDriverForm();break;case 'edit-driver':openDriverForm(driverById(id));break;case 'delete-driver':deleteRecord('driver',id);break;case 'add-vehicle':openVehicleForm();break;case 'edit-vehicle':openVehicleForm(vehicleById(id));break;case 'delete-vehicle':deleteRecord('vehicle',id);break;case 'add-address':openAddressForm();break;case 'edit-address':openAddressForm(db.addresses.find(a=>a.id===id));break;case 'delete-address':deleteRecord('address',id);break;case 'add-subscriber':openSubscriberForm();break;case 'edit-subscriber':openSubscriberForm(subscriberById(id));break;case 'delete-subscriber':deleteRecord('subscriber',id);break;case 'subscriber-payment':openPaymentForm('subscriber',id);break;case 'driver-payment':openPaymentForm('driver',id);break;case 'subscriber-invoice':openSubscriberInvoice(id);break;case 'driver-statement':openDriverInvoice(id);break;case 'add-expense':openExpenseForm();break;case 'delete-expense':deleteRecord('expense',id);break;case 'assign-trip':{const selected=$(`[data-assign-select="${CSS.escape(id)}"]`);assignTrip(id,selected?.value);break;}case 'quick-assign':smartAssign(id);break;case 'start-trip':if(updateTripStatus(id,'inProgress')){}break;case 'complete-trip':confirmDialog('تکمیل سفر','پس از تکمیل، کرایه و کمیسیون در گزارش‌های مالی ثبت می‌شود.',()=>updateTripStatus(id,'completed'),'تکمیل سفر');break;case 'cancel-trip':showCancelTrip(id);break;case 'edit-trip':openTripEdit(id);break;case 'print-trip':openTripReceipt(id);break;case 'trip-page':ui.tripPage=Number(actionEl.dataset.page)||1;renderApp();break;case 'export-trips':exportCSV('trips');break;case 'export-accounting':exportCSV('accounting');break;case 'backup-encrypted':openPasswordBackup();break;
+      case 'skip-to-content':{const main=$('#app-root');main.focus();if(typeof main.scrollIntoView==='function')main.scrollIntoView({block:'start'});break;}case 'operator-menu':openOperatorModal();break;case 'close-modal':{const pending=!!(ui.pendingSecurity||ui.pendingPin);ui.pendingSecurity=null;ui.pendingPin=null;ui.pendingSwitch=null;closeModal();if(pending)renderApp();break;}case 'add-driver':openDriverForm();break;case 'edit-driver':openDriverForm(driverById(id));break;case 'delete-driver':deleteRecord('driver',id);break;case 'add-vehicle':openVehicleForm();break;case 'edit-vehicle':openVehicleForm(vehicleById(id));break;case 'delete-vehicle':deleteRecord('vehicle',id);break;case 'add-address':openAddressForm();break;case 'edit-address':openAddressForm(db.addresses.find(a=>a.id===id));break;case 'delete-address':deleteRecord('address',id);break;case 'add-subscriber':openSubscriberForm();break;case 'edit-subscriber':openSubscriberForm(subscriberById(id));break;case 'delete-subscriber':deleteRecord('subscriber',id);break;case 'subscriber-payment':openPaymentForm('subscriber',id);break;case 'driver-payment':openPaymentForm('driver',id);break;case 'subscriber-invoice':openSubscriberInvoice(id);break;case 'driver-statement':openDriverInvoice(id);break;case 'add-expense':openExpenseForm();break;case 'delete-expense':deleteRecord('expense',id);break;case 'assign-trip':{const selected=$(`[data-assign-select="${CSS.escape(id)}"]`);assignTrip(id,selected?.value);break;}case 'quick-assign':smartAssign(id);break;case 'start-trip':if(updateTripStatus(id,'inProgress')){}break;case 'complete-trip':confirmDialog('تکمیل سفر','پس از تکمیل، کرایه و کمیسیون در گزارش‌های مالی ثبت می‌شود.',()=>updateTripStatus(id,'completed'),'تکمیل سفر');break;case 'cancel-trip':showCancelTrip(id);break;case 'edit-trip':openTripEdit(id);break;case 'print-trip':openTripReceipt(id);break;case 'trip-page':ui.tripPage=Number(actionEl.dataset.page)||1;renderApp();break;case 'export-trips':exportCSV('trips');break;case 'export-accounting':exportCSV('accounting');break;case 'backup-encrypted':openPasswordBackup();break;
       case 'send-driver-sms':sendTripToDriver(id);break;
       case 'assign-next':id?pickNextDriver(id):assignNextQueuedTrip();break;
       case 'assign-shared':assignSharedGroup(actionEl.dataset.id);break;
@@ -3024,7 +3405,7 @@
     function handleInput(event){const target=event.target;if(!isStoreAccount())return;if(target.id==='quick-search-input'){runQuickSearch(target.value);return;}if(target.id==='lock-code'){target.value=toEnglish(target.value).toUpperCase().replace(/[^0-9A-Z-]/g,'').slice(0,11);return;}if(/^(lock-pin2?|reset-pin-value|reset-pin-repeat|operator-pin-value|change-pin-current|change-pin-value|change-pin-repeat)$/.test(target.id)){target.value=normalizePin(target.value).slice(0,8);return;}if(target.id==='trip-search'){const start=target.selectionStart;ui.tripSearch=target.value;ui.tripPage=1;const panel=$('.card-pad', $('#app-root'));if(parseRoute().key==='trips/list'){const html=tripListPanel();const wrapper=panel?.parentElement;if(wrapper){const existing=$('.card.card-pad',wrapper);if(existing){existing.outerHTML=html;const input=$('#trip-search');if(input){input.focus();input.setSelectionRange(start,start);}}}}return;}if(target.id==='trip-fare'&&target.dataset.manual!=='false'){target.dataset.manual='true';const caption=$('#fare-caption',target.form);if(caption)caption.textContent='مبلغ به‌صورت دستی وارد شده است.';}if(['trip-distance','trip-time','trip-date','trip-origin','trip-destination'].includes(target.id)){const form=target.closest('form');if(form)estimateFare(form);}}
     function handleDocumentClick(event){const backdrop=event.target.closest('[data-modal-backdrop]');if(backdrop&&event.target===backdrop){closeModal();return;}if(ui.calendar&&!event.target.closest('.calendar-pop')&&!event.target.closest('[data-action="calendar-toggle"]')){const pop=$('.calendar-pop');if(pop)pop.remove();ui.calendar=null;}if(window.innerWidth<=760&&!event.target.closest('#sidebar')&&!event.target.closest('[data-action="toggle-sidebar"]'))$('#sidebar').classList.remove('open');}
     function init(){setTheme();initSubscription();initSecurity();initDurability();initSync();renderApp();setupPWA();document.addEventListener('click',handleClick);document.addEventListener('submit',handleSubmit);document.addEventListener('change',handleChange);document.addEventListener('input',handleInput);document.addEventListener('click',handleDocumentClick);window.addEventListener('hashchange',renderApp);window.addEventListener('load',()=>{if(isStoreAccount())drawCharts(parseRoute().page==='dashboard');});document.addEventListener('keydown',event=>{if(event.key==='Escape'){if($('#modal-root').firstElementChild)closeModal();$('#sidebar').classList.remove('open');return;}if(!isStoreAccount())return;const tag=event.target&&event.target.tagName;const typing=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(event.target&&event.target.isContentEditable);if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();openQuickSearch();return;}if(typing)return;if(event.key==='/'){event.preventDefault();openQuickSearch();return;}if(event.key.toLowerCase()==='n'&&!event.ctrlKey&&!event.metaKey&&!event.altKey){event.preventDefault();if(!subscriptionWritable()){toast(subscriptionBlockMessage(),'error');return;}navTo('trips/new');return;}if(event.key==='?'){event.preventDefault();navTo('tutorial');return;}if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();const form=$('#modal-root form')||$('#app-root form');if(form){form.requestSubmit();}else toast('همه تغییرات به‌صورت خودکار ذخیره می‌شوند.');}});setInterval(()=>{if(isStoreAccount()&&parseRoute().key==='trips/queue'&&!ui.locked)renderApp();const clock=$('#clock-value');if(clock)clock.textContent=nowTime();$('#footer-clock').textContent=`${formatDate(jalaliToday())} · ${nowTime()}`;},30000);}
-    const App={version:APP_VERSION,get data(){return db;},navigate:navTo,backup:backupDatabase,render:renderApp,calendar:{today:jalaliToday,daysAgo:jalaliDaysAgo,valid:validJalaliDate,toGregorian:dateToGregorian,fromGregorian:gregorianToJalali,monthLength:jalaliMonthLength,monthBounds:jalaliMonthBounds,parts:jalaliParts,format:formatDate},fares:{estimateFare,tripTax,driverStatement,subscriberBalance,dispatch},utils:{money,fmtNumber,toPersian,toEnglish,parseAmount,esc,currentShift},quality:{quickSearchResults,openQuickSearch,runQuickSearch,repeatTrip,tripNote,driverTodayRows,driverTodayCard,accessibilityCard,defaultTheme,totalFareForDate,prefersDark},sync:{info:syncInfo,deviceId:syncDeviceId,handlePeer:handlePeerMessage,peer:handlePeerMessage,recordStamp,sameRecord,mergeDatabases,mergeDecision,stampChanges,log:()=>db.sync.log,peers:peerList,adoptExternalChange,exportBundle:exportSyncBundle,importFile:handleSyncFile,applyMerge:applySyncMerge,lastReport:()=>ui.syncReport,setImport:payload=>{ui.syncImport=payload;},openMerge:openSyncMerge,summaryRows,operatorActivity,shiftCash,cashBetween,currentShift,closeShift,startShift:startOrEndShift,counts:syncCounts},accounting:{reportRange,setReportRange,plReport,isDateClosed,closeMonth,reopenClose,archiveStats,invoices:()=>db.invoices,closes:()=>db.closes,lastCloseNumber:()=>db.invoices.find(i=>i.kind==='subscriber')?.number||'',exportRangeCSV,issueInvoice},dispatch:{turnBased:()=>dispatch().turnBased,nextInTurn,driverTurnList,assignTrips,assignSharedGroup,sharedRouteGroups,minutesWaiting,routeDistanceKm,haversineKm,tripStops,tripRouteText},comms:{tripMessage,tripPlaceholders,fillTemplate,smsTemplates,toDial,smsLink,contactButtons,previewTripMessage},durability:{takeSnapshot,snapshotInfo,restoreSnapshot,backupDue,storageUsage,isEncryptedBackup,encryptBackupText,decryptBackupText,takeBackupMarker:markBackupTaken,importCsvRows,csvRows},security:{can,roleOf,requiredCapability,securityActive,operatorHasPin,createSecret,verifySecret,lock:lockApp,unlock:unlockApp,submitPin,setPin:pin=>setOperatorPin(getOperator(),pin),verifyCurrentPin:pin=>verifySecret(getOperator().pin,pin),state:()=>({locked:ui.locked,sessionVerified:ui.sessionVerified,mode:ui.auth&&ui.auth.mode,attempts:lockState().attempts,until:lockState().until})},subscription:{info:subscriptionInfo,writable:subscriptionWritable,isAuthenticated:accountAuthenticated,isManager:isManagerAccount,isStore:isStoreAccount,user:()=>accountState?.user||null,state:()=>accountState,login:accountLogin,logout:accountLogout,refresh:refreshAccount,setAccountState:setAccountStateForApp,apiFetch,managerState:()=>mgr,loadManagerTab}};window.App=App;
+    const App={version:APP_VERSION,get data(){return db;},navigate:navTo,backup:backupDatabase,render:renderApp,logo:{upload:handleLogoFile,preview:previewLogoInvoice,printHtml:printDocHtml},calendar:{today:jalaliToday,daysAgo:jalaliDaysAgo,valid:validJalaliDate,toGregorian:dateToGregorian,fromGregorian:gregorianToJalali,monthLength:jalaliMonthLength,monthBounds:jalaliMonthBounds,parts:jalaliParts,format:formatDate},fares:{estimateFare,tripTax,driverStatement,subscriberBalance,dispatch},utils:{money,fmtNumber,toPersian,toEnglish,parseAmount,esc,currentShift},quality:{quickSearchResults,openQuickSearch,runQuickSearch,repeatTrip,tripNote,driverTodayRows,driverTodayCard,accessibilityCard,defaultTheme,totalFareForDate,prefersDark},sync:{info:syncInfo,deviceId:syncDeviceId,handlePeer:handlePeerMessage,peer:handlePeerMessage,recordStamp,sameRecord,mergeDatabases,mergeDecision,stampChanges,log:()=>db.sync.log,peers:peerList,adoptExternalChange,exportBundle:exportSyncBundle,importFile:handleSyncFile,applyMerge:applySyncMerge,lastReport:()=>ui.syncReport,setImport:payload=>{ui.syncImport=payload;},openMerge:openSyncMerge,summaryRows,operatorActivity,shiftCash,cashBetween,currentShift,closeShift,startShift:startOrEndShift,counts:syncCounts,cloudSync:runCloudSync,buildPayload:buildCloudSyncPayload,applyCloudPayload:applyCloudPayloadToLocal},accounting:{reportRange,setReportRange,plReport,isDateClosed,closeMonth,reopenClose,archiveStats,invoices:()=>db.invoices,closes:()=>db.closes,lastCloseNumber:()=>db.invoices.find(i=>i.kind==='subscriber')?.number||'',exportRangeCSV,issueInvoice},dispatch:{turnBased:()=>dispatch().turnBased,nextInTurn,driverTurnList,assignTrips,assignSharedGroup,sharedRouteGroups,minutesWaiting,routeDistanceKm,haversineKm,tripStops,tripRouteText},comms:{tripMessage,tripPlaceholders,fillTemplate,smsTemplates,toDial,smsLink,contactButtons,previewTripMessage},durability:{takeSnapshot,snapshotInfo,restoreSnapshot,backupDue,storageUsage,isEncryptedBackup,encryptBackupText,decryptBackupText,takeBackupMarker:markBackupTaken,importCsvRows,csvRows},security:{can,roleOf,requiredCapability,securityActive,operatorHasPin,createSecret,verifySecret,lock:lockApp,unlock:unlockApp,submitPin,setPin:pin=>setOperatorPin(getOperator(),pin),verifyCurrentPin:pin=>verifySecret(getOperator().pin,pin),state:()=>({locked:ui.locked,sessionVerified:ui.sessionVerified,mode:ui.auth&&ui.auth.mode,attempts:lockState().attempts,until:lockState().until})},subscription:{info:subscriptionInfo,countdown:subscriptionCountdownParts,renewalResult:()=>ui.renewalCheckResult||null,writable:subscriptionWritable,isAuthenticated:accountAuthenticated,isManager:isManagerAccount,isStore:isStoreAccount,user:()=>accountState?.user||null,state:()=>accountState,login:accountLogin,logout:accountLogout,refresh:refreshAccount,setAccountState:setAccountStateForApp,apiFetch,managerState:()=>mgr,loadManagerTab}};window.App=App;
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
   })();
   </script>

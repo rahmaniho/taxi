@@ -135,8 +135,25 @@ bash bin/cpanel-setup.sh
 
 ---
 
+## ارتقای بی‌دردسر به نسخه ۱.۴.۰ در cPanel (بدون SSH و بدون حذف اطلاعات)
+
+اگر سامانه از قبل روی هاست شما (مثلاً ساختار `/home/karensof/taxi-laravel` و `/home/karensof/public_html/taxi`) نصب است:
+
+1. **فایل‌های `.env` و `.htaccess` فعلی را نگه دارید** (به‌ویژه خط `AddHandler application/x-httpd-lsphp84 .php .php8 .phtml` در `/home/karensof/public_html/taxi/.htaccess` روی وب‌سرور LiteSpeed).
+2. فایل‌های `taxi.html` و `sw.js` جدید را در پوشهٔ وب (`/home/karensof/public_html/taxi/`) جایگزین کنید.
+3. پوشه‌های `app/`، `routes/` و `database/` جدید را در هستهٔ لاراول (`/home/karensof/taxi-laravel/`) جایگزین کنید.
+4. در مسیر `/home/karensof/taxi-laravel/bootstrap/cache/` اگر فایل `routes-v7.php` وجود دارد آن را حذف کنید تا مسیرهای جدید `/api/sync` بلافاصله فعال شوند.
+5. نیازی به SSH برای ساخت جدول جدید نیست: کنترلر `SyncController` در اولین همگام‌سازی، در صورت نبود جدول `agency_sync_states` آن را به‌صورت خودکار در دیتابیس ایجاد می‌کند (در صورت دسترسی به ترمینال می‌توانید `php artisan migrate --force` هم بزنید).
+
+---
+
 ## رفع خطاهای رایج
 
-- **خطای `Composer detected issues in your platform (>= 8.4.0)`:** در **MultiPHP Manager** نسخهٔ PHP ساب‌دامین `taxi.karen-soft.ir` را روی **PHP 8.4** بگذارید و در ترمینال هم در صورت نیاز با `/usr/local/bin/ea-php84` دستور را اجرا کنید.
+- **خطای `Composer detected issues in your platform (>= 8.4.0)` یا نسخهٔ PHP قدیمی روی LiteSpeed:** اگر `.htaccess` پوشهٔ بالاتر نسخهٔ قدیمی PHP را تحمیل می‌کند، در ابتدای `/home/USERNAME/public_html/taxi/.htaccess` خط زیر را قرار دهید:
+  ```apache
+  <IfModule mime_module>
+    AddHandler application/x-httpd-lsphp84 .php .php8 .phtml
+  </IfModule>
+  ```
 - **خطای `419 Page Expired` هنگام ورود:** مطمئن شوید سایت را با **`https://taxi.karen-soft.ir`** باز کرده‌اید (نه `http://`)، چون `SESSION_SECURE_COOKIE=true` فقط روی HTTPS کوکی امن می‌فرستد.
 - **عدم نصب PWA یا آفلاین نشدن:** مرورگرها فقط روی **`https://`** اجازهٔ ثبت Service Worker (`sw.js`) را می‌دهند؛ پس از فعال شدن AutoSSL در اولین بازدید کل برنامه در مرورگر کش می‌شود.

@@ -18,7 +18,7 @@ it('exposes a CSRF endpoint for cached PWA clients', function () {
         ->and($response->json('csrf_token'))->toBeString()->not->toBeEmpty();
 });
 
-it('does not expose operational data sync endpoints on the server', function () {
-    $this->getJson('/api/sync/pull')->assertNotFound();
-    $this->postJson('/api/sync/push', [])->assertNotFound();
+it('requires authentication on cloud sync endpoints', function () {
+    $this->getJson('/api/sync')->assertUnauthorized();
+    $this->postJson('/api/sync', ['data' => []])->assertUnauthorized();
 });

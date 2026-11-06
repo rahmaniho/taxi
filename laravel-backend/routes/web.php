@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Manager\PlanController;
 use App\Http\Controllers\Api\Manager\StoreController;
 use App\Http\Controllers\Api\Manager\SubscriberController;
 use App\Http\Controllers\Api\RegistrationController;
+use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\TeamController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,8 +60,15 @@ Route::prefix('api')->group(function () {
         Route::get('license', [LicenseController::class, 'show'])->name('api.license');
         Route::get('audit', [AuditController::class, 'mine'])->name('api.audit');
 
-        // ————— وضعیت اشتراک و کاربران آژانس —————
+        // ————— وضعیت اشتراک، همگام‌سازی ابری و کاربران آژانس —————
         Route::middleware('store.user')->group(function () {
+            Route::get('sync', [SyncController::class, 'pull'])
+                ->middleware('throttle:120,1')
+                ->name('api.sync.pull');
+            Route::post('sync', [SyncController::class, 'push'])
+                ->middleware('throttle:60,1')
+                ->name('api.sync.push');
+
             Route::get('subscription', [BillingController::class, 'show'])->name('api.subscription');
             Route::get('subscription/status', [BillingController::class, 'status'])->name('api.subscription.status');
             Route::post('subscription/checkout', [BillingController::class, 'checkout'])

@@ -1,6 +1,6 @@
 {
   "name": "karnsoft-taxi",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "description": "سامانه اشتراکی و آفلاین‌محور مدیریت تاکسی تلفنی کارن‌سافت + سرور لاراول احراز هویت و اشتراک",

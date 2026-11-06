@@ -16,11 +16,11 @@ test('نسخهٔ برنامه در taxi.html، sw.js و package.json هم‌خو
   assert.match(html, /نسخه \$\{APP_VERSION\}/, 'نسخه در صفحهٔ درباره نمایش داده می‌شود');
 });
 
-test('معماری حریم داده محلی حفظ شده است: شبکه فقط برای احراز هویت و اشتراک /api/* است و داده عملیاتی آپلود نمی‌شود', () => {
+test('معماری ترکیبی آفلاین + ابری امن است: شبکه فقط از مسیر /api/* عبور می‌کند و ذخیره‌سازی محلی فعال است', () => {
   const html = read('taxi.html');
   const script = html.match(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/)[1];
   assert.equal(/navigator\.sendBeacon/.test(script), false, 'sendBeacon استفاده نشده');
-  assert.equal(/\/api\/sync/.test(script), false, 'مسیر همگام‌سازی ابری داده عملیاتی وجود ندارد');
+  assert.match(script, /\/api\/sync/, 'مسیر همگام‌سازی ابری /api/sync تعریف شده است');
   const fetchMatches = [...script.matchAll(/\bfetch\s*\(/g)];
   assert.equal(fetchMatches.length, 2, 'fetch فقط در ماژول CSRF و کلاینت /api/* فراخوانی می‌شود');
   assert.match(script, /cleanPath\.startsWith\('\/api\/'\)/, 'کلاینت شبکه محدود به مسیرهای /api/* است');
@@ -28,7 +28,19 @@ test('معماری حریم داده محلی حفظ شده است: شبکه ف�
   assert.match(script, /indexedDB/, 'آینهٔ پنهان روی IndexedDB کار می‌کند');
 });
 
-test('سرویس‌ورکر: پیش‌کش فایل‌های پایه، استثنای /api/* برای اشتراک و پاک‌سازی کش‌های قدیمی', () => {
+test('پوستهٔ تک‌کاربرهٔ تمیز: دکمهٔ خروج برجسته و نشان سینک ابری موجود است و بخش پیام‌های آماده از تنظیمات حذف شده', () => {
+  const html = read('taxi.html');
+  assert.match(html, /id="top-logout-btn"/, 'دکمهٔ خروج در نوار بالا وجود دارد');
+  assert.match(html, /id="sidebar-logout-btn"/, 'دکمهٔ خروج در نوار کناری وجود دارد');
+  assert.match(html, /id="cloud-sync-pill"/, 'نشان وضعیت همگام‌سازی ابری در نوار بالا وجود دارد');
+  assert.equal(/id="operator-pill"/.test(html), false, 'انتخابگر چند اپراتور از نوار بالا حذف شده است');
+  const pageSettingsFn = html.match(/function pageSettings\(\)\{[^\n]+\}/)?.[0] || '';
+  assert.ok(pageSettingsFn.length > 100, 'تابع pageSettings یافت شد');
+  assert.equal(pageSettingsFn.includes('smsPanel()'), false, 'بخش پیام‌های آماده از تنظیمات حذف شده است');
+  assert.equal(pageSettingsFn.includes('add-operator'), false, 'مدیریت چند اپراتور از تنظیمات حذف شده است');
+});
+
+test('سرویس‌ورکر: پیش‌کش فایل‌های پایه، استثنای /api/* برای اشتراک و سینک ابری و پاک‌سازی کش‌های قدیمی', () => {
   const sw = read('sw.js');
   assert.match(sw, /'taxi\.html'/, 'صفحهٔ اصلی پیش‌کش می‌شود');
   assert.match(sw, /CDN_FILES\s*=/, 'فهرست CDN تعریف شده است');

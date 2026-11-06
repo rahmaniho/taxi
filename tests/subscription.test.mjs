@@ -179,7 +179,8 @@ test('ورود آنلاین، دریافت توکن CSRF و کارکرد کام�
     assert.equal(session2.App.data.trips[0].passengerName, 'مسافر آفلاین');
     const persisted = JSON.parse(session2.window.localStorage.getItem('taxi_db_v1_s1'));
     assert.equal(persisted.trips.length, 1, 'سفر در کلید اختصاصی آژانس ذخیره شد');
-    assert.equal(offlineCalls.every(u => u === '/api/me'), true, 'هیچ دادهٔ عملیاتی به شبکه ارسال نشد');
+    assert.equal(persisted.sync.dirty, true, 'تغییر آفلاین در صف همگام‌سازی ابری علامت‌گذاری شد');
+    assert.equal(offlineCalls.every(u => u.startsWith('/api/')), true, 'تمام درخواست‌های شبکه محدود به /api/* هستند');
   } finally {
     session2.dom.window.close();
     await backend.close();
@@ -436,12 +437,181 @@ test('انقضای نشست (401) یا غیرفعال شدن کاربر در س�
   }
 });
 
-test('ساختار سرور لاراول (laravel-backend): کامل، بدون جداول حسابداری اضافی و با ثبت‌نام عمومی بسته', () => {
+test('همگام‌سازی ابری چنددستگاهی (/api/sync): انتقال خودکار سفرها، لوگوی اختصاصی و حذف‌ها بین دو دستگاه', async () => {
+  const backend = await startTestBackend();
+  const deviceA = await bootRawDom({
+    url: `${backend.baseUrl}/`,
+    beforeParse(window) {
+      window.fetch = createStatefulFetch(backend.baseUrl, window);
+    },
+  });
+  const deviceB = await bootRawDom({
+    url: `${backend.baseUrl}/`,
+    beforeParse(window) {
+      window.fetch = createStatefulFetch(backend.baseUrl, window);
+    },
+  });
+
+  try {
+    await deviceA.App.subscription.login('agency@taxi.ir', 'taxi12345', true);
+    await wait(40);
+
+    // ثبت سفر و بارگذاری لوگوی اختصاصی روی دستگاه اول
+    go(deviceA, 'trips/new');
+    const form = deviceA.document.querySelector('form[data-form="trip"]');
+    form.querySelector('[name="passengerName"]').value = 'مسافر همگام ابری';
+    form.querySelector('[name="origin"]').value = 'میدان آزادی';
+    form.querySelector('[name="destination"]').value = 'سعادت‌آباد';
+    form.querySelector('[name="fare"]').dataset.manual = 'true';
+    form.querySelector('[name="fare"]').value = '220000';
+    form.dispatchEvent(new deviceA.window.Event('submit', { bubbles: true, cancelable: true }));
+
+    const svgLogo = new deviceA.window.File(['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#D4AF37"/></svg>'], 'agency-logo.svg', { type: 'image/svg+xml' });
+    const uploaded = await deviceA.App.logo.upload(svgLogo);
+    assert.equal(uploaded, true, 'لوگوی آژانس در دستگاه اول ذخیره شد');
+
+    const pushed = await deviceA.App.sync.cloudSync({ manual: true });
+    assert.equal(pushed?.ok, true, 'ارسال به سرور موفق بود');
+    assert.ok(deviceA.App.sync.info().serverRevision >= 1, 'نسخهٔ سرور ثبت شد');
+    assert.equal(deviceA.App.sync.info().dirty, false, 'وضعیت محلی با سرور همگام شد');
+
+    // ورود روی دستگاه دوم (مرورگر خام) و دریافت خودکار از سرور
+    await deviceB.App.subscription.login('agency@taxi.ir', 'taxi12345', true);
+    await deviceB.App.sync.cloudSync({ manual: false });
+
+    assert.equal(deviceB.App.data.trips.length, 1, 'سفر از سرور به دستگاه دوم منتقل شد');
+    assert.equal(deviceB.App.data.trips[0].passengerName, 'مسافر همگام ابری');
+    assert.ok(deviceB.App.data.settings.logo?.data?.startsWith('data:image/svg+xml;base64,'), 'لوگوی آژانس به دستگاه دوم منتقل شد');
+
+    // افزودن راننده در دستگاه دوم، سینک، سپس حذف در دستگاه اول و انتشار tombstone
+    go(deviceB, 'drivers');
+    deviceB.document.querySelector('[data-action="add-driver"]').click();
+    const drvForm = deviceB.document.querySelector('form[data-form="driver"]');
+    drvForm.querySelector('[name="name"]').value = 'راننده ابری';
+    drvForm.dispatchEvent(new deviceB.window.Event('submit', { bubbles: true, cancelable: true }));
+    await deviceB.App.sync.cloudSync({ manual: false });
+
+    await deviceA.App.sync.cloudSync({ manual: false });
+    assert.equal(deviceA.App.data.drivers.length, 1, 'راننده جدید به دستگاه اول رسید');
+    const driverId = deviceA.App.data.drivers[0].id;
+
+    go(deviceA, 'drivers');
+    deviceA.document.querySelector(`[data-action="delete-driver"][data-id="${driverId}"]`).click();
+    deviceA.document.querySelector('#confirm-action').click();
+    await deviceA.App.sync.cloudSync({ manual: false });
+
+    await deviceB.App.sync.cloudSync({ manual: false });
+    assert.equal(deviceB.App.data.drivers.length, 0, 'حذف راننده از طریق tombstone در دستگاه دوم نیز اعمال شد');
+  } finally {
+    deviceA.dom.window.close();
+    deviceB.dom.window.close();
+    await backend.close();
+  }
+});
+
+test('بررسی واقعی تمدید اشتراک، روزشمار زندهٔ اعتبار و دکمه‌های برجستهٔ خروج از حساب', async () => {
+  const backend = await startTestBackend();
+  const meUrls = [];
+  const session = await bootRawDom({
+    url: `${backend.baseUrl}/`,
+    beforeParse(window) {
+      const realFetch = createStatefulFetch(backend.baseUrl, window);
+      window.fetch = async (url, opts) => {
+        if (String(url).startsWith('/api/me')) meUrls.push({ url: String(url), cache: opts?.cache || '' });
+        return realFetch(url, opts);
+      };
+    },
+  });
+
+  try {
+    await session.App.subscription.login('expired@taxi.ir', 'taxi12345', true);
+    go(session, 'settings');
+
+    // ۱) بررسی تمدید وقتی هنوز در سرور تمدیدی ثبت نشده است
+    await session.App.subscription.refresh({ manual: true });
+    assert.ok(meUrls.some(u => u.url.includes('/api/me?_t=') && u.cache === 'no-store'), 'درخواست بررسی تمدید بدون کش به سرور ارسال شد');
+    assert.equal(session.App.subscription.renewalResult()?.type, 'expired', 'نتیجهٔ عدم ثبت تمدید ثبت شد');
+    assert.match(session.document.querySelector('#renewal-check-result').textContent, /هنوز تمدیدی/, 'بنر نتیجهٔ استعلام نمایش داده شد');
+
+    // ۲) ثبت تمدید در سرور و زدن دوبارهٔ بررسی تمدید
+    backend.state.licenses.find(l => l.store_id === 2).expires_at = new Date(Date.now() + 90 * 86400000 + 7200000).toISOString();
+    backend.state.licenses.find(l => l.store_id === 2).status = 'active';
+    await session.App.subscription.refresh({ manual: true });
+
+    assert.equal(session.App.subscription.writable(), true, 'قفل نوشتن بلافاصله باز شد');
+    assert.equal(session.App.subscription.renewalResult()?.type, 'renewed', 'وضعیت تأیید تمدید تشخیص داده شد');
+    assert.match(session.document.querySelector('#renewal-check-result').textContent, /تأیید و فعال شد/, 'پیام موفقیت تمدید نمایش داده شد');
+
+    // ۳) بررسی روزشمار زنده در صفحهٔ تنظیمات
+    const cd = session.App.subscription.countdown();
+    assert.equal(cd.mode, 'active');
+    assert.ok(cd.days >= 89 && cd.days <= 90, 'تعداد روزهای مانده در روزشمار دقیق است');
+    assert.ok(session.document.querySelector('#sub-countdown-box #cd-days'), 'کارت روزشمار در تنظیمات نمایش داده شد');
+
+    // ۴) دکمهٔ خروج برجسته در نوار بالا و نوار کناری
+    assert.ok(session.document.querySelector('#top-logout-btn'), 'دکمهٔ خروج نوار بالا حاضر است');
+    assert.ok(session.document.querySelector('#sidebar-logout-btn'), 'دکمهٔ خروج نوار کناری حاضر است');
+    session.document.querySelector('#top-logout-btn').click();
+    assert.match(session.document.querySelector('#modal-root').textContent, /خروج از حساب کاربری/, 'دیالوگ تأیید خروج باز شد');
+    session.document.querySelector('#confirm-action').click();
+    await wait(40);
+    assert.equal(session.App.subscription.isAuthenticated(), false, 'خروج از حساب انجام شد');
+  } finally {
+    session.dom.window.close();
+    await backend.close();
+  }
+});
+
+test('لوگوی اختصاصی آژانس تا ۱۰ مگابایت و درج نام و لوگوی آژانس در سربرگ فاکتورها', async () => {
+  const session = await bootRawDom();
+  const { window, document, App } = session;
+  try {
+    const now = new Date().toISOString();
+    const exp = new Date(Date.now() + 120 * 86400000).toISOString();
+    App.subscription.setAccountState({
+      user: {
+        id: 30, name: 'مدیریت آژانس نگین', email: 'negin@taxi.ir', role: 'store', is_active: true, store_id: 30,
+        store: { id: 30, name: 'آژانس تاکسی نگین', is_active: true, is_archived: false, license: { id: 30, plan_name: 'حرفه‌ای', status: 'active', is_active: true, is_lifetime: false, expires_at: exp } },
+      },
+      loggedInAt: now, lastVerifiedAt: now, maxSeenAt: Date.now(),
+    }, { seedAgency: true });
+
+    // ۱) فایل PNG بزرگ‌تر از ۵۰۰ کیلوبایت (مثلاً ۷۰۰ کیلوبایت) دیگر رد نمی‌شود
+    const bigPngBytes = new Uint8Array(700 * 1024);
+    bigPngBytes.set([137, 80, 78, 71, 13, 10, 26, 10]);
+    const bigPng = new window.File([bigPngBytes], 'negin-logo.png', { type: 'image/png' });
+    const okBig = await App.logo.upload(bigPng);
+    assert.equal(okBig, true, 'لوگوی ۷۰۰ کیلوبایتی پذیرفته و ذخیره شد');
+    assert.ok(App.data.settings.logo?.data?.startsWith('data:image/png;base64,'), 'دادهٔ PNG ذخیره شد');
+
+    // ۲) فایل بزرگ‌تر از ۱۰ مگابایت رد می‌شود
+    const hugeFile = new window.File([new Uint8Array(10 * 1024 * 1024 + 1024)], 'huge.png', { type: 'image/png' });
+    const okHuge = await App.logo.upload(hugeFile);
+    assert.equal(okHuge, false, 'فایل بیش از ۱۰ مگابایت رد شد');
+
+    // ۳) پیش‌نمایش فاکتور در تنظیمات با لوگو و نام آژانس
+    go(session, 'settings');
+    document.querySelector('[data-action="preview-logo-invoice"]').click();
+    const frame = document.querySelector('#print-preview-frame');
+    assert.ok(frame, 'پیش‌نمایش فاکتور رسمی باز شد');
+    const htmlDoc = frame.getAttribute('srcdoc') || '';
+    assert.match(htmlDoc, /آژانس تاکسی نگین/, 'نام اختصاصی آژانس در سربرگ فاکتور درج شده است');
+    assert.match(htmlDoc, /<img class="logo" src="data:image\/png;base64,/, 'لوگوی اختصاصی آژانس در سربرگ فاکتور چاپ شده است');
+  } finally {
+    session.dom.window.close();
+  }
+});
+
+test('ساختار سرور لاراول (laravel-backend): کامل، دارای همگام‌سازی ابری آژانس و با ثبت‌نام عمومی بسته', () => {
   const mustExist = [
     'laravel-backend/composer.json',
     'laravel-backend/routes/web.php',
     'laravel-backend/config/billing.php',
     'laravel-backend/app/Http/Controllers/Api/AuthController.php',
+    'laravel-backend/app/Http/Controllers/Api/SyncController.php',
+    'laravel-backend/app/Services/Sync/AgencySyncMergeService.php',
+    'laravel-backend/app/Models/AgencySyncState.php',
+    'laravel-backend/database/migrations/2026_11_07_020000_create_agency_sync_states_table.php',
     'laravel-backend/app/Http/Controllers/Api/Manager/StoreController.php',
     'laravel-backend/app/Http/Controllers/Api/Manager/SubscriberController.php',
     'laravel-backend/app/Http/Controllers/Api/Manager/PlanController.php',
@@ -452,13 +622,13 @@ test('ساختار سرور لاراول (laravel-backend): کامل، بدون 
     'laravel-backend/public/sw.js',
     'laravel-backend/public/manifest.json',
     'laravel-backend/tests/Feature/PwaServingTest.php',
+    'laravel-backend/tests/Feature/CloudSyncTest.php',
   ];
   for (const rel of mustExist) {
     assert.equal(fs.existsSync(path.join(rootDir, rel)), true, `فایل ${rel} موجود است`);
   }
-  assert.equal(fs.existsSync(path.join(rootDir, 'laravel-backend/app/Http/Controllers/Api/SyncController.php')), false, 'SyncController حذف شده است');
   const webRoutes = fs.readFileSync(path.join(rootDir, 'laravel-backend/routes/web.php'), 'utf8');
-  assert.equal(/\/sync\//.test(webRoutes), false, 'مسیرهای همگام‌سازی ابری داده عملیاتی در لاراول وجود ندارد');
+  assert.match(webRoutes, /SyncController::class/, 'مسیرهای /api/sync در لاراول ثبت شده‌اند');
   const billingConfig = fs.readFileSync(path.join(rootDir, 'laravel-backend/config/billing.php'), 'utf8');
   assert.match(billingConfig, /'public_registration'\s*=>\s*\(bool\)\s*env\('TAXI_PUBLIC_SIGNUP',\s*env\('KARO_PUBLIC_SIGNUP',\s*false\)\)/, 'ثبت‌نام عمومی به‌طور پیش‌فرض غیرفعال است');
 });
