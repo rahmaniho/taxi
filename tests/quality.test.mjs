@@ -16,23 +16,26 @@ test('نسخهٔ برنامه در taxi.html، sw.js و package.json هم‌خو
   assert.match(html, /نسخه \$\{APP_VERSION\}/, 'نسخه در صفحهٔ درباره نمایش داده می‌شود');
 });
 
-test('معماری محلی حفظ شده است: هیچ درخواست شبکه‌ای در منطق برنامه نیست', () => {
+test('معماری حریم داده محلی حفظ شده است: شبکه فقط برای احراز هویت و اشتراک /api/* است و داده عملیاتی آپلود نمی‌شود', () => {
   const html = read('taxi.html');
   const script = html.match(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/)[1];
-  assert.equal(/\bfetch\s*\(/.test(script), false, 'در اسکریپت برنامه fetch وجود ندارد');
-  assert.equal(/XMLHttpRequest/.test(script), false, 'XMLHttpRequest استفاده نشده');
   assert.equal(/navigator\.sendBeacon/.test(script), false, 'sendBeacon استفاده نشده');
+  assert.equal(/\/api\/sync/.test(script), false, 'مسیر همگام‌سازی ابری داده عملیاتی وجود ندارد');
+  const fetchMatches = [...script.matchAll(/\bfetch\s*\(/g)];
+  assert.equal(fetchMatches.length, 2, 'fetch فقط در ماژول CSRF و کلاینت /api/* فراخوانی می‌شود');
+  assert.match(script, /cleanPath\.startsWith\('\/api\/'\)/, 'کلاینت شبکه محدود به مسیرهای /api/* است');
   assert.match(script, /localStorage/, 'ذخیره‌سازی محلی برقرار است');
   assert.match(script, /indexedDB/, 'آینهٔ پنهان روی IndexedDB کار می‌کند');
 });
 
-test('سرویس‌ورکر: پیش‌کش فایل‌های پایه، کتابخانه‌های CDN و پاک‌سازی کش‌های قدیمی', () => {
+test('سرویس‌ورکر: پیش‌کش فایل‌های پایه، استثنای /api/* برای اشتراک و پاک‌سازی کش‌های قدیمی', () => {
   const sw = read('sw.js');
   assert.match(sw, /'taxi\.html'/, 'صفحهٔ اصلی پیش‌کش می‌شود');
   assert.match(sw, /CDN_FILES\s*=/, 'فهرست CDN تعریف شده است');
   assert.match(sw, /chart\.js/, 'Chart.js پیش‌کش می‌شود');
   assert.match(sw, /font-awesome/, 'FontAwesome پیش‌کش می‌شود');
   assert.match(sw, /vazirmatn/, 'فونت وزیرمتن پیش‌کش می‌شود');
+  assert.match(sw, /\/api\(/, 'درخواست‌های /api/* از کش سرویس‌ورکر عبور داده می‌شوند');
   assert.match(sw, /caches\.delete\(key\)/, 'کش‌های نسخهٔ قبل پاک می‌شوند');
   assert.match(sw, /skipWaiting/, 'نسخهٔ تازه بی‌درنگ فعال می‌شود');
 });
@@ -50,10 +53,12 @@ test('مانیفست PWA: آیکون‌ها، میان‌بُرها و مسیر 
   }
 });
 
-test('اسکریپت هم‌گام‌سازی نسخه، هم‌خوانی را تشخیص می‌دهد', async () => {
+test('اسکریپت‌های هم‌گام‌سازی نسخه و فایل‌های PWA سرور لاراول بدون خطا اجرا می‌شوند', async () => {
   const { execFileSync } = await import('node:child_process');
-  const output = execFileSync('node', ['scripts/bump-version.mjs', '--check'], { cwd: root, encoding: 'utf8' });
-  assert.match(output, /هم‌خوان/, 'بررسی نسخه بدون خطا اجرا می‌شود');
+  const verOutput = execFileSync('node', ['scripts/bump-version.mjs', '--check'], { cwd: root, encoding: 'utf8' });
+  assert.match(verOutput, /هم‌خوان/, 'بررسی نسخه بدون خطا اجرا می‌شود');
+  const pwaOutput = execFileSync('node', ['scripts/sync-laravel-pwa.mjs', '--check'], { cwd: root, encoding: 'utf8' });
+  assert.match(pwaOutput, /هم‌گام/, 'فایل‌های PWA سرور لاراول هم‌گام‌اند');
 });
 
 test('کیفیت فایل تک‌صفحه‌ای: بدون اسکریپت درون‌خطی دوم و با ساختار کامل HTML', () => {
@@ -66,6 +71,7 @@ test('کیفیت فایل تک‌صفحه‌ای: بدون اسکریپت درو
   assert.match(html, /<html lang="fa" dir="rtl"/);
   assert.match(html, /<\/html>\s*$/);
   assert.match(html, /id="app-root"/);
+  assert.match(html, /id="account-root"/, 'ریشهٔ صفحهٔ ورود و پنل مدیریت هست');
   assert.match(html, /class="skip-link"/, 'پیوند پرش به محتوا هست');
   assert.equal(/console\.log\(/.test(html.match(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/)[1]), false, 'در کد برنامه console.log نمانده است');
 });

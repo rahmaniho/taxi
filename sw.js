@@ -1,6 +1,6 @@
 /* Service Worker کارن‌سافت · کش آفلاین برنامه و فایل‌های استاتیک */
 'use strict';
-const CACHE_VERSION = 'taxi-v1.2.0';
+const CACHE_VERSION = 'taxi-v1.3.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const LOGO_CACHE = 'taxi-logo-v1';
@@ -83,6 +83,9 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+  if (url.origin === ROOT.origin && (/\/api(\/|$)/.test(url.pathname) || url.pathname.endsWith('/up'))) {
+    return;
+  }
   if (url.origin === ROOT.origin && url.href.split('?')[0] === LOGO_URL) {
     event.respondWith(caches.open(LOGO_CACHE).then(cache => cache.match(LOGO_URL)).then(response =>
       response || new Response('', { status: 404, statusText: 'لوگوی آژانس بارگذاری نشده است' })));

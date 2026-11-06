@@ -1,14 +1,17 @@
 {
   "name": "karnsoft-taxi",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
-  "description": "کارن‌سافت · سامانه مدیریت تاکسی تلفنی (PWA تک‌فایلی و آفلاین‌محور)",
   "type": "module",
+  "description": "سامانه اشتراکی و آفلاین‌محور مدیریت تاکسی تلفنی کارن‌سافت + سرور لاراول احراز هویت و اشتراک",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "serve": "node scripts/serve.mjs",
     "version:check": "node scripts/bump-version.mjs --check",
-    "version:sync": "node scripts/bump-version.mjs"
+    "version:sync": "node scripts/bump-version.mjs",
+    "laravel:sync": "node scripts/sync-laravel-pwa.mjs",
+    "laravel:check": "node scripts/sync-laravel-pwa.mjs --check",
+    "laravel:package": "node scripts/build-laravel-package.mjs"
   },
   "devDependencies": {
     "jsdom": "^30.1.2"
