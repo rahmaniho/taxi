@@ -1,1 +1,4 @@
 node_modules/
+deploy/laravel-app/stage/
+deploy/laravel-app/artifacts/
+deploy/laravel-app/*.zip

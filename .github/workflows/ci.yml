@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: تست‌ها و بررسی نسخه
+    name: تست‌های PWA، اشتراک و بررسی نسخه
     runs-on: ubuntu-latest
     steps:
       - name: دریافت کد
@@ -26,12 +26,63 @@ jobs:
       - name: هم‌خوانی نسخه‌ها (taxi.html · sw.js · package.json)
         run: npm run version:check
 
-      - name: بررسی نحو سرویس‌ورکر
-        run: node --check sw.js
+      - name: هم‌خوانی فایل‌های PWA در laravel-backend/public
+        run: npm run laravel:check
 
-      - name: اجرای تست‌ها
+      - name: بررسی نحو سرویس‌ورکر و اسکریپت‌ها
+        run: |
+          node --check sw.js
+          node --check scripts/serve.mjs
+          node --check scripts/sync-laravel-pwa.mjs
+          node --check scripts/build-laravel-package.mjs
+
+      - name: اجرای تمام تست‌های PWA و اشتراک
         run: npm test
 
       - name: بررسی سلامت اسناد کلیدی
         run: |
           node -e "const fs=require('fs');const html=fs.readFileSync('taxi.html','utf8');if(!html.includes('</html>'))throw new Error('taxi.html ناقص است');JSON.parse(fs.readFileSync('manifest.json','utf8'));console.log('taxi.html و manifest.json سالم‌اند', html.length, 'بایت');"
+
+  laravel:
+    name: تست‌های بک‌اند لاراول و ساخت بستهٔ cPanel (PHP 8.4)
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: آماده‌سازی PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo, pdo_sqlite, sqlite3, openssl, tokenizer, xml, ctype, json, bcmath
+          coverage: none
+
+      - name: نصب وابستگی‌های Composer و اجرای تست‌های Pest
+        working-directory: laravel-backend
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          ./vendor/bin/pest
+
+      - name: ساخت بستهٔ آمادهٔ استقرار cPanel (شامل vendor تولیدی)
+        run: |
+          rm -f laravel-backend/.env
+          composer install --working-dir=laravel-backend --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+          node scripts/build-laravel-package.mjs --with-vendor
+          node scripts/build-laravel-package.mjs
+
+      - name: بارگذاری بستهٔ آمادهٔ cPanel برای taxi.karen-soft.ir
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxi-karen-cpanel-ready
+          path: |
+            deploy/laravel-app/artifacts/taxi-karen-cpanel-full.zip
+            deploy/laravel-app/artifacts/taxi-laravel.zip
+            deploy/laravel-app/INSTALL.md
+          retention-days: 30

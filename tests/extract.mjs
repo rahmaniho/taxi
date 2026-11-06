@@ -1,13 +1,53 @@
 import fs from 'node:fs';
 
-/** متن فایل برنامهٔ تک‌فایلی را می‌خواند. */
-export function readApp() {
-  return fs.readFileSync(new URL('../taxi.html', import.meta.url), 'utf8');
+const DEFAULT_BOOT_AUTH = {
+  user: {
+    id: 1,
+    name: 'آژانس تست',
+    email: 'test@taxi.ir',
+    role: 'store',
+    is_active: true,
+    store_id: 0,
+    store: {
+      id: 0,
+      name: 'کارن‌سافت',
+      is_active: true,
+      is_archived: false,
+      license: {
+        id: 1,
+        plan_name: 'آژانس حرفه‌ای',
+        plan_code: 'pro',
+        status: 'active',
+        is_active: true,
+        is_lifetime: true,
+        is_trial: false,
+        is_valid: true,
+        days_remaining: null,
+        expires_at: null,
+        max_users: 5,
+        active_users: 1,
+      },
+    },
+  },
+  loggedInAt: '2026-11-06T08:00:00.000Z',
+  lastVerifiedAt: '2026-11-06T08:00:00.000Z',
+  maxSeenAt: 0,
+};
+
+/** متن فایل برنامهٔ تک‌فایلی را می‌خواند (در حالت پیش‌فرض نشست فعال آژانس برای تست‌های عملیاتی تزریق می‌شود). */
+export function readApp({ authenticated = true, bootAuth = DEFAULT_BOOT_AUTH } = {}) {
+  const raw = fs.readFileSync(new URL('../taxi.html', import.meta.url), 'utf8');
+  if (!authenticated) return raw;
+  const payload = JSON.stringify(bootAuth);
+  return raw.replace(
+    "'use strict';",
+    `'use strict';if(!window.__TAXI_BOOT_AUTH__)window.__TAXI_BOOT_AUTH__=${payload};`,
+  );
 }
 
 /** اسکریپت درون‌خطی برنامه را برمی‌گرداند. */
 export function readInlineScript() {
-  const match = readApp().match(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/);
+  const match = readApp({ authenticated: false }).match(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/);
   if (!match) throw new Error('اسکریپت درون‌خطی پیدا نشد.');
   return match[1];
 }
