@@ -110,7 +110,98 @@ function createSeedState() {
     audit: [],
     sessions: new Map(),
     csrfTokens: new Set(),
+    syncStates: new Map(),
   };
+}
+
+const SYNC_SERVER_COLLECTIONS = [
+  'drivers', 'vehicles', 'addresses', 'subscribers', 'subscriberPayments',
+  'driverPayments', 'trips', 'expenses', 'closes', 'invoices', 'archives', 'shifts',
+];
+
+function recordSyncTs(rec) {
+  for (const f of ['updatedAt', 'createdAt', 'at']) {
+    if (rec && typeof rec[f] === 'string') {
+      const t = Date.parse(rec[f]);
+      if (Number.isFinite(t)) return t;
+    }
+  }
+  return 0;
+}
+
+function mergeAgencySyncPayload(serverData, clientData) {
+  const server = serverData && typeof serverData === 'object' ? serverData : {};
+  const client = clientData && typeof clientData === 'object' ? clientData : {};
+  const merged = {};
+  const mergedTombstones = {};
+  const sTombs = server.meta?.tombstones || {};
+  const cTombs = client.meta?.tombstones || {};
+
+  for (const col of SYNC_SERVER_COLLECTIONS) {
+    const tMap = {};
+    for (const src of [sTombs[col] || {}, cTombs[col] || {}]) {
+      for (const [id, iso] of Object.entries(src || {})) {
+        const ts = Date.parse(iso) || 0;
+        if (!tMap[id] || ts >= (Date.parse(tMap[id]) || 0)) tMap[id] = iso;
+      }
+    }
+    const byId = new Map();
+    for (const item of Array.isArray(server[col]) ? server[col] : []) {
+      if (item && item.id) byId.set(String(item.id), item);
+    }
+    for (const item of Array.isArray(client[col]) ? client[col] : []) {
+      if (!item || !item.id) continue;
+      const id = String(item.id);
+      const prev = byId.get(id);
+      if (!prev) { byId.set(id, item); continue; }
+      const pTs = recordSyncTs(prev), cTs = recordSyncTs(item);
+      if (cTs > pTs || (cTs === pTs && (Number(item.rev) || 0) >= (Number(prev.rev) || 0))) byId.set(id, item);
+    }
+    const list = [];
+    for (const [id, rec] of byId.entries()) {
+      if (tMap[id]) {
+        const dTs = Date.parse(tMap[id]) || 0;
+        if (dTs >= recordSyncTs(rec)) continue;
+        delete tMap[id];
+      }
+      list.push(rec);
+    }
+    merged[col] = list;
+    if (Object.keys(tMap).length) mergedTombstones[col] = tMap;
+  }
+
+  const sSet = { ...(server.settings || {}) };
+  const cSet = { ...(client.settings || {}) };
+  delete sSet.security;
+  delete cSet.security;
+  const sStamp = Date.parse(server.settingsUpdatedAt || '') || 0;
+  const cStamp = Date.parse(client.settingsUpdatedAt || '') || 0;
+  if (!Object.keys(sSet).length) {
+    merged.settings = cSet;
+    merged.settingsUpdatedAt = client.settingsUpdatedAt || new Date().toISOString();
+  } else if (!Object.keys(cSet).length) {
+    merged.settings = sSet;
+    merged.settingsUpdatedAt = server.settingsUpdatedAt || new Date().toISOString();
+  } else if (cStamp >= sStamp) {
+    merged.settings = { ...sSet, ...cSet };
+    if (Object.prototype.hasOwnProperty.call(cSet, 'logo')) merged.settings.logo = cSet.logo;
+    merged.settingsUpdatedAt = client.settingsUpdatedAt || new Date().toISOString();
+  } else {
+    merged.settings = { ...cSet, ...sSet };
+    merged.settingsUpdatedAt = server.settingsUpdatedAt || new Date().toISOString();
+  }
+
+  const counters = {};
+  for (const k of ['trip', 'subscriber', 'driver', 'vehicle', 'expense']) {
+    counters[k] = Math.max(Number(server.meta?.counters?.[k]) || 0, Number(client.meta?.counters?.[k]) || 0);
+  }
+  const invoiceSeq = {};
+  for (const k of new Set([...Object.keys(server.meta?.invoiceSeq || {}), ...Object.keys(client.meta?.invoiceSeq || {})])) {
+    invoiceSeq[k] = Math.max(Number(server.meta?.invoiceSeq?.[k]) || 0, Number(client.meta?.invoiceSeq?.[k]) || 0);
+  }
+  merged.meta = { counters, invoiceSeq, tombstones: mergedTombstones };
+  const recordsCount = SYNC_SERVER_COLLECTIONS.reduce((s, col) => s + merged[col].length, 0);
+  return { merged, recordsCount };
 }
 
 function formatLicense(state, lic) {
@@ -171,7 +262,7 @@ function parseCookies(header) {
 function readJsonBody(req) {
   return new Promise(resolve => {
     let raw = '';
-    req.on('data', chunk => { raw += chunk; if (raw.length > 1024 * 1024) req.destroy(); });
+    req.on('data', chunk => { raw += chunk; if (raw.length > 10 * 1024 * 1024) req.destroy(); });
     req.on('end', () => {
       try { resolve(raw ? JSON.parse(raw) : {}); } catch (_) { resolve({}); }
     });
@@ -265,7 +356,7 @@ export function createDevServer() {
         const sid = crypto.randomBytes(24).toString('hex');
         state.sessions.set(sid, user.id);
         logAudit(user, 'auth.login', user.store_id);
-        sendJson(response, 200, { user: formatUser(state, user) }, {
+        sendJson(response, 200, { user: formatUser(state, user), server_time: new Date().toISOString() }, {
           'Set-Cookie': [`taxi_session=${sid}; Path=/; HttpOnly; SameSite=Lax`],
         });
         return;
@@ -286,7 +377,52 @@ export function createDevServer() {
       }
 
       if (pathname === '/api/me' && method === 'GET') {
-        sendJson(response, 200, { user: formatUser(state, currentUser) });
+        sendJson(response, 200, { user: formatUser(state, currentUser), server_time: new Date().toISOString() });
+        return;
+      }
+
+      if (pathname === '/api/sync' && method === 'GET') {
+        if (!currentUser.store_id) {
+          sendJson(response, 403, { message: 'این مسیر ویژهٔ حساب آژانس است.' });
+          return;
+        }
+        const entry = state.syncStates.get(currentUser.store_id);
+        if (!entry) {
+          sendJson(response, 200, { ok: true, empty: true, unchanged: false, revision: 0, synced_at: null, records_count: 0, data: null });
+          return;
+        }
+        const sinceRev = url.searchParams.get('since_revision');
+        if (sinceRev !== null && Number(sinceRev) === entry.revision) {
+          sendJson(response, 200, { ok: true, empty: false, unchanged: true, revision: entry.revision, synced_at: entry.synced_at, records_count: entry.records_count });
+          return;
+        }
+        sendJson(response, 200, { ok: true, empty: false, unchanged: false, revision: entry.revision, synced_at: entry.synced_at, records_count: entry.records_count, data: entry.data });
+        return;
+      }
+
+      if (pathname === '/api/sync' && method === 'POST') {
+        if (!currentUser.store_id) {
+          sendJson(response, 403, { message: 'این مسیر ویژهٔ حساب آژانس است.' });
+          return;
+        }
+        const store = state.stores.find(s => s.id === currentUser.store_id);
+        const lic = formatLicense(state, state.licenses.find(l => l.store_id === currentUser.store_id));
+        if (!store || !store.is_active || store.is_archived || !lic || !lic.is_valid) {
+          sendJson(response, 403, { message: 'اعتبار اشتراک به پایان رسیده است؛ ذخیرهٔ تغییرات جدید روی سرور تا زمان تمدید متوقف است.', code: 'subscription_expired' });
+          return;
+        }
+        const body = await readJsonBody(request);
+        if (!body || typeof body.data !== 'object' || Array.isArray(body.data)) {
+          sendJson(response, 422, { message: 'ساختار دادهٔ همگام‌سازی معتبر نیست.' });
+          return;
+        }
+        const prev = state.syncStates.get(currentUser.store_id) || null;
+        const { merged, recordsCount } = mergeAgencySyncPayload(prev?.data || null, body.data);
+        const hash = crypto.createHash('sha256').update(JSON.stringify(merged)).digest('hex');
+        const revision = prev ? (prev.hash === hash ? prev.revision : prev.revision + 1) : 1;
+        const syncedAt = new Date().toISOString();
+        state.syncStates.set(currentUser.store_id, { revision, hash, synced_at: syncedAt, records_count: recordsCount, data: merged });
+        sendJson(response, 200, { ok: true, revision, synced_at: syncedAt, records_count: recordsCount, data: merged });
         return;
       }
 
@@ -627,6 +763,6 @@ if (isMain) {
   const host = process.env.HOST || '0.0.0.0';
   const { server } = createDevServer();
   server.listen(port, host, () => {
-    console.log(`تاکسی کارن آماده است: http://localhost:${port}/`);
+    console.log(`تاکسینو | Taxino آماده است: http://localhost:${port}/`);
   });
 }

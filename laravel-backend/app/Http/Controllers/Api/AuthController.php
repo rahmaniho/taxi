@@ -76,15 +76,21 @@ class AuthController extends Controller
             'meta' => ['role' => $user->role],
         ]);
 
-        return response()->json(['user' => new UserResource($user)]);
+        return response()->json([
+            'user' => new UserResource($user),
+            'server_time' => now()->toIso8601String(),
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
-    /** بازگرداندن کاربر واردشده برای راه‌اندازی مجدد رابط. */
+    /** بازگرداندن کاربر واردشده برای راه‌اندازی مجدد رابط و استعلام آنی تمدید اشتراک. */
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->load('store.license');
+        $user = ($request->user()?->fresh() ?? $request->user())->load('store.license');
 
-        return response()->json(['user' => new UserResource($user)]);
+        return response()->json([
+            'user' => new UserResource($user),
+            'server_time' => now()->toIso8601String(),
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     public function logout(Request $request): JsonResponse
