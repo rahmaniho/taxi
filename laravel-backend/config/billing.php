@@ -30,12 +30,18 @@ return [
 
     'callback_path' => env('TAXI_PAYMENT_CALLBACK', env('KARO_PAYMENT_CALLBACK', '/billing/callback')),
 
-    'bank' => [
-        'holder' => env('TAXI_BANK_HOLDER', env('KARO_BANK_HOLDER', '')),
-        'account' => env('TAXI_BANK_ACCOUNT', env('KARO_BANK_ACCOUNT', '')),
-        'sheba' => env('TAXI_BANK_SHEBA', env('KARO_BANK_SHEBA', '')),
-        'card' => env('TAXI_BANK_CARD', env('KARO_BANK_CARD', '')),
-    ],
+        'bank' => [
+            'holder' => env('TAXI_BANK_HOLDER', env('KARO_BANK_HOLDER', '')),
+            'account' => env('TAXI_BANK_ACCOUNT', env('KARO_BANK_ACCOUNT', '')),
+            'sheba' => env('TAXI_BANK_SHEBA', env('KARO_BANK_SHEBA', '')),
+            'card' => env('TAXI_BANK_CARD', env('KARO_BANK_CARD', '')),
+        ],
+
+        'manager' => [
+            'name' => env('TAXI_MANAGER_NAME', env('TAXI_ADMIN_NAME', env('KARO_MANAGER_NAME', 'مدیر کل'))),
+            'email' => env('TAXI_MANAGER_EMAIL', env('TAXI_ADMIN_EMAIL', env('KARO_MANAGER_EMAIL', ''))),
+            'password' => env('TAXI_MANAGER_PASSWORD', env('TAXI_ADMIN_PASSWORD', env('KARO_MANAGER_PASSWORD', ''))),
+        ],
 
     'gateways' => [
         'manual' => [

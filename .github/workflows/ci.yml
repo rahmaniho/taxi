@@ -44,14 +44,16 @@ jobs:
           node -e "const fs=require('fs');const html=fs.readFileSync('taxi.html','utf8');if(!html.includes('</html>'))throw new Error('taxi.html ناقص است');JSON.parse(fs.readFileSync('manifest.json','utf8'));console.log('taxi.html و manifest.json سالم‌اند', html.length, 'بایت');"
 
   laravel:
-    name: تست‌های بک‌اند لاراول (PHP 8.4 · SQLite)
+    name: تست‌های بک‌اند لاراول و ساخت بستهٔ cPanel (PHP 8.4)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: laravel-backend
     steps:
       - name: دریافت کد
         uses: actions/checkout@v4
+
+      - name: آماده‌سازی Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: آماده‌سازی PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -60,13 +62,27 @@ jobs:
           extensions: mbstring, dom, fileinfo, pdo, pdo_sqlite, sqlite3, openssl, tokenizer, xml, ctype, json, bcmath
           coverage: none
 
-      - name: نصب وابستگی‌های Composer
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: آماده‌سازی فایل محیط تست
+      - name: نصب وابستگی‌های Composer و اجرای تست‌های Pest
+        working-directory: laravel-backend
         run: |
+          composer install --no-interaction --prefer-dist --no-progress
           cp .env.example .env
           php artisan key:generate
+          ./vendor/bin/pest
 
-      - name: اجرای تست‌های Pest / PHPUnit
-        run: ./vendor/bin/pest
+      - name: ساخت بستهٔ آمادهٔ استقرار cPanel (شامل vendor تولیدی)
+        run: |
+          rm -f laravel-backend/.env
+          composer install --working-dir=laravel-backend --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+          node scripts/build-laravel-package.mjs --with-vendor
+          node scripts/build-laravel-package.mjs
+
+      - name: بارگذاری بستهٔ آمادهٔ cPanel برای taxi.karen-soft.ir
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxi-karen-cpanel-ready
+          path: |
+            deploy/laravel-app/artifacts/taxi-karen-cpanel-full.zip
+            deploy/laravel-app/artifacts/taxi-laravel.zip
+            deploy/laravel-app/INSTALL.md
+          retention-days: 30

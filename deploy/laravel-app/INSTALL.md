@@ -1,68 +1,142 @@
-# راهنمای استقرار «تاکسی کارن» روی هاست اشتراکی (cPanel) و سرور مجازی
+# راهنمای راه‌اندازی «تاکسی کارن» روی ساب‌دامین `taxi.karen-soft.ir` (cPanel)
 
-این راهنما نحوهٔ بسته‌بندی و بارگذاری هم‌زمان **PWA تاکسی کارن** و **بک‌اند لاراول (`laravel-backend`)** را توضیح می‌دهد.
+این راهنما دقیقاً برای بالا آوردن سامانه روی آدرس **`https://taxi.karen-soft.ir`** در هاست cPanel دامنهٔ `karen-soft.ir` تنظیم شده است (هم‌خانواده و بدون هیچ تداخل کوکی یا دیتابیس با سایر سرویس‌های `karen-soft.ir`).
 
 ---
 
-## ۱. ساخت بستهٔ آمادهٔ استقرار
+## پیش‌نیازهای ساب‌دامین در cPanel
 
-در ریشهٔ مخزن دستورات زیر را اجرا کنید:
+| مورد | مقدار مورد نیاز |
+|---|---|
+| آدرس ساب‌دامین | `taxi.karen-soft.ir` |
+| نسخهٔ PHP | **PHP 8.4** (از بخش **MultiPHP Manager** در cPanel برای `taxi.karen-soft.ir` انتخاب شود) |
+| اکستنشن‌های PHP | `mbstring`, `openssl`, `pdo_mysql`, `fileinfo`, `ctype`, `json`, `tokenizer`, `xml`, `bcmath` |
+| گواهی SSL (HTTPS) | فعال از بخش **SSL/TLS Status → Run AutoSSL** (الزامی برای کارکرد آفلاین Service Worker و کوکی امن) |
+| دیتابیس | یک دیتابیس و کاربر MySQL/MariaDB با کاراکترست `utf8mb4` |
+
+---
+
+## گام ۱: ساخت ساب‌دامین `taxi.karen-soft.ir` و فعال‌سازی SSL
+
+1. وارد **cPanel** هاست `karen-soft.ir` شوید و به بخش **Domains → Create A New Domain** بروید.
+2. در فیلد Domain عبارت زیر را وارد کنید:
+   ```text
+   taxi.karen-soft.ir
+   ```
+3. تیک گزینهٔ *Share document root* را **بردارید** و مسیر **Document Root** را روی مسیر زیر بگذارید:
+   ```text
+   taxi-app/laravel-backend/public
+   ```
+   *(یعنی مسیر کامل `/home/USERNAME/taxi-app/laravel-backend/public` — با این کار فایل `.env` و هستهٔ لاراول بیرون از پوشهٔ عمومی وب قرار می‌گیرند و کاملاً امن هستند.)*
+4. در صفحهٔ **Domains** گزینهٔ **Force HTTPS Redirect** را برای `taxi.karen-soft.ir` روشن کنید (یا در **SSL/TLS Status** گزینهٔ **Run AutoSSL** را روی `taxi.karen-soft.ir` بزنید تا گواهی HTTPS صادر شود).
+5. به **MultiPHP Manager** بروید، تیک `taxi.karen-soft.ir` را بزنید و نسخهٔ PHP را روی **`PHP 8.4` (`ea-php84`)** قرار داده و **Apply** بزنید.
+
+> **نکتهٔ DNS (اگر دامنه روی Cloudflare یا DNS خارجی است):** یک رکورد `A` به نام `taxi` با IP همان هاست `karen-soft.ir` ثبت کنید. اگر DNS دامنه روی خود همین cPanel است، رکورد `taxi.karen-soft.ir` به‌صورت خودکار ساخته می‌شود.
+
+---
+
+## گام ۲: ساخت دیتابیس MySQL در cPanel
+
+1. در cPanel وارد **MySQL Database Wizard** شوید.
+2. یک دیتابیس بسازید (مثلاً `USERNAME_taxi`).
+3. یک کاربر دیتابیس با رمز قوی بسازید و در مرحلهٔ بعد تیک **ALL PRIVILEGES** را بزنید تا به دیتابیس متصل شود.
+
+---
+
+## گام ۳: آپلود فایل‌های پروژه در `/home/USERNAME/taxi-app`
+
+دو راه دارید (هر کدام راحت‌تر است):
+
+- **راه الف — بستهٔ کاملِ بدون نیاز به Composer (پیشنهادی و سریع‌ترین):**
+  از صفحهٔ **GitHub Actions** آخرین اجرای مخزن، آرتیفکت **`taxi-karen-cpanel-ready`** (فایل `taxi-karen-cpanel-full.zip` که پوشهٔ `vendor/` هم از قبل داخلش نصب شده است) را دانلود کنید، در **File Manager** به مسیر `/home/USERNAME/taxi-app` بروید، **Upload** و سپس **Extract** کنید.
+- **راه ب — ساخت بسته یا کلون مستقیم با Composer روی سرور:**
+  اجرای `npm run laravel:package` فایل `deploy/laravel-app/artifacts/taxi-laravel.zip` را می‌سازد؛ آن را در `/home/USERNAME/taxi-app` آپلود و Extract کنید.
+
+پس از Extract، باید مسیر `/home/USERNAME/taxi-app/laravel-backend/public/index.php` و `/home/USERNAME/taxi-app/laravel-backend/public/taxi.html` موجود باشد.
+
+---
+
+## گام ۴: تنظیم فایل `.env` برای `https://taxi.karen-soft.ir`
+
+یک نمونهٔ ازپیش‌تنظیم‌شده برای همین ساب‌دامین در `laravel-backend/.env.production.example` قرار دارد. در File Manager (یا Terminal) آن را به `.env` کپی کنید:
 
 ```bash
-# در محیطی که PHP و Composer نصب است (یا در CI):
-cd laravel-backend && composer install --no-dev --optimize-autoloader && cd ..
-
-# همگام‌سازی PWA و ساخت پوشهٔ deploy/laravel-app/stage:
-npm run laravel:package
+cd ~/taxi-app/laravel-backend
+cp .env.production.example .env
 ```
 
-خروجی در مسیر `deploy/laravel-app/stage/` شامل دو پوشه خواهد بود:
-- `laravel-app/` — هستهٔ برنامهٔ لاراول (خارج از `public_html` قرار می‌گیرد تا فایل‌های `.env` و دیتابیس در معرض وب نباشند)
-- `public_html/` — شامل `index.php` بازنویسی‌شده، `.htaccess`، `taxi.html`، `sw.js`، `manifest.json` و `icons/`
+سپس در فایل `~/taxi-app/laravel-backend/.env` فقط سه بخش **دیتابیس**، **رمز مدیر کل** و (در صورت نیاز) **ایمیل** را با مقادیر واقعی خود پر کنید:
+
+```dotenv
+APP_NAME="تاکسی کارن · کارن‌سافت"
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_URL=https://taxi.karen-soft.ir
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=USERNAME_taxi
+DB_USERNAME=USERNAME_taxi
+DB_PASSWORD="رمز_دیتابیس_شما"
+
+SESSION_DRIVER=database
+SESSION_LIFETIME=43200
+SESSION_COOKIE=taxi_karen_session
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=lax
+SESSION_DOMAIN=null
+
+TAXI_PUBLIC_SIGNUP=false
+TAXI_PAYMENT_GATEWAY=manual
+
+TAXI_MANAGER_NAME="مدیر کل تاکسی کارن"
+TAXI_MANAGER_EMAIL=admin@karen-soft.ir
+TAXI_MANAGER_PASSWORD="یک_رمز_قوی_برای_مدیر_کل"
+```
 
 ---
 
-## ۲. بارگذاری در cPanel
+## گام ۵: اجرای دستور راه‌اندازی در Terminal سی‌پنل
 
-1. محتویات `deploy/laravel-app/stage/laravel-app/` را در مسیر `/home/<CPANEL_USER>/laravel-app/` بارگذاری کنید.
-2. محتویات `deploy/laravel-app/stage/public_html/` را در `/home/<CPANEL_USER>/public_html/` (یا پوشهٔ ساب‌دامنه) قرار دهید.
-3. فایل `/home/<CPANEL_USER>/laravel-app/.env.example` را به `.env` تغییر نام دهید و مقادیر زیر را تنظیم کنید:
-   ```dotenv
-   APP_ENV=production
-   APP_DEBUG=false
-   APP_URL=https://taxi.yourdomain.ir
-   PUBLIC_FOLDER_PATH=/home/<CPANEL_USER>/public_html
+در **cPanel → Terminal** دستورات زیر را اجرا کنید:
 
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=cpaneluser_taxi
-   DB_USERNAME=cpaneluser_taxi
-   DB_PASSWORD=STRONG_DB_PASSWORD
+```bash
+cd ~/taxi-app/laravel-backend
+bash bin/cpanel-setup.sh
+```
 
-   TAXI_PUBLIC_SIGNUP=false
-   TAXI_ADMIN_NAME="مدیر کل تاکسی کارن"
-   TAXI_ADMIN_EMAIL=admin@yourdomain.ir
-   TAXI_ADMIN_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
-   ```
-4. در ترمینال cPanel (یا SSH) دستورات زیر را اجرا کنید:
-   ```bash
-   cd ~/laravel-app
-   php artisan key:generate --force
-   php artisan migrate --seed --force
-   php artisan config:cache
-   php artisan route:cache
-   ```
-5. برای ارسال خودکار ایمیل‌های یادآور انقضای اشتراک، یک Cron Job در cPanel تنظیم کنید:
+*(اسکریپت `bin/cpanel-setup.sh` به‌ترتیب نسخهٔ PHP 8.4 را بررسی می‌کند، اگر `vendor/` نباشد `composer install --no-dev` می‌زند، مجوز `storage` و `bootstrap/cache` را تنظیم می‌کند، `APP_KEY` می‌سازد، جداول دیتابیس و حساب مدیر کل را با `migrate --seed --force` ایجاد می‌کند و `config:cache` و `route:cache` را اجرا می‌نماید.)*
+
+---
+
+## گام ۶: تست نهایی و Cron Job یادآور اشتراک
+
+1. آدرس **`https://taxi.karen-soft.ir/up`** را باز کنید — باید وضعیت سبز (`200 OK`) نمایش داده شود.
+2. آدرس **`https://taxi.karen-soft.ir/`** را باز کنید — صفحهٔ ورود «تاکسی کارن» باز می‌شود.
+3. با ایمیل و رمزی که در `TAXI_MANAGER_EMAIL` و `TAXI_MANAGER_PASSWORD` گذاشته‌اید وارد شوید و از تب **«آژانس‌ها»**، اشتراک آژانس‌ها را بسازید.
+4. برای ارسال خودکار یادآور انقضای اشتراک، در **cPanel → Cron Jobs** یک کران‌جاب (Once Per Day یا هر دقیقه برای زمان‌بند لاراول) ثبت کنید:
    ```cron
-   * * * * * cd /home/<CPANEL_USER>/laravel-app && php artisan schedule:run >> /dev/null 2>&1
+   * * * * * cd /home/USERNAME/taxi-app/laravel-backend && /usr/local/bin/ea-php84 artisan schedule:run >> /dev/null 2>&1
    ```
 
 ---
 
-## ۳. چرخهٔ کارکرد آفلاین برای آژانس‌ها
+## حالت جایگزین: اگر cPanel اجازهٔ تغییر Document Root نداد
 
-1. مدیر کل با حساب `TAXI_ADMIN_EMAIL` وارد سامانه می‌شود و از تب **«آژانس‌ها»**، حساب هر آژانس و مدت اشتراک آن را تعریف می‌کند.
-2. اپراتور/مدیر آژانس در اولین مراجعه با ایمیل و رمز عبور خود وارد می‌شود؛ توکن نشست و وضعیت اشتراک در مرورگر کش می‌شود و Service Worker کل پوستهٔ PWA را ذخیره می‌کند.
-3. از آن لحظه به بعد، برنامه حتی در زمان قطع کامل اینترنت باز می‌شود و تمام عملیات ثبت سفر، دیسپچ، حسابداری و چاپ رسید به‌صورت آفلاین روی همان سیستم انجام می‌گیرد.
-4. پس از پایان اعتبار اشتراک، برنامه به حالت **فقط‌خواندنی و پشتیبان‌گیری (`readonly_backup`)** می‌رود: مشاهدهٔ تمام سفرها و گزارش‌ها، چاپ اسناد و دریافت پشتیبان JSON/CSV باز است و به‌محض تمدید اشتراک، ثبت و ویرایش دوباره فعال می‌شود.
+اگر در هاست شما پوشهٔ ساب‌دامین اجباراً `/home/USERNAME/taxi.karen-soft.ir` یا `/home/USERNAME/public_html/taxi` است:
+1. خروجی `deploy/laravel-app/stage/laravel-app` را در `/home/USERNAME/laravel-app` بگذارید.
+2. خروجی `deploy/laravel-app/stage/public_html` را درون پوشهٔ وب ساب‌دامین (`/home/USERNAME/taxi.karen-soft.ir`) بریزید.
+3. در فایل `/home/USERNAME/laravel-app/.env` این خط را اضافه کنید:
+   ```dotenv
+   PUBLIC_FOLDER_PATH=/home/USERNAME/taxi.karen-soft.ir
+   ```
+
+---
+
+## رفع خطاهای رایج
+
+- **خطای `Composer detected issues in your platform (>= 8.4.0)`:** در **MultiPHP Manager** نسخهٔ PHP ساب‌دامین `taxi.karen-soft.ir` را روی **PHP 8.4** بگذارید و در ترمینال هم در صورت نیاز با `/usr/local/bin/ea-php84` دستور را اجرا کنید.
+- **خطای `419 Page Expired` هنگام ورود:** مطمئن شوید سایت را با **`https://taxi.karen-soft.ir`** باز کرده‌اید (نه `http://`)، چون `SESSION_SECURE_COOKIE=true` فقط روی HTTPS کوکی امن می‌فرستد.
+- **عدم نصب PWA یا آفلاین نشدن:** مرورگرها فقط روی **`https://`** اجازهٔ ثبت Service Worker (`sw.js`) را می‌دهند؛ پس از فعال شدن AutoSSL در اولین بازدید کل برنامه در مرورگر کش می‌شود.
