@@ -763,6 +763,6 @@ if (isMain) {
   const host = process.env.HOST || '0.0.0.0';
   const { server } = createDevServer();
   server.listen(port, host, () => {
-    console.log(`تاکسی کارن آماده است: http://localhost:${port}/`);
+    console.log(`تاکسینو | Taxino آماده است: http://localhost:${port}/`);
   });
 }

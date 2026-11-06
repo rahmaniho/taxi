@@ -632,3 +632,63 @@ test('ساختار سرور لاراول (laravel-backend): کامل، دارا�
   const billingConfig = fs.readFileSync(path.join(rootDir, 'laravel-backend/config/billing.php'), 'utf8');
   assert.match(billingConfig, /'public_registration'\s*=>\s*\(bool\)\s*env\('TAXI_PUBLIC_SIGNUP',\s*env\('KARO_PUBLIC_SIGNUP',\s*false\)\)/, 'ثبت‌نام عمومی به‌طور پیش‌فرض غیرفعال است');
 });
+
+test('هویت بصری تاکسینو | Taxino: نام رسمی، لوگوی افقی (logo.png) و آیکون برنامه در تمام لایه‌های PWA و لاراول', async () => {
+  const brandFiles = [
+    'icons/logo.png',
+    'icons/apple-touch-icon.png',
+    'icons/icon-72.png',
+    'icons/icon-96.png',
+    'icons/icon-128.png',
+    'icons/icon-144.png',
+    'icons/icon-152.png',
+    'icons/icon-192.png',
+    'icons/icon-384.png',
+    'icons/icon-512.png',
+    'icons/maskable-512.png',
+    'laravel-backend/public/icons/logo.png',
+    'laravel-backend/public/icons/apple-touch-icon.png',
+    'laravel-backend/public/icons/icon-192.png',
+    'laravel-backend/public/icons/icon-512.png',
+    'laravel-backend/public/icons/maskable-512.png',
+  ];
+  for (const rel of brandFiles) {
+    const abs = path.join(rootDir, rel);
+    assert.equal(fs.existsSync(abs), true, `دارایی برند ${rel} موجود است`);
+    assert.ok(fs.statSync(abs).size > 2000, `دارایی برند ${rel} معتبر و غیرخالی است`);
+  }
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'manifest.json'), 'utf8'));
+  assert.match(manifest.name, /تاکسینو.*Taxino/);
+  assert.equal(manifest.short_name, 'تاکسینو | Taxino');
+
+  const swText = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
+  assert.match(swText, /icons\/logo\.png/, 'لوگوی رسمی تاکسینو در Service Worker پیش‌کش شده است');
+  assert.match(swText, /icons\/apple-touch-icon\.png/, 'آیکون iOS تاکسینو در Service Worker پیش‌کش شده است');
+
+  const backend = await startTestBackend();
+  const session = await bootRawDom({
+    url: `${backend.baseUrl}/`,
+    beforeParse(window) {
+      window.fetch = createStatefulFetch(backend.baseUrl, window);
+    },
+  });
+  try {
+    assert.match(session.document.title, /تاکسینو \| Taxino/);
+    assert.equal(session.document.querySelector('meta[name="application-name"]')?.content, 'تاکسینو | Taxino');
+    const loginBannerImg = session.document.querySelector('.auth-logo-banner img');
+    assert.ok(loginBannerImg, 'بنر لوگوی رسمی تاکسینو در صفحهٔ ورود نمایش داده شده است');
+    assert.match(loginBannerImg.getAttribute('src'), /icons\/logo\.png/);
+    assert.match(session.document.querySelector('#auth-login-title')?.textContent || '', /تاکسینو \| Taxino/);
+
+    await session.App.subscription.login('agency@taxi.ir', 'taxi12345', true);
+    assert.match(session.document.querySelector('#sidebar .brand-name')?.textContent || '', /تاکسینو/);
+    assert.match(session.document.querySelector('#sidebar-brand-icon img')?.getAttribute('src') || '', /icons\/icon-192\.png/);
+
+    go(session, 'about');
+    assert.ok(session.document.querySelector('.about-logo-showcase img[src*="icons/logo.png"]'), 'لوگوی کامل تاکسینو در صفحهٔ درباره نمایش داده می‌شود');
+  } finally {
+    session.dom.window.close();
+    await backend.close();
+  }
+});

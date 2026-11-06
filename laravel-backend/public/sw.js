@@ -1,12 +1,13 @@
-/* Service Worker کارن‌سافت · کش آفلاین برنامه و فایل‌های استاتیک */
+/* Service Worker تاکسینو | Taxino · کش آفلاین برنامه و فایل‌های استاتیک */
 'use strict';
-const CACHE_VERSION = 'taxi-v1.4.0';
+const CACHE_VERSION = 'taxi-v1.5.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const LOGO_CACHE = 'taxi-logo-v1';
 const ROOT = new URL('./', self.registration.scope);
 const STATIC_FILES = [
   'taxi.html', 'manifest.json',
+  'icons/logo.png', 'icons/apple-touch-icon.png', 'icons/brand.svg',
   'icons/icon-72.png', 'icons/icon-96.png', 'icons/icon-128.png',
   'icons/icon-144.png', 'icons/icon-152.png', 'icons/icon-192.png',
   'icons/icon-384.png', 'icons/icon-512.png', 'icons/maskable-512.png'
@@ -20,7 +21,7 @@ const CDN_FILES = [
 ];
 const PRECACHE_FILES = STATIC_FILES.concat(CDN_FILES);
 const LOGO_URL = new URL('__taxi_agency_logo__', ROOT).href;
-const OFFLINE_HTML = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#D4AF37"><title>کارن‌سافت · آفلاین</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#080A19;color:#f6f5f1;font:16px Tahoma,Arial,sans-serif}.box{max-width:440px;margin:20px;padding:32px;border:1px solid #343954;border-radius:22px;background:#11162b;text-align:center;line-height:2}.mark{width:62px;height:62px;margin:0 auto 16px;border-radius:18px;display:grid;place-items:center;background:#D4AF37;color:#111;font-size:28px;font-weight:bold}.muted{color:#a5acc0;font-size:13px}</style><main class="box"><div class="mark">ت</div><h1>کارن‌سافت آفلاین است</h1><p class="muted">برای بازشدن برنامه، یک بار به اینترنت وصل شوید. پس از بارگذاری اولیه، می‌توانید سفرها را بدون اینترنت مدیریت کنید.</p><p class="muted">اطلاعات ثبت‌شده روی همین دستگاه باقی می‌مانند.</p></main></html>`;
+const OFFLINE_HTML = `<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0B1942"><title>تاکسینو | Taxino · آفلاین</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#080A19;color:#f6f5f1;font:16px Tahoma,Arial,sans-serif}.box{max-width:440px;margin:20px;padding:32px;border:1px solid #343954;border-radius:22px;background:#11162b;text-align:center;line-height:2}.mark{width:64px;height:64px;margin:0 auto 16px;border-radius:18px;display:grid;place-items:center;background:#0B1942;border:2px solid #FDB400;color:#FDB400;font-size:28px;font-weight:900;font-style:italic}.muted{color:#a5acc0;font-size:13px}</style><main class="box"><div class="mark">T</div><h1>تاکسینو آفلاین است</h1><p class="muted">برای بازشدن برنامه، یک بار به اینترنت وصل شوید. پس از بارگذاری اولیه، می‌توانید سفرها را بدون اینترنت مدیریت کنید.</p><p class="muted">اطلاعات ثبت‌شده روی همین دستگاه باقی می‌مانند.</p></main></html>`;
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
