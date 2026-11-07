@@ -264,6 +264,35 @@ test('fix-app-key.php: ایمنی و درستی منطق .env', () => {
   assert.match(body, /strlen\(\$v\)/, 'برای رمز فقط طول نمایش داده شود');
 });
 
+test('fix-app-key.php: رفع دو مانع واقعی (.env خالی و کلید به‌صورت نام فایل)', () => {
+  const f = join(root, 'deploy/laravel-app/fix-app-key.php');
+  const body = readFileSync(f, 'utf8');
+
+  // ۱) .env خالی باید «خالی» تشخیص داده شود، نه «موجود»
+  assert.match(body, /function env_is_blank\(string \$file\): bool/, 'تابع env_is_blank لازم است');
+  assert.match(body, /\$body = \(string\) @file_get_contents\(\$file\)/, 'محتوای .env باید خوانده شود');
+  assert.match(body, /if \(trim\(\$body\) === ''\)/, 'فایل فقط-فاصله هم باید خالی شمرده شود');
+  assert.match(body, /APP_KEY\|DB_DATABASE\|APP_ENV/, 'نبود کلیدهای ساختاری هم باید «خالی» شمرده شود');
+
+  // دکمهٔ create نباید با دیدن .env خالی دست از کار بکشد
+  assert.match(body, /envExists && !env_is_blank/, 'شرط «وجود دارد پس دست نزن» باید خالی‌بودن را استثنا کند');
+  assert.match(body, /env_is_blank\(\(string\) \$envPath\) && is_file/, 'باید .env خالی را از نمونه پر کند');
+
+  // ۲) عملیات یک‌کلیکی
+  assert.match(body, /action === 'all'/, 'اکشن all لازم است');
+  assert.match(body, /\?action=all&amp;key=/, 'دکمهٔ «همه را درست کن» باید در پنل باشد');
+
+  // ۳) پذیرش کلید به‌صورت نام فایل، اما نه فایل‌های خود لاراول
+  assert.match(body, /\$tokenAsFile/, 'باید حالت «کلید به‌صورت نام فایل» پشتیبانی شود');
+  assert.match(body, /\$protectedNames/, 'باید فایل‌های محافظت‌شده تعریف شوند');
+  for (const name of ['artisan', 'composer.json', 'composer.lock']) {
+    assert.ok(body.includes(`'${name}'`), `${name} باید در فهرست محافظت‌شده باشد`);
+  }
+  assert.match(body, /\$size <= 8192/, 'فایل کلید باید اندازهٔ محدود داشته باشد');
+  assert.match(body, /\$content === '' \|\| \$content === \$token/, 'محتوای فایل کلید باید خالی یا همان کلید باشد');
+  assert.match(body, /!in_array\(\$token, \$protectedNames, true\)/, 'نام محافظت‌شده نباید به‌عنوان کلید پذیرفته شود');
+});
+
 test('بستهٔ ۰۰ شامل fix-app-key.php باشد', () => {
   const zip = join(artifactsDir, 'taxi-cpanel-00-root-tools.zip');
   if (!existsSync(zip)) {

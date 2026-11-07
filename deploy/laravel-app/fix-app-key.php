@@ -90,6 +90,23 @@ function env_set(string $file, string $key, string $value): bool
     return @rename($tmp, $file);
 }
 
+/**
+ * آیا .env عملاً آماده نیست؟ (فایل صفر بایتی، فقط فاصله، یا بدون هیچ‌کدام از کلیدهای اصلی)
+ * فقط وجود فایل کافی نیست — فایل خالی هم «وجود دارد» ولی لاراول با آن بالا نمی‌آید.
+ */
+function env_is_blank(string $file): bool
+{
+    if (!is_file($file)) {
+        return true;
+    }
+    $body = (string) @file_get_contents($file);
+    if (trim($body) === '') {
+        return true;
+    }
+    // اگر هیچ‌کدام از کلیدهای ساختاری در آن نیست، یعنی محتوای واقعی ندارد
+    return !preg_match('/^\s*(APP_KEY|DB_DATABASE|APP_ENV)\s*=/m', $body);
+}
+
 /** حذف کش config تا مقدار جدید خوانده شود */
 function clear_config_cache(string $root): array
 {
@@ -118,7 +135,32 @@ $root = laravel_root();
 $token = (string) ($_GET['key'] ?? '');
 $action = (string) ($_GET['action'] ?? '');
 $keyFile = __DIR__ . '/' . KEY_FILE;
-$authorized = is_file($keyFile) && $token !== '' && trim((string) @file_get_contents($keyFile)) === $token;
+
+/**
+ * راه‌های مجاز بودن:
+ *  ۱) فایل `.fix-key` وجود دارد و محتوایش همان کلید است (روش اصلی و امن)
+ *  ۲) فایلی به نام همان کلید کنار ابزار هست (خطای رایج: ساخت «فایل taxino2026» به‌جای .fix-key)
+ *
+ * در حالت ۲ سخت‌گیرانه عمل می‌کنیم تا فایل‌های خودِ لاراول (artisan، composer.json، …)
+ * به‌عنوان «کلید» پذیرفته نشوند.
+ */
+$keyFileToken = is_file($keyFile) ? trim((string) @file_get_contents($keyFile)) : '';
+
+$protectedNames = ['artisan', 'composer.json', 'composer.lock', 'index.php', 'server.php',
+                   'phpunit.xml', 'package.json', 'vite.config.js', KEY_FILE, basename(__FILE__)];
+
+$tokenAsFile = false;
+if ($token !== '' && preg_match('/^[A-Za-z0-9_-]{6,64}$/', $token) === 1
+    && !in_array($token, $protectedNames, true)
+    && is_file(__DIR__ . '/' . $token)) {
+    $candidate = __DIR__ . '/' . $token;
+    $size = (int) @filesize($candidate);
+    $content = trim((string) @file_get_contents($candidate, false, null, 0, 4096));
+    // فایل کلید: یا خالی است، یا حداکثر همان عبارت داخلش نوشته شده، یا فایل کوچکی است
+    $tokenAsFile = ($content === '' || $content === $token) && $size <= 8192;
+}
+
+$authorized = $token !== '' && ($keyFileToken === $token || $tokenAsFile);
 
 $messages = [];
 $done = [];
@@ -137,13 +179,16 @@ if ($action !== '') {
     } else {
         // ۱) ساخت .env از نمونه
         if ($action === 'create') {
-            if ($envExists) {
-                $messages[] = ['info', 'فایل <code>.env</code> از قبل وجود دارد (دست نزدم).'];
+            if ($envExists && !env_is_blank((string) $envPath)) {
+                $messages[] = ['info', 'فایل <code>.env</code> از قبل وجود دارد و خالی نیست (دست نزدم).'];
             } elseif (is_file((string) $examplePath)) {
+                $overwroteBlank = $envExists;
                 if (@copy((string) $examplePath, $root . '/.env')) {
                     @chmod($root . '/.env', 0644);
                     $envExists = true;
-                    $messages[] = ['ok', 'فایل <code>.env</code> از <code>.env.production.example</code> ساخته شد.'];
+                    $messages[] = ['ok', $overwroteBlank
+                        ? 'فایل <code>.env</code> خالی بود؛ با محتوای <code>.env.production.example</code> پر شد.'
+                        : 'فایل <code>.env</code> از <code>.env.production.example</code> ساخته شد.'];
                 } else {
                     $messages[] = ['bad', 'کپی .env ناموفق بود (مجوز پوشه را بررسی کنید).'];
                 }
@@ -154,6 +199,13 @@ if ($action !== '') {
 
         // ۲) ساخت کلید تازه
         if ($action === 'key') {
+            // اگر .env هست ولی خالی است، اول از نمونه پر می‌شود
+            if ($envExists && env_is_blank((string) $envPath) && is_file((string) $examplePath)) {
+                if (@copy((string) $examplePath, (string) $envPath)) {
+                    @chmod((string) $envPath, 0644);
+                    $messages[] = ['ok', 'فایل <code>.env</code> خالی بود؛ از نمونه پر شد.'];
+                }
+            }
             if (!$envExists) {
                 $messages[] = ['bad', 'اول <code>.env</code> را بسازید (دکمهٔ ۱).'];
             } else {
@@ -168,6 +220,42 @@ if ($action !== '') {
                     }
                 } else {
                     $messages[] = ['bad', 'نوشتن در <code>.env</code> ناموفق بود (مجوز فایل).'];
+                }
+            }
+        }
+
+        // ۰) انجام همهٔ کارها با یک کلیک: پر کردن .env + ساخت APP_KEY + پاک‌سازی کش
+        if ($action === 'all') {
+            if ($envExists && env_is_blank((string) $envPath) && is_file((string) $examplePath)) {
+                if (@copy((string) $examplePath, (string) $envPath)) {
+                    @chmod((string) $envPath, 0644);
+                    $envExists = true;
+                    $messages[] = ['ok', 'فایل <code>.env</code> خالی بود؛ از <code>.env.production.example</code> پر شد.'];
+                }
+            } elseif (!$envExists && is_file((string) $examplePath)) {
+                if (@copy((string) $examplePath, (string) $envPath)) {
+                    @chmod((string) $envPath, 0644);
+                    $envExists = true;
+                    $messages[] = ['ok', 'فایل <code>.env</code> از نمونه ساخته شد.'];
+                }
+            }
+
+            if (!$envExists) {
+                $messages[] = ['bad', '<code>.env</code> ساخته نشد. اجازهٔ نوشتن در پوشه را بررسی کنید.'];
+            } else {
+                $newKey = 'base64:' . base64_encode(random_bytes(32));
+                if (env_set((string) $envPath, 'APP_KEY', $newKey)) {
+                    $done[] = $newKey;
+                    $currentKey = $newKey;
+                    $keyOk = true;
+                    $messages[] = ['ok', '<code>APP_KEY</code> تازه ساخته و در <code>.env</code> نوشته شد.'];
+                } else {
+                    $messages[] = ['bad', 'نوشتن <code>APP_KEY</code> ناموفق بود (مجوز فایل).'];
+                }
+
+                $removedFiles = clear_config_cache($root);
+                if ($removedFiles !== []) {
+                    $messages[] = ['info', 'کش حذف شد: <code>' . h(implode(', ', $removedFiles)) . '</code>'];
                 }
             }
         }
@@ -288,8 +376,10 @@ $qs = $authorized ? '&key=' . urlencode($token) : '';
     <div class="verdict bad">
       🔐 برای تغییر، کلید لازم است.
       <div style="font-weight:400;font-size:13.5px;margin-top:8px">
-        در File Manager کنار همین فایل، فایلی به نام <code>.fix-key</code> بسازید و داخلش یک عبارت دلخواه بگذارید (مثل <code>taxino2026</code>)،
-        سپس بنویسید: <code><?= h($base) ?>?action=create&amp;key=taxino2026</code>
+        <b>دو راه:</b>
+        <br>۱) در File Manager کنار همین فایل، فایلی به نام <code>.fix-key</code> بسازید و <b>داخلش</b> یک عبارت بگذارید (مثل <code>taxino2026</code>).
+        <br>۲) یا فقط یک فایل <b>به نام</b> <code>taxino2026</code> کنار همین فایل بسازید (بدون محتوا).
+        <br>سپس بنویسید: <code><?= h($base) ?>?action=create&amp;key=taxino2026</code>
       </div>
     </div>
   <?php endif; ?>
@@ -299,8 +389,15 @@ $qs = $authorized ? '&key=' . urlencode($token) : '';
     <table>
       <tr><th>مسیر ریشهٔ لاراول</th><td><code><?= h($root) ?></code> <?= badge(true, 'پیدا شد ✓', '') ?></td></tr>
       <tr><th>فایل <code>.env</code></th>
-          <td><?= badge($envExists, 'وجود دارد ✓', 'وجود ندارد ✗') ?>
-              <?php if (!$envExists): ?><br><span class="sub">لاراول بدون این فایل کار نمی‌کند.</span><?php endif; ?></td></tr>
+          <td><?php if (!$envExists): ?>
+                <?= badge(false, '', 'وجود ندارد ✗') ?>
+                <br><span class="sub">لاراول بدون این فایل کار نمی‌کند.</span>
+              <?php elseif (env_is_blank((string) $envPath)): ?>
+                <span class="badge bad">هست ولی خالی است ✗</span>
+                <br><span class="sub">فایل ساخته شده اما هیچ محتوایی ندارد — دکمهٔ زیر پرش می‌کند.</span>
+              <?php else: ?>
+                <?= badge(true, 'پر است ✓', '') ?>
+              <?php endif; ?></td></tr>
       <tr><th>مقدار <code>APP_KEY</code></th>
           <td><?= badge($keyOk, 'معتبر ✓', $envExists ? 'خالی یا نامعتبر ✗' : '—') ?>
               <?php if ($keyOk): ?><br><code><?= h(substr($currentKey, 0, 22)) ?>…</code>
@@ -324,7 +421,13 @@ $qs = $authorized ? '&key=' . urlencode($token) : '';
     </div>
   <?php endif; ?>
 
-  <h2>سه دکمه (به ترتیب)</h2>
+  <h2>⚡ انجام یک‌کلیکی</h2>
+  <div class="card">
+    <p style="margin:0 0 10px">این دکمه هر دو کار لازم را با هم انجام می‌دهد: پر کردن <code>.env</code> از نمونه + ساخت <code>APP_KEY</code> + پاک‌کردن کش.</p>
+    <a class="btn b2" style="font-size:15px;padding:13px 24px" href="?action=all&amp;key=<?= h($token) ?>">⚡ همه را درست کن</a>
+  </div>
+
+  <h2>یا سه دکمهٔ جدا (به ترتیب)</h2>
   <div class="card">
     <p style="margin:0 0 10px"><b>۱)</b> ساخت <code>.env</code> از روی نمونه:</p>
     <a class="btn b1" href="?action=create&amp;key=<?= h($token) ?>">① ساخت .env</a>
