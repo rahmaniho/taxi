@@ -249,6 +249,45 @@ if ($root !== null && $envReady && is_file($root . '/vendor/autoload.php')) {
 $add('فایل‌های حساس', 'warn',
     'لاگ <code>storage/logs/laravel.log</code> و کل درخت لاراول از اینترنت قابل خواندن است — بعد از راه‌اندازی با <code>.htaccess</code> ریشه بسته می‌شود');
 
+// ─────────────────────── حالت موقت بدون دیتابیس ───────────────────────
+// SESSION/CACHE روی file می‌رود تا /api/csrf بدون MySQL جواب بدهد.
+$swResult = null;
+
+if (($_POST['switch_file_driver'] ?? '') === '1' && $root !== null && $envReady) {
+    $setSafe = static function (string $text, string $key, string $val): string {
+        $pattern = '/^\s*' . preg_quote($key, '/') . '\s*=.*$/m';
+        $line = $key . '=' . $val;
+        if (preg_match($pattern, $text) === 1) {
+            return (string) preg_replace($pattern, str_replace(['\\', '$'], ['\\\\', '\\$'], $line), $text, 1);
+        }
+        return rtrim($text, "\n") . "\n" . $line . "\n";
+    };
+
+    $out = (string) @file_get_contents((string) $envPath);
+    $out = $setSafe($out, 'SESSION_DRIVER', 'file');
+    $out = $setSafe($out, 'CACHE_STORE', 'file');
+    $out = $setSafe($out, 'QUEUE_CONNECTION', 'sync');
+
+    $tmp = (string) $envPath . '.tmp' . bin2hex(random_bytes(4));
+    if (@file_put_contents($tmp, $out) === false) {
+        $swResult = ['bad', 'نوشتن .env ناموفق بود.'];
+    } else {
+        @chmod($tmp, 0644);
+        if (@rename($tmp, (string) $envPath)) {
+            $c = [];
+            foreach ((array) @glob($root . '/bootstrap/cache/*.php') ?: [] as $f) {
+                if (@unlink($f)) {
+                    $c[] = basename((string) $f);
+                }
+            }
+            $swResult = ['ok', 'روی file switch شد (SESSION/CACHE/QUEUE). کش پاک شد. حالا /public/api/csrf را تست کنید.'];
+        } else {
+            @unlink($tmp);
+            $swResult = ['bad', 'جایگزینی .env ناموفق بود.'];
+        }
+    }
+}
+
 // ─────────────────────── نوشتن مستقیم .env ───────────────────────
 $writeResult = null;
 
@@ -439,6 +478,31 @@ $verdict = $badCount === 0
       echo '</div>';
   }
   ?>
+</div>
+<?php endif; ?>
+
+<?php if ($root !== null && $envReady): ?>
+<h2>🚑 نجات فوری: سایت را بدون دیتابیس بالا بیاور</h2>
+<div class="card">
+  <?php if ($swResult !== null): ?>
+    <div style="margin-bottom:12px"><?= badge($swResult[0] === 'ok' ? 'ok' : 'bad', $swResult[0] === 'ok' ? 'انجام شد' : 'ناموفق') ?> <?= h($swResult[1]) ?></div>
+  <?php endif; ?>
+  <p class="sub" style="margin:0 0 12px">
+    اگر الان فقط می‌خواهید <b>سایت باز شود</b> و خطای ۵۰۰ برطرف شود، این دکمه
+    <code>SESSION_DRIVER</code> و <code>CACHE_STORE</code> را روی <code>file</code> می‌گذارد.
+    آن‌وقت <code>/api/csrf</code> و صفحهٔ ورود بدون MySQL کار می‌کنند.
+  </p>
+  <p class="sub" style="margin:0 0 12px">
+    ⚠️ ولی <b>ورود به حساب</b> همچنان به دیتابیس نیاز دارد — این فقط یک راه نجات موقت است.
+    بعداً با پر کردن رمز دیتابیس، همین‌جا می‌توانید برگردانید (بگویید تا دکمه‌اش را اضافه کنم).
+  </p>
+  <form method="post">
+    <input type="hidden" name="switch_file_driver" value="1">
+    <button type="submit" style="padding:11px 26px;border-radius:9px;border:1px solid #ff9f43;background:rgba(255,159,67,.15);color:#ff9f43;font-weight:700;font-family:inherit;font-size:14px"
+      onclick="return confirm('تغییر SESSION و CACHE به file. مطمئنید؟')">
+      🚑 بالا آوردن موقت سایت (file driver)
+    </button>
+  </form>
 </div>
 <?php endif; ?>
 
