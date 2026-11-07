@@ -11,7 +11,9 @@
     "version:sync": "node scripts/bump-version.mjs",
     "laravel:sync": "node scripts/sync-laravel-pwa.mjs",
     "laravel:check": "node scripts/sync-laravel-pwa.mjs --check",
-    "laravel:package": "node scripts/build-laravel-package.mjs"
+    "laravel:package": "node scripts/build-laravel-package.mjs",
+    "laravel:parts": "node scripts/build-cpanel-parts.mjs",
+    "laravel:parts:vendor": "node scripts/build-cpanel-parts.mjs --with-vendor"
   },
   "devDependencies": {
     "jsdom": "^30.1.2"

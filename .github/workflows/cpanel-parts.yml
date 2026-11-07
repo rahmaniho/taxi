@@ -1,0 +1,88 @@
+name: بسته‌های بخش‌به‌بخش cPanel (با vendor)
+
+# این گردش‌کار فقط وقتی اجرا می‌شود که پیام کامیت شامل نشانهٔ [parts] باشد
+# یا از تب Actions به‌صورت دستی (Run workflow) اجرا شود.
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cpanel-parts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parts:
+    name: ساخت و انتشار بسته‌های آپلود cPanel
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[parts]')
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: آماده‌سازی PHP 8.4 و Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo, pdo_mysql, openssl, tokenizer, xml, ctype, json, bcmath
+          tools: composer:v2
+          coverage: none
+
+      - name: نصب وابستگی‌های تولید (vendor بدون dev)
+        working-directory: laravel-backend
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+
+      - name: ساخت بسته‌های بخش‌به‌بخش به‌همراه vendor
+        run: node scripts/build-cpanel-parts.mjs --with-vendor --vendor-chunk-mb=8
+
+      - name: نمایش فهرست بسته‌ها
+        run: |
+          ls -lh deploy/laravel-app/artifacts/parts
+          cat deploy/laravel-app/artifacts/parts/PARTS.md
+
+      - name: ذخیرهٔ بسته‌ها به‌عنوان آرتیفکت اجرا
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxi-cpanel-parts
+          path: |
+            deploy/laravel-app/artifacts/parts/*.zip
+            deploy/laravel-app/artifacts/parts/SHA256SUMS.txt
+            deploy/laravel-app/artifacts/parts/PARTS.md
+          retention-days: 30
+
+      - name: انتشار بسته‌ها در GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="cpanel-parts-v${VERSION}"
+          NOTES="deploy/laravel-app/artifacts/parts/RELEASE_NOTES.md"
+          cp deploy/laravel-app/artifacts/parts/PARTS.md "$NOTES"
+          {
+            echo ""
+            echo "---"
+            echo "ساخته‌شده از کامیت \`${GITHUB_SHA}\` روی شاخهٔ \`${GITHUB_REF_NAME}\`."
+            echo ""
+            echo "همهٔ بسته‌ها را در مسیر \`~/taxi-app\` سی‌پنل Extract کنید."
+          } >> "$NOTES"
+          gh release delete "$TAG" --yes --cleanup-tag >/dev/null 2>&1 || true
+          gh release create "$TAG" \
+            deploy/laravel-app/artifacts/parts/*.zip \
+            deploy/laravel-app/artifacts/parts/SHA256SUMS.txt \
+            deploy/laravel-app/artifacts/parts/PARTS.md \
+            --target "$GITHUB_SHA" \
+            --latest=false \
+            --title "بسته‌های آپلود cPanel — نسخهٔ ${VERSION}" \
+            --notes-file "$NOTES"
+          echo "✓ انتشار انجام شد: $TAG"
