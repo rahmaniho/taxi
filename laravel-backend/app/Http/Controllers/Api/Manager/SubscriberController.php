@@ -3,22 +3,20 @@
 namespace App\Http\Controllers\Api\Manager;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\LicenseResource;
 use App\Models\License;
 use App\Models\Order;
 use App\Models\SubscriptionHistory;
+use App\Models\SubscriptionInvoice;
 use App\Models\SubscriptionPayment;
 use App\Services\Billing\LicenseService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * مدیریت مشترکان: فهرست با فیلتر/جست‌وجو/صفحه‌بندی، سابقه، تمدید، تغییر وضعیت و سقف.
- *
- * فیلتر وضعیت در سطح SQL اعمال می‌شود (نه بعد از limit) تا نتیجه با دادهٔ زیاد
- * هم درست بماند. آخرین پرداخت هر مشترک با زیرکوئری خوانده می‌شود (بدون N+1).
+ * مدیریت مشترکین (هر آژانس یک اشتراک دارد): فهرست، فیلتر، جزئیات، تمدید دستی، تغییر وضعیت و سقف کاربر.
  */
 class SubscriberController extends Controller
 {
@@ -27,58 +25,55 @@ class SubscriberController extends Controller
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
+            'status' => ['nullable', 'in:all,active,expired,pending,suspended,canceled,renewal_pending'],
+            'plan' => ['nullable', 'string', 'max:40'],
             'q' => ['nullable', 'string', 'max:120'],
-            'status' => ['nullable', 'in:active,expired,pending,suspended,canceled,renewal_pending'],
-            'plan_code' => ['nullable', 'string', 'max:40'],
-            'include_archived' => ['nullable', 'boolean'],
-            'sort' => ['nullable', 'in:expires_at,-expires_at,created_at,-created_at,seats,-seats'],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'search' => ['nullable', 'string', 'max:120'],
+            'expiring_in_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
             'page' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'sort' => ['nullable', 'in:expires_at,-expires_at,created_at,-created_at,seats,-seats'],
         ]);
 
-        $sort = $filters['sort'] ?? '-created_at';
-        $column = ltrim($sort, '-') === 'seats' ? 'seats' : (ltrim($sort, '-') === 'expires_at' ? 'expires_at' : 'created_at');
+        $perPage = (int) ($filters['limit'] ?? 25);
+        $sort = $filters['sort'] ?? 'expires_at';
+        $column = ltrim($sort, '-');
         $direction = str_starts_with($sort, '-') ? 'desc' : 'asc';
+        $searchTerm = trim((string) ($filters['q'] ?? $filters['search'] ?? ''));
+        $statusFilter = ($filters['status'] ?? null) === 'all' ? null : ($filters['status'] ?? null);
 
         $query = License::query()
-            ->select('licenses.*')
-            ->with(['store' => fn ($relation) => $relation->withCount([
-                'users as active_users_count' => fn ($q) => $q->where('is_active', true),
-            ])])
-            ->addSelect([
-                'last_order_amount' => Order::query()
-                    ->select('amount')
-                    ->whereColumn('orders.store_id', 'licenses.store_id')
-                    ->where('status', Order::STATUS_PAID)
-                    ->latest('id')
-                    ->limit(1),
-                'last_order_reference' => Order::query()
-                    ->select('reference_id')
-                    ->whereColumn('orders.store_id', 'licenses.store_id')
-                    ->where('status', Order::STATUS_PAID)
-                    ->latest('id')
-                    ->limit(1),
+            ->with([
+                'store' => fn ($q) => $q
+                    ->with(['users:id,store_id,name,email,phone,is_active'])
+                    ->withCount([
+                        'users',
+                        'users as active_users_count' => fn ($inner) => $inner->where('is_active', true),
+                    ]),
             ])
-            ->when($filters['plan_code'] ?? null, fn ($q, $plan) => $q->where('plan_code', $plan))
-            ->when(! ($filters['include_archived'] ?? false), fn ($q) => $q->whereHas('store', fn ($store) => $store->whereNull('archived_at')))
-            ->when($filters['q'] ?? null, function ($q, $term) {
-                $like = '%'.$term.'%';
-                $q->where(fn ($inner) => $inner
-                    ->where('plan_code', 'like', $like)
-                    ->orWhereHas('store', fn ($store) => $store
-                        ->where('name', 'like', $like)
-                        ->orWhere('phone', 'like', $like)
+            ->when($filters['plan'] ?? null, fn (Builder $q, $plan) => $q->where('plan_code', $plan))
+            ->when($statusFilter, fn (Builder $q, $status) => $this->applyStatusFilter($q, $status))
+            ->when(isset($filters['expiring_in_days']), function (Builder $q) use ($filters) {
+                $days = (int) $filters['expiring_in_days'];
+                $q->where('is_lifetime', false)
+                    ->whereNotNull('expires_at')
+                    ->whereBetween('expires_at', [now(), now()->addDays($days)]);
+            })
+            ->when($searchTerm !== '', function (Builder $q) use ($searchTerm) {
+                $like = '%'.$searchTerm.'%';
+                $q->whereHas('store', function (Builder $store) use ($like) {
+                    $store->where('name', 'like', $like)
                         ->orWhere('owner_name', 'like', $like)
-                        ->orWhereHas('users', fn ($user) => $user->where('email', 'like', $like))));
-            });
+                        ->orWhere('phone', 'like', $like)
+                        ->orWhereHas('users', fn (Builder $u) => $u->where('email', 'like', $like)->orWhere('phone', 'like', $like));
+                });
+            })
+            ->orderBy($column, $direction);
 
-        $this->applyStatusFilter($query, $filters['status'] ?? null);
-
-        $page = $query->orderBy($column, $direction)
-            ->paginate((int) ($filters['limit'] ?? 12), ['*'], 'page', (int) ($filters['page'] ?? 1));
+        $page = $query->paginate($perPage, ['*'], 'page', (int) ($filters['page'] ?? 1));
 
         return response()->json([
-            'subscribers' => collect($page->items())->map(fn (License $license) => $this->serialize($license))->all(),
+            'subscribers' => collect($page->items())->map(fn (License $lic) => $this->serialize($lic))->values()->all(),
             'meta' => [
                 'page' => $page->currentPage(),
                 'per_page' => $page->perPage(),
@@ -89,23 +84,28 @@ class SubscriberController extends Controller
         ]);
     }
 
-    public function show(License $license): JsonResponse
+    public function show(string $licenseKey): JsonResponse
     {
-        $license->load(['store' => fn ($relation) => $relation->withCount([
-            'users as active_users_count' => fn ($q) => $q->where('is_active', true),
+        $license = $this->resolveLicense($licenseKey);
+
+        $license->load(['store' => fn ($q) => $q->withCount([
+            'users',
+            'users as active_users_count' => fn ($inner) => $inner->where('is_active', true),
         ])]);
 
         $payments = Order::query()
             ->where('store_id', $license->store_id)
             ->latest()
-            ->limit(20)
+            ->limit(25)
             ->get()
             ->map(fn (Order $order) => [
                 'id' => $order->id,
                 'plan' => $order->plan,
+                'plan_label' => is_array($order->meta) ? ($order->meta['plan_label'] ?? $order->plan) : $order->plan,
                 'type' => $order->type,
                 'seats' => (int) $order->seats,
                 'months' => (int) $order->months,
+                'is_lifetime' => (bool) $order->is_lifetime,
                 'amount' => (int) $order->amount,
                 'status' => $order->status,
                 'gateway' => $order->gateway,
@@ -136,6 +136,21 @@ class SubscriberController extends Controller
             ->values()
             ->all();
 
+        $invoices = SubscriptionInvoice::query()
+            ->where('store_id', $license->store_id)
+            ->orderByDesc('issued_at')
+            ->limit(25)
+            ->get()
+            ->map(fn (SubscriptionInvoice $inv) => [
+                'number' => $inv->number,
+                'plan_name' => $inv->plan_name,
+                'total' => (int) $inv->total,
+                'issued_at' => $inv->issued_at?->toIso8601String(),
+                'is_voided' => $inv->isVoided(),
+            ])
+            ->values()
+            ->all();
+
         $history = SubscriptionHistory::query()
             ->where('store_id', $license->store_id)
             ->orderByDesc('id')
@@ -154,11 +169,12 @@ class SubscriberController extends Controller
 
         $users = $license->store?->users()
             ->orderBy('id')
-            ->get(['id', 'name', 'email', 'is_active', 'last_login_at'])
+            ->get(['id', 'name', 'email', 'phone', 'is_active', 'last_login_at'])
             ->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'phone' => $user->phone,
                 'is_active' => (bool) $user->is_active,
                 'last_login_at' => $user->last_login_at?->toIso8601String(),
             ])
@@ -167,8 +183,14 @@ class SubscriberController extends Controller
 
         return response()->json([
             'subscriber' => $this->serialize($license),
+            'store' => [
+                'id' => $license->store?->id,
+                'name' => $license->store?->name,
+                'phone' => $license->store?->phone,
+            ],
             'payments' => $payments,
             'attempts' => $attempts,
+            'invoices' => $invoices,
             'history' => $history,
             'users' => $users,
         ]);
@@ -179,21 +201,29 @@ class SubscriberController extends Controller
      *
      * @throws Throwable
      */
-    public function extend(Request $request, License $license): JsonResponse
+    public function extend(Request $request, string $licenseKey): JsonResponse
     {
+        $license = $this->resolveLicense($licenseKey);
+
         $data = $request->validate([
-            'months' => ['required', 'integer', 'min:1', 'max:60'],
+            'months' => ['required', 'integer', 'min:1', 'max:120'],
             'seats' => ['nullable', 'integer', 'min:1', 'max:200'],
+            'max_users' => ['nullable', 'integer', 'min:1', 'max:200'],
             'plan_code' => ['nullable', 'string', 'max:40', 'exists:subscription_plans,code'],
             'reason' => ['required', 'string', 'min:3', 'max:300'],
         ], [
             'reason.required' => 'دلیل تمدید/اصلاح الزامی است و در تاریخچه ثبت می‌شود.',
         ]);
 
+        $months = max(1, (int) $data['months']);
+        $seats = isset($data['seats'])
+            ? (int) $data['seats']
+            : (isset($data['max_users']) ? (int) $data['max_users'] : null);
+
         $updated = $this->licenses->extendManually(
             $license->store,
-            (int) $data['months'],
-            isset($data['seats']) ? (int) $data['seats'] : null,
+            $months,
+            $seats,
             (string) $data['reason'],
             $request->user(),
             $data['plan_code'] ?? null,
@@ -205,8 +235,10 @@ class SubscriberController extends Controller
     /**
      * @throws Throwable
      */
-    public function status(Request $request, License $license): JsonResponse
+    public function status(Request $request, string $licenseKey): JsonResponse
     {
+        $license = $this->resolveLicense($licenseKey);
+
         $data = $request->validate([
             'status' => ['required', 'in:active,suspended,canceled'],
             'reason' => ['required', 'string', 'min:3', 'max:300'],
@@ -223,10 +255,12 @@ class SubscriberController extends Controller
     }
 
     /**
-     * @throws ValidationException
+     * @throws Throwable
      */
-    public function seats(Request $request, License $license): JsonResponse
+    public function seats(Request $request, string $licenseKey): JsonResponse
     {
+        $license = $this->resolveLicense($licenseKey);
+
         $data = $request->validate([
             'seats' => ['required', 'integer', 'min:1', 'max:200'],
             'reason' => ['required', 'string', 'min:3', 'max:300'],
@@ -240,71 +274,76 @@ class SubscriberController extends Controller
             ]);
         }
 
-        $updated = $this->licenses->setSeats($license->store, (int) $data['seats'], $request->user(), (string) $data['reason']);
+        $updated = $this->licenses->setSeats(
+            $license->store,
+            (int) $data['seats'],
+            $request->user(),
+            (string) $data['reason'],
+        );
 
         return response()->json(['subscriber' => $this->serialize($updated->load('store'))]);
     }
 
-    /**
-     * وضعیت مؤثر در سطح SQL — برای فیلتر درست و سریع.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<License>  $query
-     */
-    private function applyStatusFilter($query, ?string $status): void
+    private function resolveLicense(string $licenseKey): License
     {
-        if ($status === null) {
-            return;
+        if (ctype_digit($licenseKey)) {
+            $byId = License::find((int) $licenseKey);
+            if ($byId !== null) {
+                return $byId;
+            }
+
+            $byStore = License::where('store_id', (int) $licenseKey)->first();
+            if ($byStore !== null) {
+                return $byStore;
+            }
         }
 
+        abort(404, 'اشتراک مورد نظر یافت نشد.');
+    }
+
+    /** @param  Builder<License>  $query */
+    private function applyStatusFilter(Builder $query, string $status): void
+    {
         match ($status) {
-            License::STATUS_SUSPENDED => $query->where('status', License::STATUS_SUSPENDED),
-            License::STATUS_CANCELED => $query->where('status', License::STATUS_CANCELED),
-            License::STATUS_PENDING => $query->where('status', License::STATUS_PENDING),
-            License::STATUS_RENEWAL_PENDING => $query->where('status', License::STATUS_RENEWAL_PENDING),
-            License::STATUS_EXPIRED => $query
-                ->whereNotIn('status', [License::STATUS_SUSPENDED, License::STATUS_CANCELED])
+            'active' => $query
+                ->where('is_active', true)
+                ->where('status', License::STATUS_ACTIVE)
+                ->where(fn ($q) => $q->where('is_lifetime', true)->orWhere('expires_at', '>', now())),
+            'expired' => $query
                 ->where('is_lifetime', false)
                 ->whereNotNull('expires_at')
-                ->where('expires_at', '<', now()),
-            default => $query
-                ->whereNotIn('status', [License::STATUS_SUSPENDED, License::STATUS_CANCELED])
-                ->where(fn ($q) => $q->where('is_lifetime', true)->orWhere('expires_at', '>', now())),
+                ->where('expires_at', '<=', now()),
+            default => $query->where('status', $status),
         };
     }
 
     /**
-     * آمار کلی (بدون فروشگاه‌های آرشیوشده).
-     *
      * @return array<string, int>
      */
     private function stats(): array
     {
-        $base = fn () => License::query()
-            ->whereHas('store', fn ($store) => $store->whereNull('archived_at'));
-
-        $paid = Order::query()->where('status', Order::STATUS_PAID);
+        $now = now();
 
         return [
-            'total' => (int) (clone $base())->count(),
-            'active' => (int) (clone $base())
+            'total' => License::query()->count(),
+            'active' => License::query()
                 ->where('is_active', true)
-                ->whereNotIn('status', [License::STATUS_SUSPENDED, License::STATUS_CANCELED])
-                ->where(fn ($q) => $q->where('is_lifetime', true)->orWhere('expires_at', '>', now()))
+                ->where('status', License::STATUS_ACTIVE)
+                ->where(fn ($q) => $q->where('is_lifetime', true)->orWhere('expires_at', '>', $now))
                 ->count(),
-            'trial' => (int) (clone $base())->where('is_trial', true)->where('is_active', true)->count(),
-            'expiring_soon' => (int) (clone $base())
-                ->where('is_active', true)
-                ->where('is_lifetime', false)
-                ->whereBetween('expires_at', [now(), now()->copy()->addDays(7)])
-                ->count(),
-            'expired' => (int) (clone $base())
+            'expired' => License::query()
                 ->where('is_lifetime', false)
                 ->whereNotNull('expires_at')
-                ->where('expires_at', '<', now())
+                ->where('expires_at', '<=', $now)
                 ->count(),
-            'suspended' => (int) (clone $base())->where('status', License::STATUS_SUSPENDED)->count(),
-            'revenue_total' => (int) (clone $paid)->sum('amount'),
-            'revenue_month' => (int) (clone $paid)->where('paid_at', '>=', now()->startOfMonth())->sum('amount'),
+            'expiring_7' => License::query()
+                ->where('is_active', true)
+                ->where('status', License::STATUS_ACTIVE)
+                ->where('is_lifetime', false)
+                ->whereBetween('expires_at', [$now, $now->copy()->addDays(7)])
+                ->count(),
+            'suspended' => License::query()->where('status', License::STATUS_SUSPENDED)->count(),
+            'pending_orders' => Order::query()->where('status', Order::STATUS_PENDING)->count(),
         ];
     }
 
@@ -314,42 +353,47 @@ class SubscriberController extends Controller
     private function serialize(License $license): array
     {
         $store = $license->store;
-
-        $lastReference = $license->last_order_reference ?? null;
-        $lastAmount = $license->last_order_amount ?? null;
-
-        if ($lastReference === null && $lastAmount === null) {
-            $latest = Order::query()
-                ->where('store_id', $license->store_id)
-                ->where('status', Order::STATUS_PAID)
-                ->latest('id')
-                ->first(['amount', 'reference_id']);
-
-            $lastReference = $latest?->reference_id;
-            $lastAmount = $latest?->amount;
-        }
+        $isLifetime = (bool) $license->is_lifetime;
+        $primaryUser = $store && $store->relationLoaded('users') ? $store->users->first() : null;
+        $lastOrder = Order::query()
+            ->where('store_id', $license->store_id)
+            ->where('status', Order::STATUS_PAID)
+            ->latest('paid_at')
+            ->latest('id')
+            ->first(['reference_id', 'paid_at', 'amount']);
 
         return [
-            'license_id' => $license->id,
+            'id' => $license->id,
             'store_id' => $license->store_id,
             'store_name' => $store?->name,
             'owner_name' => $store?->owner_name,
             'phone' => $store?->phone,
-            'store_archived' => $store?->archived_at !== null,
+            'email' => $primaryUser?->email,
+            'store' => $store ? [
+                'id' => $store->id,
+                'name' => $store->name,
+                'owner_name' => $store->owner_name,
+                'phone' => $store->phone,
+                'email' => $primaryUser?->email,
+            ] : null,
             'plan_code' => $license->plan_code,
+            'plan_name' => $license->planLabel(),
             'tier' => $license->tier,
             'seats' => $license->seats(),
-            'active_users' => (int) ($store->active_users_count ?? $store?->activeUserCount() ?? 0),
+            'max_users' => $license->seats(),
+            'active_users' => (int) ($store->active_users_count ?? 0),
+            'total_users' => (int) ($store->users_count ?? 0),
             'status' => $license->effectiveStatus(),
             'is_active' => (bool) $license->is_active,
+            'is_lifetime' => $isLifetime,
             'is_trial' => (bool) $license->is_trial,
-            'is_lifetime' => (bool) $license->is_lifetime,
+            'is_valid' => $license->isCurrentlyValid(),
             'starts_at' => $license->starts_at?->toIso8601String(),
-            'expires_at' => $license->expires_at?->toIso8601String(),
+            'expires_at' => $isLifetime ? null : $license->expires_at?->toIso8601String(),
             'days_remaining' => $license->daysRemaining(),
-            'last_transaction' => $lastReference,
-            'last_amount' => $lastAmount !== null ? (int) $lastAmount : null,
-            'license' => new LicenseResource($license),
+            'notes' => $license->notes,
+            'last_transaction' => $lastOrder?->reference_id,
+            'last_paid_at' => $lastOrder?->paid_at?->toIso8601String(),
         ];
     }
 }

@@ -16,7 +16,7 @@ const laravelPublic = join(root, 'laravel-backend', 'public');
 
 export function syncLaravelPwa({ checkOnly = false } = {}) {
   const rootFiles = ['taxi.html', 'sw.js', 'manifest.json'];
-  const iconFiles = readdirSync(join(root, 'icons')).filter(name => name.endsWith('.png') || name.endsWith('.svg'));
+  const iconFiles = readdirSync(join(root, 'icons')).filter(name => /\.(png|svg|jpe?g|webp)$/i.test(name));
   const allFiles = [
     ...rootFiles,
     ...iconFiles.map(name => join('icons', name)),

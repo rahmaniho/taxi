@@ -633,9 +633,11 @@ test('ساختار سرور لاراول (laravel-backend): کامل، دارا�
   assert.match(billingConfig, /'public_registration'\s*=>\s*\(bool\)\s*env\('TAXI_PUBLIC_SIGNUP',\s*env\('KARO_PUBLIC_SIGNUP',\s*false\)\)/, 'ثبت‌نام عمومی به‌طور پیش‌فرض غیرفعال است');
 });
 
-test('هویت بصری تاکسینو | Taxino: نام رسمی، لوگوی افقی (logo.png) و آیکون برنامه در تمام لایه‌های PWA و لاراول', async () => {
+test('هویت بصری تاکسینو | Taxino و صفحهٔ ورود مشکی-طلایی (ورود با شماره موبایل/تلفن یا ایمیل + تغییر نمایش رمز)', async () => {
   const brandFiles = [
     'icons/logo.png',
+    'icons/logo-dark.png',
+    'icons/login-hero.jpg',
     'icons/apple-touch-icon.png',
     'icons/icon-72.png',
     'icons/icon-96.png',
@@ -647,6 +649,8 @@ test('هویت بصری تاکسینو | Taxino: نام رسمی، لوگوی ا
     'icons/icon-512.png',
     'icons/maskable-512.png',
     'laravel-backend/public/icons/logo.png',
+    'laravel-backend/public/icons/logo-dark.png',
+    'laravel-backend/public/icons/login-hero.jpg',
     'laravel-backend/public/icons/apple-touch-icon.png',
     'laravel-backend/public/icons/icon-192.png',
     'laravel-backend/public/icons/icon-512.png',
@@ -664,6 +668,8 @@ test('هویت بصری تاکسینو | Taxino: نام رسمی، لوگوی ا
 
   const swText = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
   assert.match(swText, /icons\/logo\.png/, 'لوگوی رسمی تاکسینو در Service Worker پیش‌کش شده است');
+  assert.match(swText, /icons\/logo-dark\.png/, 'لوگوی تیرهٔ تاکسینو در Service Worker پیش‌کش شده است');
+  assert.match(swText, /icons\/login-hero\.jpg/, 'تصویر هدر صفحهٔ ورود در Service Worker پیش‌کش شده است');
   assert.match(swText, /icons\/apple-touch-icon\.png/, 'آیکون iOS تاکسینو در Service Worker پیش‌کش شده است');
 
   const backend = await startTestBackend();
@@ -676,12 +682,29 @@ test('هویت بصری تاکسینو | Taxino: نام رسمی، لوگوی ا
   try {
     assert.match(session.document.title, /تاکسینو \| Taxino/);
     assert.equal(session.document.querySelector('meta[name="application-name"]')?.content, 'تاکسینو | Taxino');
-    const loginBannerImg = session.document.querySelector('.auth-logo-banner img');
-    assert.ok(loginBannerImg, 'بنر لوگوی رسمی تاکسینو در صفحهٔ ورود نمایش داده شده است');
-    assert.match(loginBannerImg.getAttribute('src'), /icons\/logo\.png/);
+    const heroLogoImg = session.document.querySelector('.auth-hero-logo img');
+    assert.ok(heroLogoImg, 'لوگوی رسمی تاکسینو در هدر مشکی-طلایی صفحهٔ ورود نمایش داده شده است');
+    assert.match(heroLogoImg.getAttribute('src'), /icons\/logo-dark\.png/);
     assert.match(session.document.querySelector('#auth-login-title')?.textContent || '', /تاکسینو \| Taxino/);
+    assert.match(session.document.querySelector('.auth-submit-btn')?.textContent || '', /ورود به حساب/);
+    assert.doesNotMatch(session.document.querySelector('.auth-screen')?.textContent || '', /گوگل|تلگرام|ثبت‌نام کنید/);
 
-    await session.App.subscription.login('agency@taxi.ir', 'taxi12345', true);
+    // تست دکمهٔ نمایش / مخفی‌سازی رمز عبور و راهنمای فراموشی رمز
+    const pwdInput = session.document.querySelector('#auth-password');
+    const pwdToggle = session.document.querySelector('[data-action="auth-toggle-pwd"]');
+    assert.equal(pwdInput.type, 'password');
+    pwdToggle.click();
+    assert.equal(pwdInput.type, 'text');
+    pwdToggle.click();
+    assert.equal(pwdInput.type, 'password');
+
+    session.document.querySelector('[data-action="auth-forgot-help"]').click();
+    assert.match(session.document.querySelector('#modal-root')?.textContent || '', /بازیابی رمز عبور/);
+    session.document.querySelector('[data-action="close-modal"]').click();
+
+    // تست ورود با شماره تلفن ثبت‌شدهٔ آژانس به ارقام فارسی
+    const loggedInByPhone = await session.App.subscription.login('۰۲۱-۸۸۷۷-۶۶۵۵', 'taxi12345', true);
+    assert.equal(loggedInByPhone?.email, 'agency@taxi.ir', 'ورود با شماره تلفن فارسی با موفقیت انجام شد');
     assert.match(session.document.querySelector('#sidebar .brand-name')?.textContent || '', /تاکسینو/);
     assert.match(session.document.querySelector('#sidebar-brand-icon img')?.getAttribute('src') || '', /icons\/icon-192\.png/);
 

@@ -35,7 +35,7 @@ class LicenseService
 
         $license = $store->license()->updateOrCreate([], [
             'tier' => 'pro',
-            'plan_code' => 'basic',
+            'plan_code' => 'monthly',
             'seats' => max(1, $seats),
             'status' => License::STATUS_ACTIVE,
             'is_lifetime' => false,
@@ -73,6 +73,10 @@ class LicenseService
             $months = max(1, (int) $order->months);
 
             $isLifetime = (bool) $order->is_lifetime || (bool) $plan?->is_lifetime;
+            $snapshot = is_array($order->price_snapshot) ? $order->price_snapshot : [];
+            $durationDays = isset($snapshot['duration_days']) && $snapshot['duration_days'] !== null
+                ? (int) $snapshot['duration_days']
+                : ($plan?->duration_days !== null ? (int) $plan->duration_days : 0);
 
             if ($isLifetime) {
                 $attributes = [
@@ -88,6 +92,11 @@ class LicenseService
                     'notes' => 'اشتراک مادام‌العمر',
                 ];
             } else {
+                $baseDate = $this->renewalBase($license);
+                $expiresAt = $durationDays > 0
+                    ? $baseDate->addDays($durationDays)
+                    : $baseDate->addMonths($months);
+
                 $attributes = [
                     'tier' => $tier,
                     'plan_code' => $order->plan,
@@ -97,7 +106,7 @@ class LicenseService
                     'is_active' => true,
                     'is_trial' => false,
                     'starts_at' => $license?->starts_at ?? now(),
-                    'expires_at' => $this->renewalBase($license)->addMonths($months),
+                    'expires_at' => $expiresAt,
                     'notes' => 'اشتراک فعال',
                 ];
             }
@@ -145,12 +154,22 @@ class LicenseService
         return DB::transaction(function () use ($store, $months, $seats, $reason, $actor, $planCode) {
             $license = $store->license()->first();
             $plan = $planCode !== null ? SubscriptionPlan::where('code', $planCode)->first() : null;
+            $makeLifetime = (bool) $plan?->is_lifetime;
+
+            if ($makeLifetime) {
+                $expiresAt = null;
+            } elseif ($plan !== null && $plan->duration_days !== null && (int) ($plan->months_count ?: 0) === $months) {
+                $expiresAt = $this->renewalBase($license)->addDays((int) $plan->duration_days);
+            } else {
+                $expiresAt = $this->renewalBase($license)->addMonths(max(1, $months));
+            }
 
             $attributes = [
                 'status' => License::STATUS_ACTIVE,
                 'is_active' => true,
-                'is_lifetime' => false,
-                'expires_at' => $this->renewalBase($license)->addMonths(max(1, $months)),
+                'is_trial' => false,
+                'is_lifetime' => $makeLifetime,
+                'expires_at' => $expiresAt,
                 'starts_at' => $license?->starts_at ?? now(),
                 'created_by' => $actor->id,
             ];
@@ -168,7 +187,8 @@ class LicenseService
             $this->resetReminders($store);
 
             $this->recordHistoryInTransaction($store, $license, 'subscription_manual_extended', [
-                'months' => $months,
+                'months' => $makeLifetime ? 0 : $months,
+                'is_lifetime' => $makeLifetime,
                 'seats' => $license->seats,
                 'expires_at' => $license->expires_at?->toIso8601String(),
             ], $reason, $actor->id);

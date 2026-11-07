@@ -6,25 +6,42 @@ use App\Models\SubscriptionPlan;
 use App\Models\SubscriptionPlanPrice;
 use App\Models\User;
 use App\Support\AuditLogger;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
- * کاتالوگ پلن‌ها — منبع آن جدول `subscription_plans` است، نه کد.
+ * کاتالوگ تعرفه‌ها — خواندن از دیتابیس + ثبت تاریخچهٔ تغییر قیمت.
  *
- * مدیر می‌تواند تعرفه‌ها را بدون تغییر کد عوض کند. هر تغییر قیمت یک ردیف در
- * `subscription_plan_prices` می‌سازد و در دفتر رویدادها هم ثبت می‌شود؛
- * سفارش‌های قبلی چون قیمت واحد خودشان را نگه داشته‌اند تغییر نمی‌کنند.
+ * تغییر قیمت فقط روی خریدهای جدید اثر دارد؛ هر سفارش در لحظهٔ ثبت، قیمت
+ * لحظهٔ خرید را داخل خودش (`price_snapshot`, `amount`) قفل می‌کند.
  */
 class PlanCatalog
 {
-    /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, SubscriptionPlan>
-     */
-    public function all(bool $onlyActive = false): \Illuminate\Database\Eloquent\Collection
+    private const LEGACY_CODES = ['basic', 'pro', 'proplus'];
+
+    /** @return Collection<int, SubscriptionPlan> */
+    public function active(): Collection
     {
         return SubscriptionPlan::query()
-            ->when($onlyActive, fn ($query) => $query->where('is_active', true))
+            ->active()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /** @return Collection<int, SubscriptionPlan> */
+    public function all(bool $onlyActive = false): Collection
+    {
+        if ($onlyActive) {
+            return $this->active();
+        }
+
+        return SubscriptionPlan::query()
+            ->where(function ($query) {
+                $query->whereNotIn('code', self::LEGACY_CODES)
+                    ->orWhere('is_active', true);
+            })
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -33,66 +50,82 @@ class PlanCatalog
     public function find(string $code, bool $onlyActive = true): ?SubscriptionPlan
     {
         return SubscriptionPlan::query()
-            ->where('code', $code)
-            ->when($onlyActive, fn ($query) => $query->where('is_active', true))
+            ->when($onlyActive, fn ($q) => $q->active())
+            ->where('code', strtolower(trim($code)))
             ->first();
     }
 
-    /**
-     * خروجی استاندارد برای رابط کاربری و API.
-     *
-     * @return array<string, mixed>
-     */
-    public function serialize(SubscriptionPlan $plan): array
+    public function findActive(string $code): ?SubscriptionPlan
     {
-        return [
-            'code' => $plan->code,
-            'name' => $plan->name,
-            'tier' => $plan->tier,
-            'description' => $plan->description,
-            'base_monthly' => (int) $plan->base_monthly,
-            'extra_user_monthly' => (int) $plan->extra_user_monthly,
-            'min_seats' => (int) $plan->min_seats,
-            'max_seats' => (int) $plan->max_seats,
-            'is_lifetime' => (bool) $plan->is_lifetime,
-            'is_active' => (bool) $plan->is_active,
-            'features' => $plan->featureList(),
-            'sort_order' => (int) $plan->sort_order,
-        ];
+        return $this->find($code, true);
+    }
+
+    public function referenceMonthlyPrice(): int
+    {
+        $monthly = SubscriptionPlan::query()
+            ->where('code', 'monthly')
+            ->first();
+
+        if ($monthly !== null) {
+            return $monthly->packagePrice();
+        }
+
+        return 150_000;
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $attributes
      *
-     * @throws ValidationException
+     * @throws Throwable
      */
-    public function create(array $data, ?User $actor = null): SubscriptionPlan
+    public function create(array $attributes, ?User $actor = null): SubscriptionPlan
     {
-        $this->assertUniqueCode((string) $data['code']);
-        $this->assertPriceRange($data);
+        return DB::transaction(function () use ($attributes, $actor) {
+            $code = strtolower(trim((string) $attributes['code']));
+            $isLifetime = (bool) ($attributes['is_lifetime'] ?? false);
+            $monthsCount = $isLifetime ? 0 : (int) ($attributes['months_count'] ?? 1);
+            $durationDays = $isLifetime
+                ? null
+                : (isset($attributes['duration_days']) ? (int) $attributes['duration_days'] : ($monthsCount > 0 ? $monthsCount * 30 : 30));
 
-        return DB::transaction(function () use ($data, $actor) {
+            $totalPrice = isset($attributes['total_price'])
+                ? (int) $attributes['total_price']
+                : null;
+
+            $baseMonthly = isset($attributes['base_monthly'])
+                ? (int) $attributes['base_monthly']
+                : ($totalPrice !== null
+                    ? ($isLifetime ? $totalPrice : (int) round($totalPrice / max(1, $monthsCount)))
+                    : 0);
+
             $plan = SubscriptionPlan::create([
-                'code' => mb_strtolower((string) $data['code']),
-                'name' => (string) $data['name'],
-                'tier' => (string) ($data['tier'] ?? 'pro'),
-                'description' => $data['description'] ?? null,
-                'base_monthly' => (int) $data['base_monthly'],
-                'extra_user_monthly' => (int) $data['extra_user_monthly'],
-                'min_seats' => (int) ($data['min_seats'] ?? 1),
-                'max_seats' => (int) ($data['max_seats'] ?? 50),
-                'is_lifetime' => (bool) ($data['is_lifetime'] ?? false),
-                'features' => $this->normalizeFeatures($data['features'] ?? []),
-                'is_active' => (bool) ($data['is_active'] ?? true),
-                'sort_order' => (int) ($data['sort_order'] ?? 0),
+                'code' => $code,
+                'name' => (string) $attributes['name'],
+                'tier' => (string) ($attributes['tier'] ?? 'proplus'),
+                'description' => $attributes['description'] ?? null,
+                'duration_days' => $durationDays,
+                'months_count' => $monthsCount,
+                'total_price' => $totalPrice,
+                'base_monthly' => $baseMonthly,
+                'extra_user_monthly' => (int) ($attributes['extra_user_monthly'] ?? 0),
+                'min_seats' => max(1, (int) ($attributes['min_seats'] ?? 1)),
+                'max_seats' => max(1, (int) ($attributes['max_seats'] ?? 50)),
+                'is_lifetime' => $isLifetime,
+                'badge' => $attributes['badge'] ?? null,
+                'is_featured' => (bool) ($attributes['is_featured'] ?? false),
+                'features' => array_values((array) ($attributes['features'] ?? [])),
+                'is_active' => (bool) ($attributes['is_active'] ?? true),
+                'sort_order' => (int) ($attributes['sort_order'] ?? 100),
             ]);
 
-            $this->logPrice($plan, $actor, 'تعرفهٔ اولیه');
+            $this->logPriceChange($plan, 'ثبت اولیهٔ تعرفه', $actor);
 
             AuditLogger::record('plan_created', [
+                'user_id' => $actor?->id,
                 'subject_type' => 'plan',
                 'subject_key' => $plan->code,
                 'meta' => [
+                    'total_price' => $plan->total_price,
                     'base_monthly' => $plan->base_monthly,
                     'extra_user_monthly' => $plan->extra_user_monthly,
                 ],
@@ -103,49 +136,85 @@ class PlanCatalog
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $attributes
      *
-     * @throws ValidationException
+     * @throws Throwable
      */
-    public function update(SubscriptionPlan $plan, array $data, ?User $actor = null): SubscriptionPlan
+    public function update(SubscriptionPlan $plan, array $attributes, ?User $actor = null): SubscriptionPlan
     {
-        $this->assertPriceRange($data);
+        return DB::transaction(function () use ($plan, $attributes, $actor) {
+            $oldTotal = $plan->total_price;
+            $oldBase = (int) $plan->base_monthly;
+            $oldExtra = (int) $plan->extra_user_monthly;
 
-        $priceChanged = (int) ($data['base_monthly'] ?? $plan->base_monthly) !== (int) $plan->base_monthly
-            || (int) ($data['extra_user_monthly'] ?? $plan->extra_user_monthly) !== (int) $plan->extra_user_monthly;
+            $isLifetime = array_key_exists('is_lifetime', $attributes)
+                ? (bool) $attributes['is_lifetime']
+                : (bool) $plan->is_lifetime;
 
-        return DB::transaction(function () use ($plan, $data, $actor, $priceChanged) {
-            $plan->fill([
-                'name' => (string) ($data['name'] ?? $plan->name),
-                'tier' => (string) ($data['tier'] ?? $plan->tier),
-                'description' => array_key_exists('description', $data) ? $data['description'] : $plan->description,
-                'base_monthly' => (int) ($data['base_monthly'] ?? $plan->base_monthly),
-                'extra_user_monthly' => (int) ($data['extra_user_monthly'] ?? $plan->extra_user_monthly),
-                'min_seats' => (int) ($data['min_seats'] ?? $plan->min_seats),
-                'max_seats' => (int) ($data['max_seats'] ?? $plan->max_seats),
-                'is_lifetime' => (bool) ($data['is_lifetime'] ?? $plan->is_lifetime),
-                'is_active' => (bool) ($data['is_active'] ?? $plan->is_active),
-                'sort_order' => (int) ($data['sort_order'] ?? $plan->sort_order),
-            ]);
+            $monthsCount = array_key_exists('months_count', $attributes)
+                ? (int) $attributes['months_count']
+                : (int) ($plan->months_count ?? 1);
 
-            if (array_key_exists('features', $data)) {
-                $plan->features = $this->normalizeFeatures($data['features']);
+            $totalPrice = array_key_exists('total_price', $attributes) && $attributes['total_price'] !== null
+                ? (int) $attributes['total_price']
+                : $plan->total_price;
+
+            $baseMonthly = array_key_exists('base_monthly', $attributes) && $attributes['base_monthly'] !== null
+                ? (int) $attributes['base_monthly']
+                : (int) $plan->base_monthly;
+
+            if (array_key_exists('total_price', $attributes) && $attributes['total_price'] !== null && ! array_key_exists('base_monthly', $attributes)) {
+                $baseMonthly = $isLifetime
+                    ? $totalPrice
+                    : (int) round($totalPrice / max(1, $monthsCount));
+            } elseif (array_key_exists('base_monthly', $attributes) && ! array_key_exists('total_price', $attributes) && $plan->total_price !== null) {
+                $totalPrice = $isLifetime
+                    ? $baseMonthly
+                    : $baseMonthly * max(1, $monthsCount);
             }
 
-            $plan->save();
+            $plan->fill([
+                'name' => $attributes['name'] ?? $plan->name,
+                'tier' => $attributes['tier'] ?? $plan->tier,
+                'description' => array_key_exists('description', $attributes) ? $attributes['description'] : $plan->description,
+                'duration_days' => $isLifetime
+                    ? null
+                    : (array_key_exists('duration_days', $attributes) ? $attributes['duration_days'] : $plan->duration_days),
+                'months_count' => $isLifetime ? 0 : $monthsCount,
+                'total_price' => $totalPrice,
+                'base_monthly' => $baseMonthly,
+                'extra_user_monthly' => isset($attributes['extra_user_monthly']) ? (int) $attributes['extra_user_monthly'] : $plan->extra_user_monthly,
+                'min_seats' => isset($attributes['min_seats']) ? max(1, (int) $attributes['min_seats']) : $plan->min_seats,
+                'max_seats' => isset($attributes['max_seats']) ? max(1, (int) $attributes['max_seats']) : $plan->max_seats,
+                'is_lifetime' => $isLifetime,
+                'badge' => array_key_exists('badge', $attributes) ? $attributes['badge'] : $plan->badge,
+                'is_featured' => isset($attributes['is_featured']) ? (bool) $attributes['is_featured'] : $plan->is_featured,
+                'features' => isset($attributes['features']) ? array_values((array) $attributes['features']) : $plan->features,
+                'is_active' => isset($attributes['is_active']) ? (bool) $attributes['is_active'] : $plan->is_active,
+                'sort_order' => isset($attributes['sort_order']) ? (int) $attributes['sort_order'] : $plan->sort_order,
+            ])->save();
+
+            $priceChanged = $oldTotal !== $plan->total_price
+                || $oldBase !== (int) $plan->base_monthly
+                || $oldExtra !== (int) $plan->extra_user_monthly;
 
             if ($priceChanged) {
-                $this->logPrice($plan, $actor, (string) ($data['price_note'] ?? 'تغییر تعرفه توسط مدیر'));
+                $this->logPriceChange($plan, (string) ($attributes['price_note'] ?? 'ویرایش تعرفه توسط مدیر'), $actor);
             }
 
             AuditLogger::record('plan_updated', [
+                'user_id' => $actor?->id,
                 'subject_type' => 'plan',
                 'subject_key' => $plan->code,
                 'meta' => [
-                    'base_monthly' => $plan->base_monthly,
-                    'extra_user_monthly' => $plan->extra_user_monthly,
-                    'is_active' => $plan->is_active,
                     'price_changed' => $priceChanged,
+                    'old_total_price' => $oldTotal,
+                    'new_total_price' => $plan->total_price,
+                    'old_base_monthly' => $oldBase,
+                    'new_base_monthly' => (int) $plan->base_monthly,
+                    'old_extra_user_monthly' => $oldExtra,
+                    'new_extra_user_monthly' => (int) $plan->extra_user_monthly,
+                    'is_active' => (bool) $plan->is_active,
                 ],
             ]);
 
@@ -153,11 +222,12 @@ class PlanCatalog
         });
     }
 
-    public function setActive(SubscriptionPlan $plan, bool $active): SubscriptionPlan
+    public function setActive(SubscriptionPlan $plan, bool $active, ?User $actor = null): SubscriptionPlan
     {
         $plan->forceFill(['is_active' => $active])->save();
 
         AuditLogger::record($active ? 'plan_activated' : 'plan_deactivated', [
+            'user_id' => $actor?->id,
             'subject_type' => 'plan',
             'subject_key' => $plan->code,
         ]);
@@ -165,10 +235,8 @@ class PlanCatalog
         return $plan;
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, SubscriptionPlanPrice>
-     */
-    public function priceHistory(string $planCode): \Illuminate\Database\Eloquent\Collection
+    /** @return Collection<int, SubscriptionPlanPrice> */
+    public function priceHistory(string $planCode): Collection
     {
         return SubscriptionPlanPrice::query()
             ->where('plan_code', $planCode)
@@ -179,56 +247,68 @@ class PlanCatalog
     }
 
     /**
-     * @throws ValidationException
-     */
-    private function assertUniqueCode(string $code): void
-    {
-        if ($code === '' || SubscriptionPlan::where('code', mb_strtolower($code))->exists()) {
-            throw ValidationException::withMessages([
-                'code' => ['کد پلن خالی است یا قبلاً استفاده شده است.'],
-            ]);
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
+     * خروجی استاندارد یک پلن برای API عمومی و مدیریتی.
      *
-     * @throws ValidationException
+     * @return array<string, mixed>
      */
-    private function assertPriceRange(array $data): void
+    public function serialize(SubscriptionPlan $plan, ?int $referenceMonthlyPrice = null): array
     {
-        foreach (['base_monthly', 'extra_user_monthly'] as $field) {
-            if (isset($data[$field]) && ((int) $data[$field] < 0 || (int) $data[$field] > 1_000_000_000)) {
-                throw ValidationException::withMessages([$field => ['مبلغ خارج از محدودهٔ مجاز است.']]);
-            }
-        }
+        $isLifetime = (bool) $plan->is_lifetime;
+        $totalPrice = $plan->packagePrice();
+        $monthsCount = $isLifetime ? 0 : max(1, (int) ($plan->months_count ?: 1));
+        $durationDays = $isLifetime
+            ? null
+            : ($plan->duration_days !== null ? (int) $plan->duration_days : ($monthsCount * 30));
+
+        $monthlyEquivalent = $isLifetime
+            ? null
+            : ($monthsCount > 0 ? (int) round($totalPrice / $monthsCount) : (int) $plan->base_monthly);
+
+        $refMonthly = $referenceMonthlyPrice ?? $this->referenceMonthlyPrice();
+        $savings = (! $isLifetime && $monthsCount > 1)
+            ? max(0, ($refMonthly * $monthsCount) - $totalPrice)
+            : 0;
+
+        return [
+            'id' => (int) $plan->id,
+            'code' => (string) $plan->code,
+            'name' => (string) $plan->name,
+            'tier' => (string) $plan->tier,
+            'description' => $plan->description,
+            'duration_days' => $durationDays,
+            'months_count' => $monthsCount,
+            'price' => $totalPrice,
+            'total_price' => $totalPrice,
+            'monthly_equivalent' => $monthlyEquivalent,
+            'savings' => $savings,
+            'base_monthly' => (int) $plan->base_monthly,
+            'extra_user_monthly' => (int) $plan->extra_user_monthly,
+            'min_seats' => (int) $plan->min_seats,
+            'max_seats' => (int) $plan->max_seats,
+            'is_lifetime' => $isLifetime,
+            'badge' => $plan->badge,
+            'is_featured' => (bool) $plan->is_featured,
+            'payment_type' => $isLifetime ? 'یک‌باره' : 'دوره‌ای',
+            'renewal_type' => $isLifetime ? 'بدون نیاز به تمدید دوره‌ای' : 'قابل تمدید در پایان دوره',
+            'updates_policy' => 'طبق شرایط محصول',
+            'support_policy' => 'طبق شرایط محصول',
+            'features' => $plan->featureList(),
+            'is_active' => (bool) $plan->is_active,
+            'sort_order' => (int) $plan->sort_order,
+        ];
     }
 
-    private function logPrice(SubscriptionPlan $plan, ?User $actor, string $note): void
+    private function logPriceChange(SubscriptionPlan $plan, string $note, ?User $actor): void
     {
+        $storedPrice = $plan->total_price !== null ? (int) $plan->total_price : (int) $plan->base_monthly;
+
         SubscriptionPlanPrice::create([
             'plan_code' => $plan->code,
-            'base_monthly' => (int) $plan->base_monthly,
+            'base_monthly' => $storedPrice,
             'extra_user_monthly' => (int) $plan->extra_user_monthly,
             'note' => $note,
             'changed_by' => $actor?->id,
             'changed_at' => now(),
         ]);
-    }
-
-    /**
-     * @param  mixed  $features
-     * @return list<string>
-     */
-    private function normalizeFeatures(mixed $features): array
-    {
-        if (! is_array($features)) {
-            return [];
-        }
-
-        return array_values(array_filter(
-            array_map(fn ($item) => is_string($item) ? trim($item) : '', $features),
-            fn (string $item) => $item !== '',
-        ));
     }
 }
