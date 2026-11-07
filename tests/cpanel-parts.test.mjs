@@ -301,3 +301,39 @@ test('بستهٔ ۰۰ شامل fix-app-key.php باشد', () => {
   const entries = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' }).split('\n').filter(Boolean);
   assert.ok(entries.includes('fix-app-key.php'), 'fix-app-key.php باید در بستهٔ ریشه باشد');
 });
+
+test('setup-doctor.php: عیب‌یابی و نوشتن مستقیم .env', () => {
+  const f = join(root, 'deploy/laravel-app/setup-doctor.php');
+  assert.ok(existsSync(f), 'setup-doctor.php باید وجود داشته باشد');
+  const body = readFileSync(f, 'utf8');
+
+  assert.match(body, /^<\?php/, 'باید با تگ PHP شروع شود');
+  assert.match(body, /declare\(strict_types=1\)/, 'strict_types لازم است');
+
+  // تست واقعی دیتابیس بدون بوت لاراول
+  assert.match(body, /new PDO\(/, 'باید اتصال دیتابیس را با PDO تست کند');
+  assert.match(body, /SHOW TABLES/, 'باید وجود جدول‌ها را بررسی کند');
+  assert.match(body, /1045/, 'باید خطای 1045 را تفسیر کند');
+  assert.match(body, /1049/, 'باید خطای 1049 را تفسیر کند');
+
+  // نوشتن مستقیم .env
+  assert.match(body, /write_env/, 'فرم نوشتن .env لازم است');
+  assert.match(body, /random_bytes\(32\)/, 'APP_KEY تازه باید ساخته شود');
+  assert.match(body, /rename\(\$tmp/, 'نوشتن باید اتمیک باشد');
+  assert.match(body, /bootstrap\/cache\/\*\.php/, 'کش باید پاک شود');
+
+  // نباید رمز خام را برگرداند
+  assert.match(body, /strlen\(\$v\)|strlen\(\(string\) \$env\['DB_PASSWORD'\]\)/, 'رمز فقط به‌صورت طول نمایش داده شود');
+
+  // هیچ POST بدون escape چاپ نشود
+  assert.equal((body.match(/echo .*\$_POST/g) || []).length, 0, 'هیچ $_POST نباید مستقیم echo شود');
+});
+
+test('setup-doctor.php: در بستهٔ ۰۰ باشد', () => {
+  const zip = join(artifactsDir, 'taxi-cpanel-00-root-tools.zip');
+  if (!existsSync(zip)) {
+    execFileSync('node', [join(root, 'scripts', 'build-cpanel-parts.mjs')], { cwd: root, stdio: 'pipe' });
+  }
+  const entries = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' }).split('\n').filter(Boolean);
+  assert.ok(entries.includes('setup-doctor.php'), 'setup-doctor.php باید در بستهٔ ریشه باشد');
+});
