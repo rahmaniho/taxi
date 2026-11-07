@@ -2,6 +2,22 @@
 
 این راهنما دقیقاً برای بالا آوردن سامانه روی آدرس **`https://taxi.karen-soft.ir`** در هاست cPanel دامنهٔ `karen-soft.ir` تنظیم شده است (هم‌خانواده و بدون هیچ تداخل کوکی یا دیتابیس با سایر سرویس‌های `karen-soft.ir`).
 
+## 📦 بسته‌های آمادهٔ آپلود (نسخه ۱.۶.۰)
+
+🔗 **https://github.com/rahmaniho/taxi/releases/tag/cpanel-parts-v1.6.0**
+
+| # | فایل | مقصد Extract |
+|---|------|--------------|
+| ۰۱ | `taxi-cpanel-01-core.zip` | `~/taxi-app` |
+| ۰۲ | `taxi-cpanel-02-database.zip` | `~/taxi-app` |
+| ۰۳ | `taxi-cpanel-03-public-bootstrap.zip` | `~/taxi-app` |
+| ۰۴ | `taxi-cpanel-04-pwa-app.zip` | `~/taxi-app` |
+| ۰۵ | `taxi-cpanel-05-pwa-icons.zip` | `~/taxi-app` |
+| ۰۶ | `taxi-cpanel-06-storage.zip` | `~/taxi-app` |
+| ۰۷ | `taxi-cpanel-07-vendor-01…04.zip` | `~/taxi-app` |
+
+> **همه به یک پوشه:** `~/taxi-app` — هر ZIP خودش پوشهٔ `laravel-backend/` را دارد. نقشهٔ فایل‌به‌فایل در **قدم ۳.۸**.
+
 ---
 ## گام ۱: پیش‌نیازهای ساب‌دامین در cPanel (نسخه ۱.۶.۰ / Laravel 13) - قدم به قدم
 
@@ -152,12 +168,58 @@
 ۲. به مسیر خانه (`/home/USERNAME`) بروید.
 ۳. دکمهٔ **+ Folder** → نام: `taxi-app` → **Create New Folder**.
 
-**قدم ۳.۴ — آپلود و Extract بسته‌ها (تک‌تک)**
-برای هر بستهٔ `taxi-cpanel-*.zip` به‌ترتیب زیر عمل کنید:
-۱. وارد پوشهٔ `taxi-app` شوید و **Upload** را بزنید.
-۲. فایل ZIP را انتخاب و منتظر پایان آپلود بمانید (هر بستهٔ بدون vendor زیر ۱ مگابایت است، پس چند ثانیه‌ای تمام می‌شود).
-۳. روی فایل آپلودشده **راست‌کلیک → Extract** → مسیر را همان `taxi-app` بگذارید → **Extract File(s)** → سپس فایل ZIP را **Delete** کنید (برای صرفه‌جویی فضا و جلوگیری از سردرگمی).
-۴. برای بستهٔ بعدی همین کار را تکرار کنید.
+**قدم ۳.۴ — آپلود همهٔ بسته‌ها در `~/taxi-app` (فقط Upload، بدون Extract)**
+
+۱. **cPanel → File Manager** → وارد پوشهٔ `taxi-app` شوید.
+۲. **Upload** را بزنید و **همهٔ** فایل‌های `taxi-cpanel-*.zip` را یک‌جا انتخاب کنید (به‌همراه `SHA256SUMS.txt` و `PARTS.md`).
+۳. دکمهٔ **Go** / **Upload** را بزنید و منتظر پایان آپلود بمانید. هر بسته زیر ۳ مگابایت است، پس کل آپلود معمولاً کمتر از ۲ دقیقه طول می‌کشد.
+۴. وقتی همه در `taxi-app` نشستند، **Extract** را انجام دهید — با یکی از دو روش قدم ۳.۴-الف یا ۳.۴-ب.
+
+**قدم ۳.۴-الف (توصیه‌شده) — Extract همه با یک دستور**
+
+اگر به **cPanel → Terminal** دسترسی دارید، این تنها راهی است که هر ۱۰ فایل را یک‌جا و بدون کلیک‌کردن استخراج می‌کند:
+
+```bash
+cd ~/taxi-app
+# ۱) فقط بستهٔ ۰۱ را اول Extract کنید تا اسکریپتِ داخلش آزاد شود:
+unzip -oq taxi-cpanel-01-core.zip
+# ۲) بقیه (و خود ۰۱) را با اسکریپت کمکی Extract و بررسی کنید:
+bash laravel-backend/bin/cpanel-extract-parts.sh --delete-zips
+```
+
+خروجی مورد انتظار در پایان:
+
+```text
+  ✓ artisan
+  ✓ public/index.php
+  ✓ public/taxi.html
+  ✓ vendor/autoload.php  (77 پکیج نصب‌شده)
+✓ همه‌چیز کامل است. قدم بعدی:
+    cd ~/taxi-app/laravel-backend
+    bash bin/cpanel-setup.sh
+```
+
+اسکریپت `cpanel-extract-parts.sh` این کارها را می‌کند:
+- همهٔ `taxi-cpanel-*.zip` را به‌ترتیب Extract می‌کند (تکرارپذیر و بی‌خطر).
+- اگر بسته‌ای ناقص آپلود شده باشد یا ساختارش درست نباشد، **همان بسته** را گزارش می‌کند و بقیه را ادامه می‌دهد.
+- یک چک‌لیست ۱۹ فایلی حیاتی + وجود `vendor/autoload.php` را بررسی می‌کند.
+- مجوز `storage` و `bootstrap/cache` را `ug+rwX` می‌کند.
+- با سوییچ `--delete-zips` فایل‌های ZIP را بعد از Extract پاک می‌کند.
+
+**قدم ۳.۴-ب — Extract با File Manager (بدون Terminal)**
+
+برای هر بستهٔ `taxi-cpanel-*.zip` جداگانه:
+۱. روی فایل ZIP **راست‌کلیک → Extract** بزنید.
+۲. در کادر **Extract to** فقط بنویسید:
+   ```text
+   /home/USERNAME/taxi-app
+   ```
+   (این همان پوشه‌ای است که ZIP داخلش است؛ اگر کادر خالی بماند هم همان‌جا Extract می‌شود.)
+۳. **Extract File(s)** را بزنید و صبر کنید تا پیام *Extraction completed* بیاید.
+۴. فایل ZIP را **Delete** کنید (برای صرفه‌جویی فضا).
+۵. برای بستهٔ بعدی همین کار را تکرار کنید.
+
+> **مهم:** تا وقتی همهٔ بسته‌ها Extract نشده‌اند سایت را باز نکنید — نبود `vendor/` باعث خطای ۵۰۰ می‌شود.
 
 > **نکتهٔ امنیتی:** بستهٔ `06-storage` فقط اسکلت پوشه‌های نوشتنی را می‌سازد. بستهٔ `04-pwa-app` هم فقط `taxi.html`، `sw.js` و `manifest.json` را جایگزین می‌کند؛ بنابراین می‌توانید در به‌روزرسانی‌های بعدی فقط همین یک بسته را آپلود کنید و بقیهٔ سرور دست‌نخورده بماند.
 
@@ -201,6 +263,181 @@
 | ۷+ | `taxi-cpanel-07-vendor-NN.zip` | پوشهٔ `vendor/` (فقط در ریلیز/آرتیفکت با vendor؛ هر بسته ≈ ۸ مگابایت) | ۸ MB هر بسته |
 
 > **چرا بخش‌به‌بخش سریع‌تر و امن‌تر است؟** در File Manager سی‌پنل، آپلود یک ZIP بزرگ (بیش از ۵۰ مگابایت با vendor) معمولاً به سقف `upload_max_filesize` می‌خورد یا وسط کار قطع می‌شود و فایل ناقص Extract می‌شود. با بسته‌های ۱ مگابایتی، هر آپلود در چند ثانیه تمام می‌شود؛ اگر یکی خراب شد فقط همان یکی را تکرار می‌کنید و لازم نیست کل پروژه را دوباره آپلود کنید.
+
+**قدم ۳.۸ — نقشهٔ دقیق «هر فایل کجا می‌رود» (مرجع اصلی)**
+
+> **قانون طلایی:** **همهٔ** بسته‌ها به **یک پوشه** Extract می‌شوند و آن پوشه همیشه `~/taxi-app` است. هیچ بسته‌ای را جای دیگری Extract نکنید. داخل هر ZIP، مسیرها از پیش با پیشوند `laravel-backend/` ذخیره شده‌اند؛ پس `unzip` خودش فایل‌ها را در جای صحیح می‌گذارد و شما لازم نیست چیزی را جابه‌جا یا کپی کنید.
+
+**نمای کلی مسیرها روی هاست**
+
+```text
+/home/USERNAME/
+└── taxi-app/                         ← فقط همین یک پوشه می‌سازید
+    ├── taxi-cpanel-01-core.zip        ← این‌ها را آپلود می‌کنید
+    ├── taxi-cpanel-02-database.zip
+    ├── taxi-cpanel-03-public-bootstrap.zip
+    ├── taxi-cpanel-04-pwa-app.zip
+    ├── taxi-cpanel-05-pwa-icons.zip
+    ├── taxi-cpanel-06-storage.zip
+    ├── taxi-cpanel-07-vendor-01.zip
+    ├── … 07-vendor-02 … 04
+    ├── SHA256SUMS.txt
+    ├── PARTS.md
+    └── laravel-backend/              ← این پوشه توسط Extract ساخته می‌شود
+        ├── app/  config/  routes/  resources/  database/  bin/  bootstrap/  storage/  public/
+        ├── artisan
+        ├── composer.json   composer.lock   README.md
+        ├── .env            ← خودتان از .env.production.example می‌سازید
+        └── vendor/         ← از بسته‌های 07-vendor-*
+```
+
+**جزئیات: هر بسته چه فایل‌هایی را کجا می‌گذارد**
+
+<details>
+<summary><b>بستهٔ ۰۱ — <code>taxi-cpanel-01-core.zip</code></b> (۱۵۰ KB) → مقصد: <code>~/taxi-app/laravel-backend/</code></summary>
+
+| فایل/پوشه داخل بسته | مسیر نهایی روی هاست |
+|---|---|
+| `laravel-backend/artisan` | `~/taxi-app/laravel-backend/artisan` |
+| `laravel-backend/composer.json` | `~/taxi-app/laravel-backend/composer.json` |
+| `laravel-backend/composer.lock` | `~/taxi-app/laravel-backend/composer.lock` |
+| `laravel-backend/.env.example` | `~/taxi-app/laravel-backend/.env.example` |
+| `laravel-backend/.env.production.example` | `~/taxi-app/laravel-backend/.env.production.example` |
+| `laravel-backend/.gitignore` | `~/taxi-app/laravel-backend/.gitignore` |
+| `laravel-backend/README.md` | `~/taxi-app/laravel-backend/README.md` |
+| `laravel-backend/app/**` | `~/taxi-app/laravel-backend/app/**` |
+| `…/app/Http/Controllers/Api/*.php` | کنترلرهای API (Auth, Billing, License, Sync, Team, Registration, Audit) |
+| `…/app/Http/Controllers/Api/Manager/*.php` | کنترلرهای پنل مدیر کل |
+| `…/app/Models/*.php` | مدل‌ها (User, Store, License, Order, Subscription*) |
+| `…/app/Services/Billing/*.php` | سرویس‌های اشتراک و درگاه‌ها (Zarinpal, Manual) |
+| `…/app/Services/Sync/AgencySyncMergeService.php` | سرویس همگام‌سازی آژانس |
+| `…/app/Support/Jalali.php` | تبدیل تاریخ شمسی |
+| `laravel-backend/config/**` | همهٔ فایل‌های پیکربندی لاراول |
+| `laravel-backend/routes/web.php` | همهٔ مسیرهای `/api/*` و `/up` |
+| `laravel-backend/routes/console.php` | زمان‌بند یادآور اشتراک |
+| `laravel-backend/resources/views/mail/license-expiring.blade.php` | قالب ایمیل یادآور |
+| `laravel-backend/bin/cpanel-setup.sh` | اسکریپت راه‌اندازی (گام ۵) |
+| `laravel-backend/bin/cpanel-extract-parts.sh` | اسکریپت کمکی Extract خودکار (قدم ۳.۹) |
+
+</details>
+
+<details>
+<summary><b>بستهٔ ۰۲ — <code>taxi-cpanel-02-database.zip</code></b> (۲۰ KB) → مقصد: <code>~/taxi-app/laravel-backend/database/</code></summary>
+
+| فایل داخل بسته | مسیر نهایی |
+|---|---|
+| `laravel-backend/database/migrations/0001_01_01_000000_create_users_table.php` | `~/taxi-app/laravel-backend/database/migrations/…` |
+| `…/0001_01_01_000001_create_cache_table.php` | همان پوشه (جدول cache و cache_locks) |
+| `…/0001_01_01_000002_create_jobs_table.php` | همان پوشه (jobs, job_batches, failed_jobs) |
+| `…/2026_11_05_090000_create_stores_table.php` | همان پوشه (آژانس‌ها) |
+| `…/2026_11_05_100015_create_licenses_table.php` | همان پوشه (لایسنس‌ها) |
+| `…/2026_11_06_010000_create_audit_logs_table.php` | همان پوشه (لاگ ممیزی) |
+| `…/2026_11_06_020000_create_orders_table.php` | همان پوشه (سفارش‌ها) |
+| `…/2026_11_06_020100_add_billing_fields.php` | همان پوشه |
+| `…/2026_11_06_030000_create_subscription_plans_table.php` | همان پوشه (پلن‌ها) |
+| `…/2026_11_06_030100_create_subscription_support_tables.php` | همان پوشه |
+| `…/2026_11_06_030200_add_subscription_fields_to_orders.php` | همان پوشه |
+| `…/2026_11_06_030300_add_subscription_fields_to_licenses.php` | همان پوشه |
+| `…/2026_11_06_030400_create_subscription_payments_table.php` | همان پوشه (پرداخت‌ها) |
+| `…/2026_11_07_000000_add_admin_panel_fields.php` | همان پوشه (فیلدهای پنل مدیر) |
+| `…/2026_11_07_020000_create_agency_sync_states_table.php` | همان پوشه (همگام‌سازی) |
+| `…/2026_11_07_040000_upgrade_to_taxino_five_plans.php` | همان پوشه (۵ پلن تومانی) |
+| `laravel-backend/database/seeders/DatabaseSeeder.php` | `~/taxi-app/laravel-backend/database/seeders/` (ساخت مدیر کل) |
+| `laravel-backend/database/factories/*.php` | `~/taxi-app/laravel-backend/database/factories/` |
+| `laravel-backend/database/.gitignore` | `~/taxi-app/laravel-backend/database/.gitignore` |
+
+</details>
+
+<details>
+<summary><b>بستهٔ ۰۳ — <code>taxi-cpanel-03-public-bootstrap.zip</code></b> (۲ KB) → مقصد: <code>~/taxi-app/laravel-backend/public/</code> و <code>…/bootstrap/</code></summary>
+
+| فایل داخل بسته | مسیر نهایی | نقش |
+|---|---|---|
+| `laravel-backend/public/index.php` | `~/taxi-app/laravel-backend/public/index.php` | نقطهٔ ورود همهٔ درخواست‌ها |
+| `laravel-backend/public/.htaccess` | `~/taxi-app/laravel-backend/public/.htaccess` | بازنویسی URL و هدر Authorization |
+| `laravel-backend/public/robots.txt` | `~/taxi-app/laravel-backend/public/robots.txt` | دستور موتور جستجو |
+| `laravel-backend/public/favicon.ico` | `~/taxi-app/laravel-backend/public/favicon.ico` | آیکون مرورگر |
+| `laravel-backend/bootstrap/app.php` | `~/taxi-app/laravel-backend/bootstrap/app.php` | راه‌اندازی اپ + رجیستر middleware |
+| `laravel-backend/bootstrap/providers.php` | `~/taxi-app/laravel-backend/bootstrap/providers.php` | فهرست Providerها |
+
+</details>
+
+<details>
+<summary><b>بستهٔ ۰۴ — <code>taxi-cpanel-04-pwa-app.zip</code></b> (۱۴۵ KB) → مقصد: <code>~/taxi-app/laravel-backend/public/</code></summary>
+
+| فایل داخل بسته | مسیر نهایی | نقش |
+|---|---|---|
+| `laravel-backend/public/taxi.html` | `~/taxi-app/laravel-backend/public/taxi.html` | **کل نرم‌افزار تاکسینو** (تک‌فایلی، ۵۷۰ KB) |
+| `laravel-backend/public/sw.js` | `~/taxi-app/laravel-backend/public/sw.js` | Service Worker آفلاین (`CACHE_VERSION = taxi-v1.6.0`) |
+| `laravel-backend/public/manifest.json` | `~/taxi-app/laravel-backend/public/manifest.json` | مانیفست PWA (نام، آیکون‌ها، میان‌بُرها) |
+
+> **این بسته تنها بسته‌ای است که برای به‌روزرسانی‌های بعدی لازم دارید** — فقط همین ZIP را آپلود و Extract کنید تا نسخهٔ PWA عوض شود.
+
+</details>
+
+<details>
+<summary><b>بستهٔ ۰۵ — <code>taxi-cpanel-05-pwa-icons.zip</code></b> (۸۱۶ KB) → مقصد: <code>~/taxi-app/laravel-backend/public/icons/</code></summary>
+
+| فایل داخل بسته | مسیر نهایی |
+|---|---|
+| `laravel-backend/public/icons/icon-72.png` | `~/taxi-app/laravel-backend/public/icons/` |
+| `…/icon-96.png` `96` · `…/icon-128.png` · `…/icon-144.png` · `…/icon-152.png` · `…/icon-192.png` · `…/icon-384.png` · `…/icon-512.png` | همان پوشه |
+| `…/maskable-512.png` | آیکون maskable اندروید |
+| `…/apple-touch-icon.png` | آیکون iOS |
+| `…/logo.png` · `…/logo-dark.png` | لوگوها (تیره/روشن) |
+| `…/brand.svg` | لوگوی برداری |
+| `…/login-hero.jpg` | تصویر پس‌زمینهٔ صفحهٔ ورود |
+
+</details>
+
+<details>
+<summary><b>بستهٔ ۰۶ — <code>taxi-cpanel-06-storage.zip</code></b> (۵ KB) → مقصد: <code>~/taxi-app/laravel-backend/storage/</code> و <code>…/bootstrap/cache/</code></summary>
+
+| فایل داخل بسته | مسیر نهایی | نقش |
+|---|---|---|
+| `laravel-backend/storage/app/.gitignore` | `~/taxi-app/laravel-backend/storage/app/` | پوشهٔ فایل‌های اپ |
+| `…/storage/app/private/.gitignore` | `…/storage/app/private/` | فایل‌های خصوصی (رسیدهای پرداخت) |
+| `…/storage/app/public/.gitignore` | `…/storage/app/public/` | فایل‌های عمومی (storage:link) |
+| `…/storage/framework/.gitignore` | `…/storage/framework/` | ریشهٔ فریم‌ورک |
+| `…/storage/framework/cache/data/.gitignore` | `…/storage/framework/cache/data/` | کش دیتابیسی |
+| `…/storage/framework/cache/locks/.gitignore` | `…/storage/framework/cache/locks/` | قفل‌ها |
+| `…/storage/framework/sessions/.gitignore` | `…/storage/framework/sessions/` | نشست‌ها |
+| `…/storage/framework/views/.gitignore` | `…/storage/framework/views/` | ویوهای کامپایل‌شده |
+| `…/storage/framework/testing/.gitignore` | `…/storage/framework/testing/` | تست |
+| `…/storage/logs/.gitignore` | `…/storage/logs/` | **لاگ خطاها** (`laravel.log`) |
+| `laravel-backend/bootstrap/cache/.gitignore` | `~/taxi-app/laravel-backend/bootstrap/cache/` | کش config/route |
+
+> این بسته فقط **اسکلت پوشه‌ها** را می‌سازد (چون ZIP پوشهٔ خالی نمی‌سازد). مجوز نوشتن بعداً در گام ۵ با `cpanel-setup.sh` تنظیم می‌شود.
+
+</details>
+
+<details>
+<summary><b>بسته‌های ۰۷ — <code>taxi-cpanel-07-vendor-NN.zip</code></b> (۴ بخش، مجموع ≈ ۸.۷ MB) → مقصد: <code>~/taxi-app/laravel-backend/vendor/</code></summary>
+
+| بخش | چه چیزی داخلش است | مقصد |
+|---|---|---|
+| `07-vendor-01` (۲.۷ MB) | `vendor/autoload.php` + `vendor/composer/` + `vendor/bin/` + پکیج‌های سبک + **`vendor/laravel/framework`** | `~/taxi-app/laravel-backend/vendor/…` |
+| `07-vendor-02` (۲.۳ MB) | `vendor/symfony/*` (http-foundation, http-kernel, console, mailer…) | همان‌جا |
+| `07-vendor-03` (۲.۹ MB) | `vendor/nesbot/carbon`، `guzzlehttp/*`، `psy/psysh`، `monolog/*`، `league/*`… | همان‌جا |
+| `07-vendor-04` (۰.۷ MB) | باقی پکیج‌های کوچک (`psr/*`، `ramsey/*`، `brick/math`، `vlucas/phpdotenv`…) | همان‌جا |
+
+> **مهم:** تقسیم‌بندی پکیج‌ها بین ۰۱ تا ۰۴ ممکن است بین نسخه‌ها کمی جابه‌جا شود — **مهم نیست**، چون همه داخل `vendor/` می‌روند. فقط کافی است **هر چهار (یا هر NN) بسته** Extract شوند.
+> `vendor/` شامل **۷۷ پکیج تولیدی** است (بدون Pest/PHPUnit که فقط برای توسعه‌اند).
+
+</details>
+
+**فایل‌هایی که هرگز داخل بسته‌ها نیستند (و باید خودتان بسازید)**
+
+| فایل | چرا نیست | چه کار کنید |
+|---|---|---|
+| `~/taxi-app/laravel-backend/.env` | حاوی رمز دیتابیس و رمز مدیر است — نباید در گیت باشد | از `.env.production.example` کپی و پر کنید (**گام ۴**) |
+| `~/taxi-app/laravel-backend/storage/logs/laravel.log` | خودکار ساخته می‌شود | کاری نکنید |
+| `~/taxi-app/laravel-backend/bootstrap/cache/config.php` و `routes-v7.php` | با `config:cache`/`route:cache` ساخته می‌شوند | در گام ۵ ساخته می‌شوند |
+| `~/taxi-app/laravel-backend/public/storage` | لینک نمادین | با `php artisan storage:link` ساخته می‌شود |
+| `phpunit.xml` و `tests/` | فقط برای توسعه | نیاز نیست روی سرور باشد |
+
+**علت اینکه همه‌چیز این‌قدر ساده است:** هر ZIP از قبل پوشهٔ `laravel-backend/` را در خود دارد. پس وقتی در `~/taxi-app` راست‌کلیک → Extract می‌کنید، cPanel خودش `laravel-backend/...` را می‌سازد. **هرگز** محتویات ZIP را دستی به پوشه‌ای دیگر منتقل نکنید و **هرگز** بسته‌ها را داخل `public_html` یا `~/taxi.karen-soft.ir` Extract نکنید.
+
 
 ### راه ب — بستهٔ کامل (اگر هاست اجازهٔ آپلود فایل بزرگ‌تر را می‌دهد)
 

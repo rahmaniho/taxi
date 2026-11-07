@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -102,4 +102,63 @@ test('بسته‌های بخش‌به‌بخش cPanel: پوشش همهٔ فای�
   const guide = readFileSync(join(artifactsDir, 'PARTS.md'), 'utf8');
   assert.match(guide, /taxi-cpanel-01-core\.zip/, 'راهنمای بسته‌ها باید فهرست را داشته باشد');
   assert.match(guide, /sha256sum -c SHA256SUMS\.txt/, 'راهنمای بررسی سلامت لازم است');
+});
+
+test('اسکریپت کمکی Extract بخش‌ها: وجود، مجوز اجرا و بررسی مسیرها', () => {
+  const script = join(backendDir, 'bin', 'cpanel-extract-parts.sh');
+  assert.ok(existsSync(script), 'bin/cpanel-extract-parts.sh باید وجود داشته باشد');
+
+  const stat = statSync(script);
+  assert.ok(stat.mode & 0o111, 'اسکریپت باید مجوز اجرا داشته باشد');
+
+  const body = readFileSync(script, 'utf8');
+  assert.match(body, /^#!\/usr\/bin\/env bash/, 'shebang bash لازم است');
+  assert.match(body, /set -uo pipefail/, 'حالت سخت‌گیرانهٔ bash لازم است');
+  // چک‌لیست فایل‌های حیاتی که باید بررسی شوند
+  for (const required of [
+    'artisan',
+    'composer.json',
+    'bin/cpanel-setup.sh',
+    '.env.production.example',
+    'public/index.php',
+    'public/.htaccess',
+    'public/taxi.html',
+    'public/sw.js',
+    'public/manifest.json',
+    'vendor/autoload.php',
+  ]) {
+    assert.ok(body.includes(required), `چک‌لیست اسکریپت باید ${required} را بررسی کند`);
+  }
+  assert.match(body, /laravel-backend\//, 'اسکریپت باید پیشوند laravel-backend/ را اعتبارسنجی کند');
+});
+
+test('INSTALL.md: نقشهٔ مقصد همهٔ بسته‌ها مستند شده باشد', () => {
+  const install = readFileSync(join(root, 'deploy/laravel-app/INSTALL.md'), 'utf8');
+
+  // همهٔ بسته‌ها در جدول معرفی شده‌اند
+  for (const part of [
+    'taxi-cpanel-01-core.zip',
+    'taxi-cpanel-02-database.zip',
+    'taxi-cpanel-03-public-bootstrap.zip',
+    'taxi-cpanel-04-pwa-app.zip',
+    'taxi-cpanel-05-pwa-icons.zip',
+    'taxi-cpanel-06-storage.zip',
+    'taxi-cpanel-07-vendor',
+  ]) {
+    assert.ok(install.includes(part), `INSTALL.md باید ${part} را نام ببرد`);
+  }
+
+  // مقصد نهایی همه: ~/taxi-app
+  assert.match(install, /~\/taxi-app/, 'مسیر ~/taxi-app باید در راهنما باشد');
+  assert.match(install, /laravel-backend\/public\/taxi\.html/, 'مسیر نهایی taxi.html باید ذکر شود');
+  assert.match(install, /laravel-backend\/public\/icons/, 'پوشهٔ icons باید ذکر شود');
+  assert.match(install, /laravel-backend\/database\/migrations/, 'پوشهٔ migrations باید ذکر شود');
+  assert.match(install, /laravel-backend\/vendor/, 'پوشهٔ vendor باید ذکر شود');
+  assert.match(install, /laravel-backend\/storage/, 'پوشهٔ storage باید ذکر شود');
+
+  // هشدارهای ایمنی
+  assert.match(install, /\.env/, 'راهنما باید دربارهٔ .env توضیح دهد');
+  assert.match(install, /cpanel-extract-parts\.sh/, 'راهنما باید اسکریپت کمکی را معرفی کند');
+  assert.ok(!/نسخه ۱\.۴\.۰/.test(install), 'نسخهٔ قدیمی ۱.۴.۰ نباید در راهنما بماند');
+  assert.match(install, /releases\/tag\/cpanel-parts-v1\.6\.0/, 'لینک ریلیز باید در ابتدای راهنما باشد');
 });
