@@ -1,0 +1,47 @@
+# ─── تاکسینو | Taxino — Router ریشه (ساختار تخت: public/ کنار artisan) ───
+# این فایل را در ریشهٔ سایت (همان‌جا که artisan، app/، public/ هستند) بگذارید
+# و نامش را .htaccess بگذارید.
+#
+# ساختار مورد انتظار:
+#   public_html/
+#   ├── artisan  app/  config/  routes/  database/  storage/  vendor/
+#   ├── public/          ← index.php، taxi.html، sw.js، icons/
+#   ├── .env
+#   └── .htaccess        ← همین فایل
+#
+# اگر ساختار شما public_html/laravel-backend/public است، از root-router.htaccess استفاده کنید.
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# فایل‌های مخفی (.env، .htaccess، .git) هرگز سرو نشوند
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # ۰) دسترسی به /public/ مستقیم مجاز باشد (برای تشخیص عیب‌یابی)
+    RewriteRule ^public/ - [L]
+
+    # ۱) هسته و فایل‌های حساس مسدود
+    RewriteRule ^(app|bin|bootstrap|config|database|resources|routes|storage|tests|vendor)(/|$) - [F,L]
+    RewriteRule ^(artisan|composer\.(json|lock)|phpunit\.xml|composer\.phar)$ - [F,L]
+
+    # ۲) فایل استاتیک موجود در public → مستقیم
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+    RewriteRule ^ public%{REQUEST_URI} [L]
+
+    # ۳) بقیه → front controller لاراول
+    RewriteCond %{DOCUMENT_ROOT}/public/index.php -f
+    RewriteRule ^ public/index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

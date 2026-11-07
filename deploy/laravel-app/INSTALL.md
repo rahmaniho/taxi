@@ -500,6 +500,180 @@ TAXI_MANAGER_PASSWORD="یک_رمز_قوی_برای_مدیر_کل"
 ```
 
 ---
+## 🟢 ساختار فعلی هاست شما (تخت / flat) — راه‌اندازی نهایی
+
+بر اساس بررسی زنده، وضعیت الان این است:
+
+```text
+/home/karensof/public_html/          ← Document Root (تأیید شد)
+├── app/  bin/  bootstrap/  config/  database/
+├── public/            ← index.php، taxi.html، sw.js، icons/  ✅
+├── resources/  routes/  storage/  vendor/
+├── artisan  composer.json  composer.lock
+└── .env               ← ❌ وجود ندارد یا APP_KEY خالی است
+```
+
+**چه چیزی کار می‌کند:** `https://taxi.karen-soft.ir/public/up` → **200 OK** ✅ (لاراول سالم است)
+**چه چیزی کار نمی‌کند:** `/up` → ۴۰۴، `/` → لیست پوشه‌ها
+**خطای ثبت‌شده:** `No application encryption key has been specified` (در `storage/logs/laravel.log`)
+
+یعنی فقط **سه قدم** مانده:
+
+---
+
+### قدم نهایی ۱ — ساخت `.env` با `APP_KEY`
+
+**الف) در Terminal سی‌پنل:**
+
+```bash
+cd ~/public_html
+cp .env.production.example .env
+```
+
+اگر `.env.production.example` نیست (چون فایل‌های مخفی ممکن است آپلود نشده باشند):
+
+```bash
+cd ~/public_html
+cat > .env <<'ENVEOF'
+APP_NAME="تاکسینو | Taxino"
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_URL=https://taxi.karen-soft.ir
+
+APP_LOCALE=fa
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=fa_IR
+APP_MAINTENANCE_DRIVER=file
+BCRYPT_ROUNDS=12
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_LEVEL=error
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=karensof_taxi
+DB_USERNAME=karensof_taxi_user
+DB_PASSWORD="رمز_دیتابیس_شما"
+
+SESSION_DRIVER=database
+SESSION_LIFETIME=43200
+SESSION_ENCRYPT=false
+SESSION_COOKIE=taxi_karen_session
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=lax
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=database
+CACHE_STORE=database
+
+MAIL_MAILER=smtp
+MAIL_SCHEME=null
+MAIL_HOST=mail.karen-soft.ir
+MAIL_PORT=465
+MAIL_USERNAME=noreply@karen-soft.ir
+MAIL_PASSWORD="رمز_ایمیل"
+MAIL_FROM_ADDRESS="noreply@karen-soft.ir"
+MAIL_FROM_NAME="${APP_NAME}"
+
+TAXI_PUBLIC_SIGNUP=false
+TAXI_TRIAL_DAYS=14
+TAXI_PAYMENT_GATEWAY=manual
+ZARINPAL_MERCHANT_ID=
+ZARINPAL_SANDBOX=false
+
+TAXI_MANAGER_NAME="مدیر کل تاکسینو"
+TAXI_MANAGER_EMAIL=admin@karen-soft.ir
+TAXI_MANAGER_PASSWORD="یک_رمز_قوی_برای_مدیر_کل"
+ENVEOF
+```
+
+**ب) با File Manager → Edit فقط این ۴ خط را عوض کنید:**
+
+| خط | مقدار |
+|---|---|
+| `DB_DATABASE=` | نام واقعی دیتابیس (مثل `karensof_taxi`) |
+| `DB_USERNAME=` | نام کاربر دیتابیس |
+| `DB_PASSWORD="..."` | رمز دیتابیس |
+| `TAXI_MANAGER_PASSWORD="..."` | رمز قوی مدیر کل |
+
+**ج) ساخت `APP_KEY` (رفع خطای فعلی):**
+
+```bash
+cd ~/public_html
+php artisan key:generate --force
+```
+
+باید ببینید: `Application key set successfully.`
+
+---
+
+### قدم نهایی ۲ — گذاشتن `.htaccess` در ریشه
+
+فایل **`root-router-flat.htaccess`** از بستهٔ `taxi-cpanel-00-root-tools.zip`:
+
+1. آپلود در `public_html` (کنار `artisan` و پوشهٔ `public/`)
+2. راست‌کلیک → **Rename** → نام: `.htaccess`
+
+این فایل این کارها را می‌کند:
+
+| درخواست | مقصد |
+|---|---|
+| `/up` , `/api/*` , `/` , `/manager/*` | `public/index.php` |
+| `/taxi.html` , `/sw.js` , `/icons/*` | `public/…` مستقیم |
+| `/app/`, `/config/`, `/storage/`, `/vendor/`, `/artisan`, `/composer.json` | **۴۰۳ مسدود** |
+| `/.env`, `/.htaccess` | **۴۰۳ مسدود** |
+
+---
+
+### قدم نهایی ۳ — دیتابیس و راه‌اندازی
+
+```bash
+cd ~/public_html
+php artisan migrate --seed --force
+php artisan storage:link
+php artisan config:cache
+php artisan route:cache
+```
+
+یا فقط:
+
+```bash
+cd ~/public_html && bash bin/cpanel-setup.sh
+```
+
+---
+
+### ✅ تست نهایی
+
+| آدرس | انتظار |
+|---|---|
+| `https://taxi.karen-soft.ir/up` | **200 OK** (`Application up`) |
+| `https://taxi.karen-soft.ir/api/csrf` | JSON شامل `csrf_token` |
+| `https://taxi.karen-soft.ir/` | صفحهٔ ورود تاکسینو |
+| `https://taxi.karen-soft.ir/taxi.html` | همان صفحه |
+| `https://taxi.karen-soft.ir/.env` | **۴۰۳** |
+| `https://taxi.karen-soft.ir/storage/logs/laravel.log` | **۴۰۳** |
+
+---
+
+### 🔧 بعداً: تمیزترین حالت (اختیاری)
+
+اگر خواستید حرفه‌ای‌تر شود، **Document Root** را عوض کنید به:
+
+```text
+public_html/public
+```
+
+یا هسته را از `public_html` بیرون ببرید و `public` را داخل `public_html` بگذارید. آن‌وقت `root-router-flat.htaccess` هم لازم نیست و امنیت حداکثری است.
+
+---
+
 ## 🩺 عیب‌یابی سریع: سایت ۴۰۴ / لیست پوشه نشان می‌دهد
 
 اگر فایل‌ها آپلود شده‌اند ولی `https://taxi.karen-soft.ir/up` خطای **404** می‌دهد یا صفحهٔ اصلی **لیست پوشه‌ها** را نشان می‌دهد، یعنی **Document Root اشتباه است** — نه اینکه فایل‌ها ناقص باشند.

@@ -203,3 +203,38 @@ test('ابزار تشخیص cPanel: وجود، مسیر بسته، و اعتبا
     assert.ok(denyLine.includes(dir), `مسیر ${dir} باید در خط مسدودسازی باشد`);
   }
 });
+
+test('root-router-flat.htaccess: قواعد ساختار تخت (public/ کنار artisan)', () => {
+  const f = join(root, 'deploy/laravel-app/root-router-flat.htaccess');
+  assert.ok(existsSync(f), 'root-router-flat.htaccess باید وجود داشته باشد');
+  const ht = readFileSync(f, 'utf8');
+
+  // مسیر public بدون پیشوند laravel-backend
+  assert.ok(ht.includes('public%{REQUEST_URI}'), 'باید فایل استاتیک را از public/ سرو کند');
+  assert.ok(ht.includes('public/index.php'), 'باید به public/index.php برود');
+  // فقط خطوط قاعده بررسی می‌شوند، نه کامنت‌ها
+  const rules = ht.split('\n').filter(l => !l.trim().startsWith('#')).join('\n');
+  assert.ok(!rules.includes('laravel-backend'), 'در ساختار تخت قواعد نباید پیشوند laravel-backend داشته باشند');
+
+  // مسدودسازی هسته
+  const deny = ht.split('\n').find(l => l.includes('[F,L]') && l.includes('config'));
+  assert.ok(deny, 'خط مسدودسازی پوشه‌ها پیدا نشد');
+  for (const d of ['app', 'config', 'database', 'storage', 'vendor', 'bootstrap', 'routes']) {
+    assert.ok(deny.includes(d), `${d} باید مسدود شود`);
+  }
+  assert.ok(ht.includes('artisan'), 'artisan باید مسدود شود');
+  assert.ok(/<FilesMatch "\^\\\.">/.test(ht), 'فایل‌های مخفی (.env) باید مسدود شوند');
+  assert.ok(ht.includes('Options -Indexes'), 'لیست پوشه باید خاموش شود');
+});
+
+test('بستهٔ ۰۰ شامل هر چهار ابزار ریشه باشد', () => {
+  const zip = join(artifactsDir, 'taxi-cpanel-00-root-tools.zip');
+  if (!existsSync(zip)) {
+    // اگر هنوز ساخته نشده، از اسکریپت بساز
+    execFileSync('node', [join(root, 'scripts', 'build-cpanel-parts.mjs')], { cwd: root, stdio: 'pipe' });
+  }
+  const entries = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' }).split('\n').filter(Boolean);
+  for (const f of ['root-router.htaccess', 'root-router-flat.htaccess', 'cpanel-doctor.php', 'where-am-i.php']) {
+    assert.ok(entries.includes(f), `${f} باید در بستهٔ ریشه باشد`);
+  }
+});
