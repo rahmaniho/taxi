@@ -589,15 +589,100 @@ bash bin/cpanel-setup.sh
    ```
 
 ---
-## حالت جایگزین: اگر cPanel اجازهٔ تغییر Document Root نداد
+## 🔴 وضعیت واقعی این هاست: ساب‌دامین به `public_html` اشاره می‌کند
 
-اگر در هاست شما پوشهٔ ساب‌دامین اجباراً `/home/USERNAME/taxi.karen-soft.ir` یا `/home/USERNAME/public_html/taxi` است:
-1. خروجی `deploy/laravel-app/stage/laravel-app` را در `/home/USERNAME/laravel-app` بگذارید.
-2. خروجی `deploy/laravel-app/stage/public_html` را درون پوشهٔ وب ساب‌دامین (`/home/USERNAME/taxi.karen-soft.ir`) بریزید.
-3. در فایل `/home/USERNAME/laravel-app/.env` این خط را اضافه کنید:
-   ```dotenv
-   PUBLIC_FOLDER_PATH=/home/USERNAME/taxi.karen-soft.ir
+در این هاست، `taxi.karen-soft.ir` روی **`/home/USERNAME/public_html`** تنظیم شده و `taxi-app` بیرون از آن است. نتیجه:
+
+- `https://taxi.karen-soft.ir/` → لیست خالی (یا فایل‌های قدیمی)
+- `https://taxi.karen-soft.ir/taxi-app/...` → **404** (چون بیرون از docroot است)
+- `https://taxi.karen-soft.ir/up` → **404** (لاراول اجرا نمی‌شود)
+
+دو راه دارد. **راه ۱ کوتاه‌ترین است.**
+
+### راه ۱ — همه‌چیز را داخل `public_html` ببرید (بدون تغییر docroot)
+
+مرحله ۱ — پوشهٔ `laravel-backend` را به `public_html` منتقل کنید:
+
+1. **File Manager** → وارد `taxi-app` شوید
+2. روی پوشهٔ `laravel-backend` راست‌کلیک → **Move** (یا **Cut**)
+3. مقصد را بگذارید:
+   ```text
+   /home/USERNAME/public_html
    ```
+4. **Move File(s)**
+
+حالا ساختار باید این باشد:
+```text
+/home/USERNAME/public_html/
+├── laravel-backend/          ← اینجا
+│   ├── app/  config/  public/  vendor/ …
+│   └── .env                  ← می‌سازیم
+├── .htaccess                 ← می‌سازیم (مرحله ۳)
+└── (فایل‌های قدیمی: artifact.tar, ROADMAP.html … که می‌توانید پاک کنید)
+```
+
+مرحله ۲ — فایل `.env` را در **`public_html/laravel-backend/.env`** بسازید:
+
+```bash
+cd ~/public_html/laravel-backend
+cp .env.production.example .env
+```
+بعد در File Manager → Edit کنید و این ۷ خط را پر کنید:
+
+```dotenv
+DB_DATABASE=USERNAME_taxi
+DB_USERNAME=USERNAME_taxi_user
+DB_PASSWORD="رمز دیتابیس"
+DB_HOST=127.0.0.1
+TAXI_MANAGER_EMAIL=admin@karen-soft.ir
+TAXI_MANAGER_PASSWORD="رمز قوی مدیر کل"
+APP_URL=https://taxi.karen-soft.ir
+```
+
+مرحله ۳ — فایل router را در **ریشهٔ `public_html`** بگذارید:
+
+1. فایل [`root-router.htaccess`](../../deploy/laravel-app/root-router.htaccess) را دانلود کنید
+2. در File Manager داخل `public_html` آپلود کنید
+3. راست‌کلیک → **Rename** → نامش را بگذارید:
+   ```text
+   .htaccess
+   ```
+   *(اگر `.htaccess` از قبل هست، اول نامش را به `.htaccess.old` تغییر دهید تا پشتیبان داشته باشید)*
+
+مرحله ۴ — راه‌اندازی:
+
+```bash
+cd ~/public_html/laravel-backend
+bash bin/cpanel-setup.sh
+```
+
+مرحله ۵ — تست: `https://taxi.karen-soft.ir/up` → باید **200 OK** بدهد.
+
+---
+
+### راه ۲ (تمیزترین) — تغییر Document Root به پوشهٔ `public`
+
+اگر cPanel اجازه می‌دهد:
+
+1. **cPanel → Domains** → `taxi.karen-soft.ir` → **Manage**
+2. **Document Root**:
+   ```text
+   taxi-app/laravel-backend/public
+   ```
+   یا مطلق: `/home/USERNAME/taxi-app/laravel-backend/public`
+3. **Save** → سپس هیچ `laravel-backend` یا `.htaccess` اضافه‌ای در `public_html` لازم نیست.
+
+---
+
+### نکتهٔ مهم دربارهٔ `PUBLIC_FOLDER_PATH`
+
+اگر **مجبور شدید** هستهٔ لاراول را بیرون از پوشهٔ وب نگه دارید (مثلاً `~/laravel-app`) و فقط `public` را داخل پوشهٔ وب بگذارید:
+
+```dotenv
+PUBLIC_FOLDER_PATH=/home/USERNAME/public_html
+```
+
+این خط در `config/app.php` خوانده می‌شود (`AppServiceProvider::register()` با `usePublicPath()` مسیر `public` را عوض می‌کند) — **ولی فقط برای لاراول**. وب‌سرور همچنان `index.php` و `taxi.html` را از `public_html` سرو می‌کند، پس آن فایل‌ها باید آنجا باشند.
 
 ---
 ## ارتقای بی‌دردسر به نسخه ۱.۶.۰ در cPanel (بدون SSH و بدون حذف اطلاعات)
