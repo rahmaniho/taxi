@@ -1,0 +1,41 @@
+# ─── تاکسینو | Taxino — Router ریشهٔ سایت ───
+# این فایل را در ریشهٔ ساب‌دامین آپلود کنید
+# (همان پوشه‌ای که https://taxi.karen-soft.ir/ به آن اشاره می‌کند و پوشهٔ laravel-backend داخلش است)
+#
+# کار: بدون تغییر Document Root، همهٔ درخواست‌ها را به laravel-backend/public هدایت می‌کند.
+# اگر بعداً Document Root را روی laravel-backend/public گذاشتید، این فایل را حذف کنید.
+#
+# پیش‌نیاز: پوشهٔ laravel-backend باید در همین مسیر باشد.
+# اگر نام پوشهٔ شما laravel-backend نیست، همهٔ «laravel-backend»های زیر را عوض کنید.
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # ۰) مسیرهای حساس هسته هرگز سرو نشوند
+    RewriteRule ^laravel-backend/public/(?!index\.php) - [L]
+    RewriteRule ^laravel-backend/(app|config|database|routes|resources|bootstrap|storage|bin|tests|vendor)(/|$) - [F,L]
+    RewriteRule ^laravel-backend/(\.env|\.env\..*|composer\.(json|lock)|artisan|phpunit\.xml)($|/) - [F,L]
+
+    # ۱) فایل واقعی موجود در public → مستقیم سرو شود (taxi.html، sw.js، icons/…)
+    RewriteCond %{DOCUMENT_ROOT}/laravel-backend/public%{REQUEST_URI} -f
+    RewriteRule ^ laravel-backend/public%{REQUEST_URI} [L]
+
+    # ۲) بقیهٔ درخواست‌ها → front controller لاراول
+    RewriteCond %{DOCUMENT_ROOT}/laravel-backend/public/index.php -f
+    RewriteRule ^ laravel-backend/public/index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

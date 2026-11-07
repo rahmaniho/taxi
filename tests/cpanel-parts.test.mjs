@@ -40,7 +40,17 @@ test('بسته‌های بخش‌به‌بخش cPanel: پوشش همهٔ فای�
   // همهٔ مسیرها با پیشوند laravel-backend/ ذخیره می‌شوند تا Extract در ~/taxi-app درست بنشیند
   const allEntries = new Set();
   for (const zip of zips) {
-    for (const entry of listZip(join(artifactsDir, zip))) {
+    const entries = listZip(join(artifactsDir, zip));
+    if (zip.includes('00-root-tools')) {
+      // بستهٔ ابزار ریشه: فایل‌ها باید در ریشهٔ ZIP باشند (نه داخل laravel-backend)
+      for (const entry of entries) {
+        assert.ok(!entry.startsWith('laravel-backend/'), `بستهٔ ریشه نباید پوشهٔ laravel-backend داشته باشد: ${entry}`);
+      }
+      assert.ok(entries.includes('root-router.htaccess'), 'root-router.htaccess در بستهٔ ریشه نیست');
+      assert.ok(entries.includes('cpanel-doctor.php'), 'cpanel-doctor.php در بستهٔ ریشه نیست');
+      continue;
+    }
+    for (const entry of entries) {
       assert.ok(entry.startsWith('laravel-backend/'), `${zip} مسیر بیگانه دارد: ${entry}`);
       allEntries.add(entry);
     }
@@ -161,4 +171,35 @@ test('INSTALL.md: نقشهٔ مقصد همهٔ بسته‌ها مستند شده
   assert.match(install, /cpanel-extract-parts\.sh/, 'راهنما باید اسکریپت کمکی را معرفی کند');
   assert.ok(!/نسخه ۱\.۴\.۰/.test(install), 'نسخهٔ قدیمی ۱.۴.۰ نباید در راهنما بماند');
   assert.match(install, /releases\/tag\/cpanel-parts-v1\.6\.0/, 'لینک ریلیز باید در ابتدای راهنما باشد');
+});
+
+test('ابزار تشخیص cPanel: وجود، مسیر بسته، و اعتبارسنجی PHP', () => {
+  for (const rel of ['laravel-backend/bin/cpanel-doctor.php', 'deploy/laravel-app/cpanel-doctor.php']) {
+    const p = join(root, rel);
+    assert.ok(existsSync(p), `${rel} باید وجود داشته باشد`);
+    const body = readFileSync(p, 'utf8');
+    assert.match(body, /^<\?php/, 'باید با تگ PHP شروع شود');
+    assert.match(body, /declare\(strict_types=1\)/, 'strict_types لازم است');
+    // نباید رمزها را افشا کند
+    assert.match(body, /\$secrets/, 'باید فهرست کلیدهای حساس داشته باشد');
+    assert.match(body, /strlen\(\$value\)/, 'برای رمزها فقط طول نمایش داده شود');
+    // حفاظت path traversal
+    assert.match(body, /str_contains\(\$name, '\.\.'\)/, 'باید path traversal مسدود شود');
+    // دسترسی به ZIP فقط با کلید
+    assert.match(body, /\.install-key/, 'باید با فایل کلید محافظت شود');
+  }
+
+  const router = join(root, 'deploy/laravel-app/root-router.htaccess');
+  assert.ok(existsSync(router), 'root-router.htaccess باید وجود داشته باشد');
+  const ht = readFileSync(router, 'utf8');
+  for (const rule of ['RewriteEngine On', 'laravel-backend/public%{REQUEST_URI}', 'laravel-backend/public/index.php', '[F,L]']) {
+    assert.ok(ht.includes(rule), `.htaccess باید شامل «${rule}» باشد`);
+  }
+  // مسیرهای حساس باید مسدود شوند
+  // همهٔ پوشه‌های حساس باید در یک RewriteRule مسدود شوند
+  const denyLine = ht.split('\n').find(line => line.includes('[F,L]') && line.includes('|config|'));
+  assert.ok(denyLine, 'خط مسدودسازی پوشه‌های حساس پیدا نشد');
+  for (const dir of ['app', 'config', 'database', 'storage', 'vendor', 'routes', 'bootstrap']) {
+    assert.ok(denyLine.includes(dir), `مسیر ${dir} باید در خط مسدودسازی باشد`);
+  }
 });

@@ -24,7 +24,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -233,6 +233,45 @@ if (includeVendor) {
   }
 }
 
+// ————— بستهٔ ۰۰: فایل‌های ریشهٔ سایت (بدون پوشهٔ laravel-backend) —————
+{
+  const stage = join(artifactsDir, '.stage-root');
+  rmSync(stage, { recursive: true, force: true });
+  mkdirSync(stage, { recursive: true });
+
+  const rootFiles = [
+    ['deploy/laravel-app/root-router.htaccess', 'root-router.htaccess'],
+    ['deploy/laravel-app/cpanel-doctor.php', 'cpanel-doctor.php'],
+  ];
+  let bytes = 0;
+  for (const [src, name] of rootFiles) {
+    const from = join(root, src);
+    if (!existsSync(from)) continue;
+    cpSync(from, join(stage, name));
+    bytes += statSync(from).size;
+  }
+
+  if (bytes > 0) {
+    const zipName = 'taxi-cpanel-00-root-tools.zip';
+    const zipPath = join(artifactsDir, zipName);
+    rmSync(zipPath, { force: true });
+    execFileSync('zip', ['-qj', zipPath, 'root-router.htaccess', 'cpanel-doctor.php'], { cwd: stage, stdio: 'inherit' });
+    if (existsSync(zipPath)) {
+      built.unshift({
+        id: '00-root-tools',
+        zipName,
+        title: 'ابزار ریشهٔ سایت (router و doctor)',
+        hint: 'این بسته را در ریشهٔ سایت (کنار laravel-backend) استخراج کنید، نه داخل laravel-backend.',
+        rawBytes: bytes,
+        zipBytes: statSync(zipPath).size,
+        rootLevel: true,
+      });
+      console.log(`✓ ${zipName}  (${human(bytes)} → ${human(statSync(zipPath).size)})`);
+    }
+  }
+  rmSync(stage, { recursive: true, force: true });
+}
+
 if (built.length === 0) {
   console.error('✖ هیچ بسته‌ای ساخته نشد.');
   process.exit(1);
@@ -257,6 +296,8 @@ const guide = [
   ...built.map(item => `| ${item.id} | \`${item.zipName}\` | ${item.title} | ${human(item.zipBytes)} |`),
   '',
   '## روش استفاده در cPanel',
+  '',
+  '> بستهٔ `00-root-tools` را **در ریشهٔ سایت** (نه در taxi-app) استخراج کنید و فقط برای عیب‌یابی است.',
   '',
   '۱. در **File Manager** به مسیر `~/taxi-app` بروید (اگر نیست، بسازید).',
   '۲. برای هر بسته: **Upload** → انتخاب فایل → پس از پایان آپلود، روی فایل راست‌کلیک → **Extract**.',

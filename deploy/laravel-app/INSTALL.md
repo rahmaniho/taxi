@@ -15,6 +15,7 @@
 | ۰۵ | `taxi-cpanel-05-pwa-icons.zip` | `~/taxi-app` |
 | ۰۶ | `taxi-cpanel-06-storage.zip` | `~/taxi-app` |
 | ۰۷ | `taxi-cpanel-07-vendor-01…04.zip` | `~/taxi-app` |
+| 🩺 | `taxi-cpanel-00-root-tools.zip` | **ریشهٔ سایت** (کنار `laravel-backend`) — فقط برای عیب‌یابی |
 
 > **همه به یک پوشه:** `~/taxi-app` — هر ZIP خودش پوشهٔ `laravel-backend/` را دارد. نقشهٔ فایل‌به‌فایل در **قدم ۳.۸**.
 
@@ -152,6 +153,7 @@
    taxi-cpanel-05-pwa-icons.zip
    taxi-cpanel-06-storage.zip
    taxi-cpanel-07-vendor-01.zip  …  taxi-cpanel-07-vendor-NN.zip
+   taxi-cpanel-00-root-tools.zip     (فقط اگر سایت ۴۰۴ می‌دهد — ابزار عیب‌یابی)
    SHA256SUMS.txt
    PARTS.md
    ```
@@ -498,6 +500,72 @@ TAXI_MANAGER_PASSWORD="یک_رمز_قوی_برای_مدیر_کل"
 ```
 
 ---
+## 🩺 عیب‌یابی سریع: سایت ۴۰۴ / لیست پوشه نشان می‌دهد
+
+اگر فایل‌ها آپلود شده‌اند ولی `https://taxi.karen-soft.ir/up` خطای **404** می‌دهد یا صفحهٔ اصلی **لیست پوشه‌ها** را نشان می‌دهد، یعنی **Document Root اشتباه است** — نه اینکه فایل‌ها ناقص باشند.
+
+### علائم دقیق
+
+| نشانه | معنی |
+|---|---|
+| صفحهٔ اصلی لیست `app/ config/ database/ …` را نشان می‌دهد | Document Root روی ریشهٔ پروژه است، نه `public` |
+| `/laravel-backend/public/taxi.html` باز می‌شود ولی `/up` نه | فایل‌ها سالماند؛ فقط روتینگ لاراول اجرا نمی‌شود |
+| `/laravel-backend/vendor/` خطای 403/404 می‌دهد | طبیعی است (سرور فایل‌های PHP را لیست نمی‌کند) — مدرک معتبر برای نبود vendor نیست |
+
+### راه‌حل ۱ (بدون تغییر Document Root) — آپلود یک فایل `.htaccess`
+
+۱. فایل **`root-router.htaccess`** را از مخزن دانلود کنید:
+   👉 https://github.com/rahmaniho/taxi/raw/main/deploy/laravel-app/root-router.htaccess
+۲. در **File Manager** به **ریشهٔ سایت** بروید — همان پوشه‌ای که `laravel-backend` داخلش است
+   (اگر پوشه‌های `app/`, `config/`, `public/` را کنار هم می‌بینید، همان‌جاست).
+۳. **Upload** → فایل را آپلود کنید → راست‌کلیک → **Rename** → نام را بگذارید:
+   ```text
+   .htaccess
+   ```
+   *(نکته: نقطهٔ اول نام الزامی است؛ اگر `.htaccess` از قبل هست، اول یک نسخهٔ پشتیبان از آن بگیرید.)*
+۴. `https://taxi.karen-soft.ir/up` را باز کنید → باید **200 OK** بدهد.
+۵. حالا لینک مستقیم `…/laravel-backend/public/taxi.html` را هم امتحان کنید؛ اگر باز شود، روتینگ درست است.
+
+> این فایل چه می‌کند؟ همهٔ درخواست‌ها را به `laravel-backend/public/index.php` می‌فرستد، فایل‌های استاتیک (`taxi.html`، `sw.js`، `icons/`) را مستقیم سرو می‌کند و دسترسی به `app/`, `config/`, `.env`, `storage/`, `vendor/` را **مسدود** می‌کند.
+> **اگر بعداً Document Root را روی `public` گذاشتید، این فایل `.htaccess` را حذف کنید** تا تداخل نکند.
+
+### راه‌حل ۲ (تمیزترین) — تغییر Document Root
+
+۱. **cPanel → Domains** → `taxi.karen-soft.ir` → **Manage**
+۲. **Document Root** را روی این بگذارید:
+   ```text
+   taxi-app/laravel-backend/public
+   ```
+   یا مسیر مطلق: `/home/USERNAME/taxi-app/laravel-backend/public`
+۳. **Update** → سپس `.htaccess` ساخته‌شده در ریشه را حذف کنید.
+
+### راه‌حل ۳ — ابزار تشخیص خودکار `cpanel-doctor.php`
+
+فایل `deploy/laravel-app/cpanel-doctor.php` را در ریشهٔ سایت آپلود کنید و باز کنید:
+```text
+https://taxi.karen-soft.ir/cpanel-doctor.php
+```
+این صفحه یک گزارش کامل می‌دهد:
+
+- نسخهٔ PHP و افزونه‌های فعال (`zip`, `pdo_mysql`, `mbstring`…)
+- **Document Root واقعی** و **مسیر پوشهٔ لاراول** که پیدا کرده
+- چک‌لیست ۲۱ فایل حیاتی با وضعیت «هست/نیست/نوشتنی»
+- محتویات `.env` — **بدون افشای رمزها** (فقط «تنظیم شده ✓ (طول)»)
+- فهرست مسیرهایی که جست‌وجو کرده و در هر کدام چه دید
+
+و دو کار را هم می‌تواند خودش انجام دهد (با کلید امنیتی):
+
+| آدرس | کار |
+|---|---|
+| `/cpanel-doctor.php?action=extract&key=XXX` | استخراج همهٔ `taxi-cpanel-*.zip` در `~/taxi-app` (نیاز به `ZipArchive`) |
+| `/cpanel-doctor.php?action=router&key=XXX` | ساخت `.htaccess` در ریشه (همان راه‌حل ۱، ولی خودکار) |
+
+**ساخت کلید:** کنار `cpanel-doctor.php` یک فایل `.install-key` بسازید و داخلش هر عبارتی بنویسید (مثلاً `taxino2026`). این کار مانع می‌شود غریبه‌ها بتوانند این عملیات را اجرا کنند.
+
+> 🔴 **بعد از پایان کار، `cpanel-doctor.php` و `.install-key` را حتماً از سرور پاک کنید.**
+
+---
+
 ## گام ۵: اجرای دستور راه‌اندازی در Terminal سی‌پنل
 
 در **cPanel → Terminal** دستورات زیر را اجرا کنید:
