@@ -242,6 +242,7 @@ if (includeVendor) {
   const rootFiles = [
     ['deploy/laravel-app/root-router.htaccess', 'root-router.htaccess'],
     ['deploy/laravel-app/cpanel-doctor.php', 'cpanel-doctor.php'],
+    ['deploy/laravel-app/where-am-i.php', 'where-am-i.php'],
   ];
   let bytes = 0;
   for (const [src, name] of rootFiles) {
@@ -255,7 +256,9 @@ if (includeVendor) {
     const zipName = 'taxi-cpanel-00-root-tools.zip';
     const zipPath = join(artifactsDir, zipName);
     rmSync(zipPath, { force: true });
-    execFileSync('zip', ['-qj', zipPath, 'root-router.htaccess', 'cpanel-doctor.php'], { cwd: stage, stdio: 'inherit' });
+    const names = ['root-router.htaccess', 'cpanel-doctor.php', 'where-am-i.php']
+      .filter(n => existsSync(join(stage, n)));
+    execFileSync('zip', ['-qj', zipPath, ...names], { cwd: stage, stdio: 'inherit' });
     if (existsSync(zipPath)) {
       built.unshift({
         id: '00-root-tools',
