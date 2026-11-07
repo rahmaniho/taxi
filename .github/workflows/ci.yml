@@ -37,7 +37,13 @@ jobs:
           node --check scripts/build-laravel-package.mjs
 
       - name: اجرای تمام تست‌های PWA و اشتراک
-        run: npm test
+        run: |
+          npm test > /tmp/node-tests.log 2>&1; status=$?
+          cat /tmp/node-tests.log
+          if [ $status -ne 0 ]; then
+            grep -E "^not ok|AssertionError|SyntaxError|TypeError|ERR_" /tmp/node-tests.log | head -25 | sed 's/^/::error::/' || true
+            exit 1
+          fi
 
       - name: بررسی سلامت اسناد کلیدی
         run: |
@@ -65,10 +71,19 @@ jobs:
       - name: نصب وابستگی‌های Composer و اجرای تست‌های Pest
         working-directory: laravel-backend
         run: |
-          composer install --no-interaction --prefer-dist --no-progress
-          cp .env.example .env
-          php artisan key:generate
-          ./vendor/bin/pest
+          set +e
+          (
+            composer install --no-interaction --prefer-dist --no-progress
+            cp .env.example .env
+            php artisan key:generate
+            ./vendor/bin/pest
+          ) > /tmp/pest.log 2>&1
+          status=$?
+          cat /tmp/pest.log
+          if [ $status -ne 0 ]; then
+            grep -E "FAILED|Error|Exception|Tests:.*failed|ParseError" /tmp/pest.log | head -25 | sed 's/^/::error::/' || true
+            exit 1
+          fi
 
       - name: ساخت بستهٔ آمادهٔ استقرار cPanel (شامل vendor تولیدی)
         run: |
