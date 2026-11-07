@@ -335,11 +335,28 @@ export function createDevServer() {
 
       if (pathname === '/api/login' && method === 'POST') {
         const body = await readJsonBody(request);
-        const email = String(body.email || '').trim().toLowerCase();
+        const toEn = s => String(s || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+        const normPhone = s => {
+          let d = toEn(s).replace(/\D+/g, '');
+          if (d.startsWith('0098') && d.length > 4) d = '0' + d.slice(4);
+          else if (d.startsWith('98') && d.length === 12) d = '0' + d.slice(2);
+          else if (d.length === 10 && d.startsWith('9')) d = '0' + d;
+          return d;
+        };
+        const identifier = toEn(body.email || '').trim().toLowerCase();
         const password = String(body.password || '');
-        const user = state.users.find(u => u.email.toLowerCase() === email && u.password === password);
-        if (!user) {
-          sendJson(response, 422, { message: 'ایمیل یا رمز عبور اشتباه است.', errors: { email: ['ایمیل یا رمز عبور اشتباه است.'] } });
+        let user = state.users.find(u => u.email.toLowerCase() === identifier && u.password === password)
+          || state.users.find(u => u.email.toLowerCase() === identifier);
+        if (!user && !identifier.includes('@')) {
+          const targetPhone = normPhone(identifier);
+          if (targetPhone.length >= 7) {
+            const matchingStores = state.stores.filter(s => s.phone && normPhone(s.phone) === targetPhone).map(s => s.id);
+            user = state.users.find(u => matchingStores.includes(u.store_id) && u.password === password)
+              || state.users.find(u => matchingStores.includes(u.store_id));
+          }
+        }
+        if (!user || user.password !== password) {
+          sendJson(response, 422, { message: 'شماره موبایل/ایمیل یا رمز عبور اشتباه است.', errors: { email: ['شماره موبایل/ایمیل یا رمز عبور اشتباه است.'] } });
           return;
         }
         if (!user.is_active) {

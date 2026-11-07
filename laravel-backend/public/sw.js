@@ -1,13 +1,14 @@
 /* Service Worker تاکسینو | Taxino · کش آفلاین برنامه و فایل‌های استاتیک */
 'use strict';
-const CACHE_VERSION = 'taxi-v1.5.0';
+const CACHE_VERSION = 'taxi-v1.5.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const LOGO_CACHE = 'taxi-logo-v1';
 const ROOT = new URL('./', self.registration.scope);
 const STATIC_FILES = [
   'taxi.html', 'manifest.json',
-  'icons/logo.png', 'icons/apple-touch-icon.png', 'icons/brand.svg',
+  'icons/logo.png', 'icons/logo-dark.png', 'icons/login-hero.jpg',
+  'icons/apple-touch-icon.png', 'icons/brand.svg',
   'icons/icon-72.png', 'icons/icon-96.png', 'icons/icon-128.png',
   'icons/icon-144.png', 'icons/icon-152.png', 'icons/icon-192.png',
   'icons/icon-384.png', 'icons/icon-512.png', 'icons/maskable-512.png'

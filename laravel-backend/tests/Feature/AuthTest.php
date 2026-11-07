@@ -80,6 +80,27 @@ it('returns the authenticated user from /api/me', function () {
         ->assertJsonPath('user.id', $manager->id);
 });
 
+it('logs a store user in using the agency mobile number (including Persian digits)', function () {
+    $store = Store::factory()->create([
+        'name' => 'آژانس تاکسینو تهران',
+        'phone' => '0912-345-6789',
+    ]);
+    $user = User::factory()->forStore($store)->create([
+        'email' => 'tehran@taxino.ir',
+        'password' => Hash::make('secret123'),
+    ]);
+
+    $this->postJson('/api/login', [
+        'email' => '۰۹۱۲۳۴۵۶۷۸۹',
+        'password' => 'secret123',
+    ])
+        ->assertOk()
+        ->assertJsonPath('user.role', 'store')
+        ->assertJsonPath('user.store.name', 'آژانس تاکسینو تهران');
+
+    $this->assertAuthenticatedAs($user);
+});
+
 it('requires authentication for protected endpoints', function () {
     $this->getJson('/api/me')->assertUnauthorized();
     $this->getJson('/api/manager/stores')->assertUnauthorized();
