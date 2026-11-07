@@ -104,7 +104,11 @@ Route::prefix('api')->group(function () {
                 ->middleware('throttle:60,1');
             Route::delete('stores/{store}', [StoreController::class, 'destroy'])
                 ->middleware('throttle:20,1');
+            Route::post('stores/{store}/archive', [StoreController::class, 'archive'])
+                ->middleware('throttle:30,1');
             Route::post('stores/{store}/restore', [StoreController::class, 'restore'])
+                ->middleware('throttle:30,1');
+            Route::post('stores/{store}/trial', [StoreController::class, 'grantTrial'])
                 ->middleware('throttle:30,1');
             Route::put('stores/{store}/license', [StoreController::class, 'updateLicense'])
                 ->middleware('throttle:60,1');
@@ -126,11 +130,11 @@ Route::prefix('api')->group(function () {
             Route::get('plans', [PlanController::class, 'index']);
             Route::post('plans', [PlanController::class, 'store'])
                 ->middleware('throttle:30,1');
-            Route::put('plans/{plan:code}', [PlanController::class, 'update'])
+            Route::put('plans/{planKey}', [PlanController::class, 'update'])
                 ->middleware('throttle:30,1');
-            Route::patch('plans/{plan:code}/toggle', [PlanController::class, 'toggle'])
+            Route::patch('plans/{planKey}/toggle', [PlanController::class, 'toggle'])
                 ->middleware('throttle:30,1');
-            Route::get('plans/{plan:code}/prices', [PlanController::class, 'prices']);
+            Route::get('plans/{planKey}/prices', [PlanController::class, 'prices']);
 
             Route::get('coupons', [CouponController::class, 'index']);
             Route::post('coupons', [CouponController::class, 'store'])
@@ -141,12 +145,12 @@ Route::prefix('api')->group(function () {
                 ->middleware('throttle:30,1');
 
             Route::get('subscribers', [SubscriberController::class, 'index']);
-            Route::get('subscribers/{license}', [SubscriberController::class, 'show']);
-            Route::post('subscribers/{license}/extend', [SubscriberController::class, 'extend'])
+            Route::get('subscribers/{licenseKey}', [SubscriberController::class, 'show']);
+            Route::post('subscribers/{licenseKey}/extend', [SubscriberController::class, 'extend'])
                 ->middleware('throttle:40,1');
-            Route::post('subscribers/{license}/status', [SubscriberController::class, 'status'])
+            Route::post('subscribers/{licenseKey}/status', [SubscriberController::class, 'status'])
                 ->middleware('throttle:40,1');
-            Route::post('subscribers/{license}/seats', [SubscriberController::class, 'seats'])
+            Route::post('subscribers/{licenseKey}/seats', [SubscriberController::class, 'seats'])
                 ->middleware('throttle:40,1');
         });
     });

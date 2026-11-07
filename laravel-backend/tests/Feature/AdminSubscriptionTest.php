@@ -23,8 +23,8 @@ function subscriberStore(array $licenseAttributes = []): array
 
     $license = License::create([
         'store_id' => $store->id,
-        'tier' => 'pro',
-        'plan_code' => 'pro',
+        'tier' => 'proplus',
+        'plan_code' => 'yearly',
         'seats' => 3,
         'status' => 'active',
         'is_active' => true,
@@ -41,12 +41,12 @@ it('مدیر فهرست پلن‌ها، فروش و درآمد هر پلن را 
 
     Order::create([
         'store_id' => $store->id,
-        'plan' => 'pro',
-        'tier' => 'pro',
+        'plan' => 'yearly',
+        'tier' => 'proplus',
         'months' => 12,
         'seats' => 2,
-        'amount' => 900_000,
-        'subtotal' => 900_000,
+        'amount' => 1_200_000,
+        'subtotal' => 1_200_000,
         'status' => Order::STATUS_PAID,
         'gateway' => 'manual',
         'paid_at' => now(),
@@ -56,11 +56,11 @@ it('مدیر فهرست پلن‌ها، فروش و درآمد هر پلن را 
 
     $plans = collect($response->json('plans'))->keyBy('code');
 
-    expect($plans)->toHaveCount(3)
-        ->and($plans['pro']['sales']['orders'])->toBe(1)
-        ->and($plans['pro']['sales']['revenue'])->toBe(900_000)
-        ->and($plans['basic']['sales']['revenue'])->toBe(0)
-        ->and($license->fresh()->plan_code)->toBe('pro');
+    expect($plans)->toHaveCount(5)
+        ->and($plans['yearly']['sales']['orders'])->toBe(1)
+        ->and($plans['yearly']['sales']['revenue'])->toBe(1_200_000)
+        ->and($plans['monthly']['sales']['revenue'])->toBe(0)
+        ->and($license->fresh()->plan_code)->toBe('yearly');
 });
 
 it('مدیر می‌تواند پلن بسازد و تعرفهٔ آن را تغییر دهد (با ثبت تاریخچه)', function () {
@@ -92,13 +92,13 @@ it('مدیر می‌تواند پلن بسازد و تعرفهٔ آن را تغ�
 
 it('پلن غیرفعال از فروش خارج می‌شود ولی داده‌اش می‌ماند', function () {
     $manager = adminUser();
-    $plan = SubscriptionPlan::where('code', 'basic')->firstOrFail();
+    $plan = SubscriptionPlan::where('code', 'monthly')->firstOrFail();
 
     $this->actingAs($manager)->patchJson("/api/manager/plans/{$plan->code}/toggle", ['is_active' => false])
         ->assertOk()
         ->assertJsonPath('plan.is_active', false);
 
-    $this->getJson('/api/subscription/plans')->assertOk()->assertJsonCount(2, 'plans');
+    $this->getJson('/api/subscription/plans')->assertOk()->assertJsonCount(4, 'plans');
     expect($plan->fresh())->not->toBeNull();
 });
 

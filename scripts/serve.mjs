@@ -5,8 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * سرور محلی توسعهٔ تاکسی کارن (سرو استاتیک PWA آفلاین + شبیه‌ساز سازگار با API لاراول KarenYar).
- * در محیط عملیاتی (Production)، سرور لاراول داخل `laravel-backend/` همین قراردادهای `/api/*` را اجرا می‌کند.
+ * سرور محلی توسعه و تست تاکسینو | Taxino (سرو استاتیک PWA آفلاین + شبیه‌ساز هم‌قرارداد با Laravel در `laravel-backend/`).
+ * تمام قیمت‌ها به تومان ذخیره می‌شوند و قراردادهای `/api/subscription/*` و `/api/manager/*` دقیقاً با کنترلرهای لاراول یکسان است.
  *
  * حساب‌های پیش‌فرض محیط توسعه:
  *   - مدیر کل سامانه:     admin@karensoft.ir  /  admin12345
@@ -24,39 +24,112 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.md': 'text/markdown; charset=utf-8',
+};
+
+const KARENSOFT_SUPPORT = {
+  company: 'کارن سافت | Karen Soft',
+  website: 'https://karen-soft.ir',
+  contact_url: 'https://karen-soft.ir/contact',
+  phone: '+989152521166',
+  phone_display: '۰۹۱۵۲۵۲۱۱۶۶',
+  email: 'info@karen-soft.ir',
+  telegram: 'https://t.me/KarenSoftOfficial',
+  telegram_handle: '@KarenSoftOfficial',
+  instagram: 'https://instagram.com/karen_soft.ir',
+  address: 'قزوین، زیباشهر، کارن سافت',
+  hours: 'شنبه تا چهارشنبه ۹:۰۰ تا ۱۸:۰۰ · پنج‌شنبه ۹:۰۰ تا ۱۳:۰۰',
+  crisp_website_id: 'ffafdfcf-e510-45d0-a026-4e964ad420ee',
 };
 
 function createSeedState() {
   const now = Date.now();
   const isoInDays = days => new Date(now + days * 86400000).toISOString();
-  const plans = [
-    { id: 1, code: 'basic', name: 'آژانس پایه', description: 'مناسب آژانس‌های تک‌اپراتوره', monthly_price_rial: 1900000, default_max_users: 1, is_active: true, sort_order: 1 },
-    { id: 2, code: 'pro', name: 'آژانس حرفه‌ای', description: 'چند اپراتور، صندوق شیفت و گزارش کامل', monthly_price_rial: 2900000, default_max_users: 3, is_active: true, sort_order: 2 },
-    { id: 3, code: 'proplus', name: 'سازمانی (ویژه)', description: 'بدون محدودیت تعداد اپراتور', monthly_price_rial: 4900000, default_max_users: null, is_active: true, sort_order: 3 },
+  const commonFeatures = [
+    'ثبت سفر، صف انتظار و نوبت‌دهی هوشمند رانندگان',
+    'حسابداری کامل، صورت‌حساب مشترکین و تسویه رانندگان',
+    'کارکرد آفلاین روی دستگاه + همگام‌سازی ابری آژانس',
+    'چاپ رسید، گزارش‌های مالی و پشتیبان‌گیری رمزنگاری‌شده',
   ];
+  const plans = [
+    {
+      id: 1, code: 'monthly', name: 'یک‌ماهه', tier: 'proplus',
+      description: 'مناسب شروع استفاده از تاکسینو و تجربه امکانات نرم‌افزار.',
+      duration_days: 30, months_count: 1, total_price: 150000, base_monthly: 150000, extra_user_monthly: 0,
+      min_seats: 1, max_seats: 50, is_lifetime: false, badge: null, is_featured: false,
+      features: commonFeatures, is_active: true, sort_order: 10,
+    },
+    {
+      id: 2, code: 'quarterly', name: 'سه‌ماهه', tier: 'proplus',
+      description: 'انتخابی اقتصادی برای استفاده میان‌مدت.',
+      duration_days: 90, months_count: 3, total_price: 420000, base_monthly: 140000, extra_user_monthly: 0,
+      min_seats: 1, max_seats: 50, is_lifetime: false, badge: '۳۰٬۰۰۰ تومان صرفه‌جویی', is_featured: false,
+      features: commonFeatures, is_active: true, sort_order: 20,
+    },
+    {
+      id: 3, code: 'semiannual', name: 'شش‌ماهه', tier: 'proplus',
+      description: 'مناسب دفاتر تاکسی تلفنی که به دنبال مدیریت اقتصادی‌تر اشتراک هستند.',
+      duration_days: 180, months_count: 6, total_price: 780000, base_monthly: 130000, extra_user_monthly: 0,
+      min_seats: 1, max_seats: 50, is_lifetime: false, badge: '۱۲۰٬۰۰۰ تومان صرفه‌جویی', is_featured: false,
+      features: commonFeatures, is_active: true, sort_order: 30,
+    },
+    {
+      id: 4, code: 'yearly', name: 'یک‌ساله', tier: 'proplus',
+      description: 'بهترین انتخاب برای استفاده مستمر و بدون دغدغه تمدید ماهانه.',
+      duration_days: 365, months_count: 12, total_price: 1200000, base_monthly: 100000, extra_user_monthly: 0,
+      min_seats: 1, max_seats: 50, is_lifetime: false, badge: 'پیشنهاد ویژه · بهترین انتخاب', is_featured: true,
+      features: commonFeatures, is_active: true, sort_order: 40,
+    },
+    {
+      id: 5, code: 'lifetime', name: 'مادام‌العمر', tier: 'proplus',
+      description: 'پرداخت یک‌باره و استفاده دائمی از نسخه خریداری‌شده مطابق شرایط لایسنس.',
+      duration_days: null, months_count: 0, total_price: 7000000, base_monthly: 7000000, extra_user_monthly: 0,
+      min_seats: 1, max_seats: 50, is_lifetime: true, badge: 'پرداخت یک‌باره | بدون تمدید دوره‌ای', is_featured: false,
+      features: [
+        'دسترسی دائمی به نسخه خریداری‌شده مطابق شرایط لایسنس',
+        'پرداخت یک‌باره بدون نیاز به تمدید ماهانه یا سالانه',
+        'کارکرد آفلاین روی دستگاه + همگام‌سازی ابری آژانس',
+        'شرایط به‌روزرسانی و پشتیبانی مطابق شرایط محصول',
+      ],
+      is_active: true, sort_order: 50,
+    },
+  ];
+  const priceHistory = plans.map((p, idx) => ({
+    id: idx + 1,
+    plan_code: p.code,
+    base_monthly: p.total_price,
+    extra_user_monthly: 0,
+    note: 'ثبت اولیه تعرفه رسمی تاکسینو',
+    changed_at: new Date(now - 30 * 86400000).toISOString(),
+  }));
   const stores = [
     {
       id: 1,
       name: 'آژانس تاکسی کارن',
+      slug: 'agency-karen',
       owner_name: 'رضا محمدی',
       phone: '02188776655',
       address: 'تهران، میدان ونک، خیابان ملاصدرا',
       admin_note: 'حساب نمایشی با اشتراک فعال سالانه',
       is_active: true,
       is_archived: false,
+      archived_at: null,
       created_at: new Date(now - 30 * 86400000).toISOString(),
     },
     {
       id: 2,
       name: 'آژانس نمونه منقضی',
+      slug: 'agency-expired',
       owner_name: 'سعید رضایی',
       phone: '02144332211',
       address: 'تهران، سعادت‌آباد',
       admin_note: 'حساب نمایشی برای تست حالت فقط‌خواندنی و پشتیبان‌گیری پس از انقضا',
       is_active: true,
       is_archived: false,
+      archived_at: null,
       created_at: new Date(now - 400 * 86400000).toISOString(),
     },
   ];
@@ -64,46 +137,50 @@ function createSeedState() {
     {
       id: 1,
       store_id: 1,
-      plan_id: 2,
-      plan_code: 'pro',
-      plan_name: 'آژانس حرفه‌ای',
+      tier: 'proplus',
+      plan_code: 'yearly',
+      plan_name: 'یک‌ساله',
       status: 'active',
       is_active: true,
       is_lifetime: false,
       is_trial: false,
       starts_at: new Date(now - 30 * 86400000).toISOString(),
       expires_at: isoInDays(335),
+      seats: 3,
       max_users: 3,
-      notes: '',
+      notes: 'اشتراک فعال',
     },
     {
       id: 2,
       store_id: 2,
-      plan_id: 1,
-      plan_code: 'basic',
-      plan_name: 'آژانس پایه',
+      tier: 'proplus',
+      plan_code: 'monthly',
+      plan_name: 'یک‌ماهه',
       status: 'expired',
       is_active: true,
       is_lifetime: false,
       is_trial: false,
-      starts_at: new Date(now - 395 * 86400000).toISOString(),
+      starts_at: new Date(now - 40 * 86400000).toISOString(),
       expires_at: isoInDays(-10),
+      seats: 1,
       max_users: 1,
       notes: 'اشتراک منقضی‌شده',
     },
   ];
   const users = [
-    { id: 1, store_id: null, name: 'مدیر کل کارن‌سافت', email: 'admin@karensoft.ir', password: 'admin12345', role: 'manager', is_active: true, created_at: new Date(now - 60 * 86400000).toISOString() },
-    { id: 2, store_id: 1, name: 'اپراتور آژانس کارن', email: 'agency@taxi.ir', password: 'taxi12345', role: 'store', is_active: true, created_at: new Date(now - 30 * 86400000).toISOString() },
-    { id: 3, store_id: 2, name: 'اپراتور آژانس منقضی', email: 'expired@taxi.ir', password: 'taxi12345', role: 'store', is_active: true, created_at: new Date(now - 400 * 86400000).toISOString() },
+    { id: 1, store_id: null, name: 'مدیر کل کارن‌سافت', email: 'admin@karensoft.ir', phone: '09152521166', password: 'admin12345', role: 'manager', is_active: true, created_at: new Date(now - 60 * 86400000).toISOString() },
+    { id: 2, store_id: 1, name: 'اپراتور آژانس کارن', email: 'agency@taxi.ir', phone: '09121112233', password: 'taxi12345', role: 'store', is_active: true, created_at: new Date(now - 30 * 86400000).toISOString() },
+    { id: 3, store_id: 2, name: 'اپراتور آژانس منقضی', email: 'expired@taxi.ir', phone: '09124445566', password: 'taxi12345', role: 'store', is_active: true, created_at: new Date(now - 400 * 86400000).toISOString() },
   ];
   return {
-    nextIds: { store: 3, license: 3, user: 4, plan: 4, order: 1, coupon: 1, history: 1, invoice: 1, audit: 1 },
+    nextIds: { store: 3, license: 3, user: 4, plan: 6, order: 1, coupon: 1, history: 1, invoice: 1, payment: 1, audit: 1, priceHistory: 6 },
     plans,
+    priceHistory,
     stores,
     licenses,
     users,
     orders: [],
+    payments: [],
     coupons: [],
     history: [],
     invoices: [],
@@ -111,6 +188,16 @@ function createSeedState() {
     sessions: new Map(),
     csrfTokens: new Set(),
     syncStates: new Map(),
+    zarinpalEnabled: Boolean(process.env.ZARINPAL_MERCHANT_ID),
+    zarinpalSandbox: process.env.ZARINPAL_SANDBOX !== 'false',
+    zarinpalApprove: true,
+    taxPercent: Number(process.env.TAXI_TAX_PERCENT) || 0,
+    bank: {
+      holder: process.env.TAXI_BANK_HOLDER || 'کارن سافت',
+      card: process.env.TAXI_BANK_CARD || '',
+      sheba: process.env.TAXI_BANK_SHEBA || '',
+      account: process.env.TAXI_BANK_ACCOUNT || '',
+    },
   };
 }
 
@@ -204,32 +291,145 @@ function mergeAgencySyncPayload(serverData, clientData) {
   return { merged, recordsCount };
 }
 
+function serializePlan(state, plan) {
+  const isLifetime = !!plan.is_lifetime;
+  const totalPrice = plan.total_price != null ? Number(plan.total_price) : Number(plan.base_monthly || 0);
+  const monthsCount = isLifetime ? 0 : Math.max(1, Number(plan.months_count || 1));
+  const durationDays = isLifetime ? null : (plan.duration_days != null ? Number(plan.duration_days) : monthsCount * 30);
+  const monthlyEq = isLifetime ? null : Math.round(totalPrice / monthsCount);
+  const refMonthly = state.plans.find(p => p.code === 'monthly')?.total_price || 150000;
+  const savings = (!isLifetime && monthsCount > 1) ? Math.max(0, refMonthly * monthsCount - totalPrice) : 0;
+  return {
+    id: plan.id,
+    code: plan.code,
+    name: plan.name,
+    tier: plan.tier || 'proplus',
+    description: plan.description || '',
+    duration_days: durationDays,
+    months_count: monthsCount,
+    price: totalPrice,
+    total_price: totalPrice,
+    monthly_equivalent: monthlyEq,
+    savings,
+    base_monthly: Number(plan.base_monthly || totalPrice),
+    extra_user_monthly: Number(plan.extra_user_monthly || 0),
+    min_seats: Number(plan.min_seats || 1),
+    max_seats: Number(plan.max_seats || 50),
+    is_lifetime: isLifetime,
+    badge: plan.badge || null,
+    is_featured: !!plan.is_featured,
+    payment_type: isLifetime ? 'یک‌باره' : 'دوره‌ای',
+    renewal_type: isLifetime ? 'بدون نیاز به تمدید دوره‌ای' : 'قابل تمدید در پایان دوره',
+    updates_policy: 'طبق شرایط محصول',
+    support_policy: 'طبق شرایط محصول',
+    features: Array.isArray(plan.features) ? plan.features : [],
+    is_active: plan.is_active !== false,
+    sort_order: Number(plan.sort_order || 10),
+  };
+}
+
+function computeQuote(state, plan, seats = 1, months = null, coupon = null) {
+  const isLifetime = !!plan.is_lifetime;
+  const effectiveMonths = isLifetime ? 1 : Math.max(1, Number(plan.months_count || months || 1));
+  const durationDays = isLifetime ? null : (plan.duration_days != null ? Number(plan.duration_days) : effectiveMonths * 30);
+  const baseTotal = plan.total_price != null ? Number(plan.total_price) : Number(plan.base_monthly || 0) * effectiveMonths;
+  const extraUsers = Math.max(0, seats - 1);
+  const extraMonthly = Number(plan.extra_user_monthly || 0) * extraUsers;
+  const extraTotal = isLifetime ? extraMonthly : extraMonthly * effectiveMonths;
+  const subtotal = baseTotal + extraTotal;
+  let discount = 0;
+  if (coupon) {
+    discount = coupon.type === 'percent'
+      ? Math.round((subtotal * Number(coupon.value || 0)) / 100)
+      : Number(coupon.value || 0);
+    discount = Math.max(0, Math.min(subtotal, discount));
+  }
+  const afterDiscount = Math.max(0, subtotal - discount);
+  const taxPercent = Math.max(0, Number(state.taxPercent || 0));
+  const tax = taxPercent > 0 ? Math.round((afterDiscount * taxPercent) / 100) : 0;
+  const total = afterDiscount + tax;
+  const monthlyEq = isLifetime ? null : Math.round(subtotal / effectiveMonths);
+  return {
+    product_name: 'تاکسینو',
+    plan_code: plan.code,
+    plan_name: plan.name,
+    tier: plan.tier || 'proplus',
+    seats,
+    extra_users: extraUsers,
+    months: effectiveMonths,
+    duration_days: durationDays,
+    is_lifetime: isLifetime,
+    base_monthly: Number(plan.base_monthly || baseTotal),
+    extra_user_monthly: Number(plan.extra_user_monthly || 0),
+    extra_monthly: extraMonthly,
+    monthly_total: monthlyEq || subtotal,
+    monthly_equivalent: monthlyEq,
+    base_total: baseTotal,
+    extra_total: extraTotal,
+    subtotal,
+    discount,
+    tax_percent: taxPercent,
+    tax,
+    total,
+    coupon_code: coupon?.code || null,
+    currency: 'toman',
+  };
+}
+
 function formatLicense(state, lic) {
   if (!lic) return null;
   const now = Date.now();
-  const expMs = lic.expires_at ? Date.parse(lic.expires_at) : NaN;
-  const isExpired = !lic.is_lifetime && (!Number.isFinite(expMs) || now >= expMs);
-  const effectiveStatus = !lic.is_active ? 'suspended' : (lic.status === 'suspended' || lic.status === 'canceled' ? lic.status : (isExpired ? 'expired' : 'active'));
-  const isValid = lic.is_active && effectiveStatus === 'active' && (lic.is_lifetime || !isExpired);
-  const daysRemaining = lic.is_lifetime ? null : (Number.isFinite(expMs) ? Math.max(0, Math.ceil((expMs - now) / 86400000)) : 0);
+  const isLifetime = !!lic.is_lifetime;
+  const expMs = !isLifetime && lic.expires_at ? Date.parse(lic.expires_at) : NaN;
+  const isExpired = !isLifetime && (!Number.isFinite(expMs) || now >= expMs);
+  const effectiveStatus = !lic.is_active
+    ? 'suspended'
+    : (lic.status === 'suspended' || lic.status === 'canceled'
+      ? lic.status
+      : (isLifetime ? 'active' : (isExpired ? 'expired' : 'active')));
+  const isValid = !!lic.is_active && effectiveStatus === 'active' && (isLifetime || !isExpired);
+  const daysRemaining = isLifetime ? null : (Number.isFinite(expMs) ? Math.max(0, Math.ceil((expMs - now) / 86400000)) : 0);
+  const seats = Math.max(1, Number(lic.seats || lic.max_users || 1));
   const activeUsers = state.users.filter(u => u.store_id === lic.store_id && u.is_active).length;
+  const totalUsers = state.users.filter(u => u.store_id === lic.store_id).length;
   const store = state.stores.find(s => s.id === lic.store_id) || null;
+  const primaryUser = state.users.find(u => u.store_id === lic.store_id) || null;
+  const planRow = state.plans.find(p => p.code === lic.plan_code);
+  const planName = planRow?.name || lic.plan_name || (isLifetime ? 'مادام‌العمر' : 'اشتراک تاکسینو');
+  const lastPaid = state.orders.find(o => o.store_id === lic.store_id && o.status === 'paid');
   return {
     ...lic,
+    plan_name: planName,
+    seats,
+    max_users: seats,
+    is_lifetime: isLifetime,
+    expires_at: isLifetime ? null : lic.expires_at,
     status: effectiveStatus,
     is_valid: isValid,
+    is_expired: isExpired,
     days_remaining: daysRemaining,
     active_users: activeUsers,
-    store: store ? { id: store.id, name: store.name, phone: store.phone } : undefined,
+    total_users: totalUsers,
+    email: primaryUser?.email || null,
+    store_name: store?.name || null,
+    owner_name: store?.owner_name || null,
+    phone: store?.phone || null,
+    last_transaction: lastPaid?.reference_id || null,
+    store: store ? { id: store.id, name: store.name, owner_name: store.owner_name, phone: store.phone, email: primaryUser?.email || null } : undefined,
   };
 }
 
 function formatStore(state, store) {
   if (!store) return null;
   const lic = state.licenses.find(l => l.store_id === store.id) || null;
-  const users = state.users.filter(u => u.store_id === store.id).map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, is_active: u.is_active }));
+  const users = state.users
+    .filter(u => u.store_id === store.id)
+    .map(u => ({ id: u.id, name: u.name, email: u.email, phone: u.phone || null, role: u.role, is_active: u.is_active }));
   return {
     ...store,
+    email: users[0]?.email || null,
+    users_count: users.length,
+    active_users_count: users.filter(u => u.is_active).length,
     license: formatLicense(state, lic),
     users,
   };
@@ -242,12 +442,142 @@ function formatUser(state, user) {
     id: user.id,
     name: user.name,
     email: user.email,
+    phone: user.phone || null,
     role: user.role,
     is_active: user.is_active,
     store_id: user.store_id,
     created_at: user.created_at,
     store: formatStore(state, store),
   };
+}
+
+function formatOrder(state, order) {
+  const store = state.stores.find(s => s.id === order.store_id) || null;
+  const inv = state.invoices.find(i => i.order_id === order.id) || null;
+  return {
+    id: order.id,
+    store_id: order.store_id,
+    store_name: store?.name || null,
+    plan: order.plan,
+    plan_label: order.plan_label || order.plan,
+    tier: order.tier || 'proplus',
+    type: order.type || 'new',
+    months: order.months,
+    duration_days: order.price_snapshot?.duration_days ?? null,
+    seats: order.seats,
+    subtotal: order.subtotal,
+    discount: order.discount || 0,
+    coupon_code: order.coupon_code || null,
+    is_lifetime: !!order.is_lifetime,
+    amount: order.amount,
+    status: order.status,
+    gateway: order.gateway,
+    reference_id: order.reference_id || null,
+    paid_at: order.paid_at || null,
+    created_at: order.created_at,
+    instructions: order.instructions || null,
+    invoice_number: inv?.number || null,
+    invoice_voided: !!inv?.voided_at,
+    voided_at: order.voided_at || null,
+    void_reason: order.void_reason || null,
+    is_voided: order.status === 'voided',
+    price_snapshot: order.price_snapshot || null,
+  };
+}
+
+function availableGateways(state) {
+  const list = [{ key: 'manual', label: 'کارت به کارت / هماهنگی با پشتیبانی کارن‌سافت', mode: 'manual' }];
+  if (state.zarinpalEnabled) {
+    list.unshift({
+      key: 'zarinpal',
+      label: 'درگاه پرداخت آنلاین زرین‌پال',
+      mode: state.zarinpalSandbox ? 'sandbox' : 'live',
+    });
+  }
+  return list;
+}
+
+function completeOrder(state, order, referenceId) {
+  if (order.status === 'paid') return order;
+  let lic = state.licenses.find(l => l.store_id === order.store_id);
+  const plan = state.plans.find(p => p.code === order.plan);
+  const isLifetime = !!(order.is_lifetime || plan?.is_lifetime);
+  const durationDays = order.price_snapshot?.duration_days != null
+    ? Number(order.price_snapshot.duration_days)
+    : (plan?.duration_days != null ? Number(plan.duration_days) : Number(order.months || 1) * 30);
+
+  if (!lic) {
+    lic = {
+      id: state.nextIds.license++,
+      store_id: order.store_id,
+      starts_at: new Date().toISOString(),
+    };
+    state.licenses.push(lic);
+  }
+  const baseMs = (!lic.is_lifetime && lic.expires_at && Date.parse(lic.expires_at) > Date.now())
+    ? Date.parse(lic.expires_at)
+    : Date.now();
+
+  Object.assign(lic, {
+    tier: order.tier || 'proplus',
+    plan_code: order.plan,
+    plan_name: order.plan_label || plan?.name || order.plan,
+    seats: Math.max(1, Number(order.seats || 1)),
+    max_users: Math.max(1, Number(order.seats || 1)),
+    status: 'active',
+    is_active: true,
+    is_trial: false,
+    is_lifetime: isLifetime,
+    starts_at: lic.starts_at || new Date().toISOString(),
+    expires_at: isLifetime ? null : new Date(baseMs + durationDays * 86400000).toISOString(),
+    notes: isLifetime ? 'اشتراک مادام‌العمر' : 'اشتراک فعال',
+  });
+
+  order.status = 'paid';
+  order.paid_at = new Date().toISOString();
+  order.reference_id = referenceId || order.reference_id || `REF-${order.id}`;
+
+  const payment = state.payments.find(p => p.order_id === order.id && p.status === 'pending');
+  if (payment) {
+    payment.status = 'paid';
+    payment.reference_id = order.reference_id;
+    payment.verified_at = order.paid_at;
+  }
+
+  if (order.coupon_code) {
+    const cp = state.coupons.find(c => c.code === order.coupon_code);
+    if (cp) cp.used_count = (cp.used_count || 0) + 1;
+  }
+
+  const invNumber = `KS-${new Date().getFullYear()}-${String(state.nextIds.invoice++).padStart(5, '0')}`;
+  state.invoices.unshift({
+    number: invNumber,
+    order_id: order.id,
+    store_id: order.store_id,
+    plan_code: order.plan,
+    plan_name: order.plan_label,
+    seats: order.seats,
+    months: order.months,
+    subtotal: order.subtotal,
+    discount: order.discount || 0,
+    total: order.amount,
+    currency: 'toman',
+    snapshot: order.price_snapshot,
+    issued_at: order.paid_at,
+    voided_at: null,
+  });
+
+  state.history.unshift({
+    id: state.nextIds.history++,
+    store_id: order.store_id,
+    license_id: lic.id,
+    action: order.type === 'renewal' ? 'subscription_renewed' : 'subscription_started',
+    reason: `پرداخت سفارش #${order.id}`,
+    payload: { order_id: order.id, plan_code: order.plan, amount: order.amount, expires_at: lic.expires_at },
+    created_at: order.paid_at,
+  });
+
+  return order;
 }
 
 function parseCookies(header) {
@@ -282,17 +612,29 @@ export function createDevServer() {
   const state = createSeedState();
 
   function logAudit(user, action, storeId = null, meta = {}) {
+    const store = storeId ? state.stores.find(s => s.id === storeId) : null;
     state.audit.unshift({
       id: state.nextIds.audit++,
       action,
-      user_id: user?.id || null,
-      user_name: user?.name || null,
-      user_email: user?.email || null,
-      store_id: storeId,
+      storeId,
+      storeName: store?.name || null,
+      userName: user?.name || null,
+      userEmail: user?.email || null,
       ip: '127.0.0.1',
       meta,
-      created_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     });
+  }
+
+  function resolveCoupon(code) {
+    if (!code) return null;
+    const norm = String(code).trim().toUpperCase();
+    if (!norm) return null;
+    const cp = state.coupons.find(c => c.code === norm && c.is_active !== false);
+    if (!cp) return { error: 'کد تخفیف معتبر یا فعال نیست.' };
+    if (cp.max_uses && (cp.used_count || 0) >= cp.max_uses) return { error: 'سقف استفاده از این کد تخفیف تکمیل شده است.' };
+    if (cp.expires_at && Date.parse(cp.expires_at) < Date.now()) return { error: 'مهلت استفاده از این کد تخفیف به پایان رسیده است.' };
+    return { coupon: cp };
   }
 
   const server = http.createServer(async (request, response) => {
@@ -301,7 +643,7 @@ export function createDevServer() {
     const method = request.method || 'GET';
 
     if (pathname === '/up') {
-      sendJson(response, 200, { ok: true, service: 'karnsoft-taxi' });
+      sendJson(response, 200, { ok: true, service: 'karensoft-taxino' });
       return;
     }
 
@@ -317,6 +659,77 @@ export function createDevServer() {
         sendJson(response, 200, { csrf_token: token }, {
           'Set-Cookie': [`XSRF-TOKEN=${encodeURIComponent(token)}; Path=/; SameSite=Lax`],
         });
+        return;
+      }
+
+      // مسیرهای عمومی اشتراک (بدون نیاز به ورود)
+      if (pathname === '/api/subscription/plans' && method === 'GET') {
+        sendJson(response, 200, {
+          product_name: 'تاکسینو',
+          brand_name: 'کارن سافت',
+          slogan: 'همه‌چیز تحت کنترل شما',
+          plans: state.plans.filter(p => p.is_active !== false).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(p => serializePlan(state, p)),
+          gateways: availableGateways(state),
+          default_gateway: state.zarinpalEnabled ? 'zarinpal' : 'manual',
+          currency: 'toman',
+          currency_label: 'تومان',
+          tax_percent: state.taxPercent,
+          trial_days: 14,
+          public_registration: false,
+          support: KARENSOFT_SUPPORT,
+        });
+        return;
+      }
+
+      if (pathname === '/api/subscription/quote' && method === 'GET') {
+        const planCode = String(url.searchParams.get('plan_code') || '').trim().toLowerCase();
+        const plan = state.plans.find(p => p.code === planCode && p.is_active !== false);
+        if (!plan) {
+          sendJson(response, 422, { message: 'پلن انتخاب‌شده معتبر یا فعال نیست.', errors: { plan_code: ['پلن انتخاب‌شده معتبر یا فعال نیست.'] } });
+          return;
+        }
+        const seats = Math.max(1, Number(url.searchParams.get('seats') || 1));
+        if (seats > (plan.max_seats || 50)) {
+          sendJson(response, 422, { message: 'تعداد کاربر خارج از سقف مجاز پلن است.', errors: { seats: ['تعداد کاربر خارج از سقف مجاز پلن است.'] } });
+          return;
+        }
+        const cpRes = resolveCoupon(url.searchParams.get('coupon_code'));
+        if (cpRes?.error) {
+          sendJson(response, 422, { message: cpRes.error, errors: { coupon_code: [cpRes.error] } });
+          return;
+        }
+        const quote = computeQuote(state, plan, seats, url.searchParams.get('months'), cpRes?.coupon || null);
+        sendJson(response, 200, { quote });
+        return;
+      }
+
+      if (pathname === '/api/billing/callback' && method === 'GET') {
+        const orderId = Number(url.searchParams.get('order') || 0);
+        const order = state.orders.find(o => o.id === orderId);
+        if (!order) {
+          response.writeHead(302, { Location: '/?billing=missing#subscription' }).end();
+          return;
+        }
+        if (order.status === 'paid') {
+          response.writeHead(302, { Location: `/?billing=paid&order=${order.id}#subscription` }).end();
+          return;
+        }
+        const statusParam = String(url.searchParams.get('Status') || 'OK').toUpperCase();
+        const canVerify = order.gateway === 'zarinpal' && statusParam === 'OK' && state.zarinpalApprove;
+        if (!canVerify) {
+          if (order.status === 'pending') {
+            order.status = 'failed';
+            const p = state.payments.find(x => x.order_id === order.id && x.status === 'pending');
+            if (p) p.status = 'failed';
+            logAudit(null, 'order_failed', order.store_id, { order_id: order.id });
+          }
+          response.writeHead(302, { Location: `/?billing=failed&order=${order.id}#subscription` }).end();
+          return;
+        }
+        const refId = String(url.searchParams.get('RefID') || `ZP-${100000 + order.id}`);
+        completeOrder(state, order, refId);
+        logAudit(null, 'order_paid', order.store_id, { order_id: order.id, reference: refId });
+        response.writeHead(302, { Location: `/?billing=paid&order=${order.id}#subscription` }).end();
         return;
       }
 
@@ -350,9 +763,13 @@ export function createDevServer() {
         if (!user && !identifier.includes('@')) {
           const targetPhone = normPhone(identifier);
           if (targetPhone.length >= 7) {
-            const matchingStores = state.stores.filter(s => s.phone && normPhone(s.phone) === targetPhone).map(s => s.id);
-            user = state.users.find(u => matchingStores.includes(u.store_id) && u.password === password)
-              || state.users.find(u => matchingStores.includes(u.store_id));
+            user = state.users.find(u => u.phone && normPhone(u.phone) === targetPhone && u.password === password)
+              || state.users.find(u => u.phone && normPhone(u.phone) === targetPhone);
+            if (!user) {
+              const matchingStores = state.stores.filter(s => s.phone && normPhone(s.phone) === targetPhone).map(s => s.id);
+              user = state.users.find(u => matchingStores.includes(u.store_id) && u.password === password)
+                || state.users.find(u => matchingStores.includes(u.store_id));
+            }
           }
         }
         if (!user || user.password !== password) {
@@ -372,8 +789,13 @@ export function createDevServer() {
         }
         const sid = crypto.randomBytes(24).toString('hex');
         state.sessions.set(sid, user.id);
-        logAudit(user, 'auth.login', user.store_id);
-        sendJson(response, 200, { user: formatUser(state, user), server_time: new Date().toISOString() }, {
+        logAudit(user, 'user_logged_in', user.store_id);
+        const formattedUser = formatUser(state, user);
+        sendJson(response, 200, {
+          user: formattedUser,
+          license: formattedUser.store?.license || null,
+          server_time: new Date().toISOString(),
+        }, {
           'Set-Cookie': [`taxi_session=${sid}; Path=/; HttpOnly; SameSite=Lax`],
         });
         return;
@@ -381,7 +803,7 @@ export function createDevServer() {
 
       if (pathname === '/api/logout' && method === 'POST') {
         if (sessionId) state.sessions.delete(sessionId);
-        if (currentUser) logAudit(currentUser, 'auth.logout', currentUser.store_id);
+        if (currentUser) logAudit(currentUser, 'user_logged_out', currentUser.store_id);
         sendJson(response, 200, { ok: true }, {
           'Set-Cookie': ['taxi_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax'],
         });
@@ -394,7 +816,151 @@ export function createDevServer() {
       }
 
       if (pathname === '/api/me' && method === 'GET') {
-        sendJson(response, 200, { user: formatUser(state, currentUser), server_time: new Date().toISOString() });
+        const formattedUser = formatUser(state, currentUser);
+        sendJson(response, 200, {
+          user: formattedUser,
+          license: formattedUser.store?.license || null,
+          server_time: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // مسیرهای اشتراک سمت آژانس
+      if (pathname === '/api/subscription' && method === 'GET') {
+        if (!currentUser.store_id) {
+          sendJson(response, 422, { message: 'حساب مدیر کل به آژانس خاصی متصل نیست.' });
+          return;
+        }
+        const lic = formatLicense(state, state.licenses.find(l => l.store_id === currentUser.store_id));
+        const storeOrders = state.orders.filter(o => o.store_id === currentUser.store_id).map(o => formatOrder(state, o));
+        const storeInvoices = state.invoices.filter(i => i.store_id === currentUser.store_id).map(i => ({ ...i, is_voided: !!i.voided_at }));
+        sendJson(response, 200, {
+          product_name: 'تاکسینو',
+          brand_name: 'کارن سافت',
+          tax_percent: state.taxPercent,
+          license: lic,
+          usage: { active_users: lic?.active_users || 1, seats: lic?.seats || 1 },
+          orders: storeOrders,
+          invoices: storeInvoices,
+          plans: state.plans.filter(p => p.is_active !== false).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(p => serializePlan(state, p)),
+          gateways: availableGateways(state),
+          default_gateway: state.zarinpalEnabled ? 'zarinpal' : 'manual',
+          currency: 'toman',
+          currency_label: 'تومان',
+          pending_order: storeOrders.find(o => o.status === 'pending') || null,
+          bank: state.bank,
+          support: KARENSOFT_SUPPORT,
+        });
+        return;
+      }
+
+      if (pathname === '/api/subscription/status' && method === 'GET') {
+        const lic = currentUser.store_id ? formatLicense(state, state.licenses.find(l => l.store_id === currentUser.store_id)) : null;
+        const orderId = Number(url.searchParams.get('order') || 0);
+        const order = orderId && currentUser.store_id
+          ? state.orders.find(o => o.id === orderId && o.store_id === currentUser.store_id)
+          : null;
+        sendJson(response, 200, {
+          subscription: lic ? {
+            plan_code: lic.plan_code,
+            plan_name: lic.plan_name,
+            tier: lic.tier,
+            seats: lic.seats,
+            status: lic.status,
+            is_trial: lic.is_trial,
+            is_lifetime: lic.is_lifetime,
+            starts_at: lic.starts_at,
+            expires_at: lic.expires_at,
+            days_remaining: lic.days_remaining,
+          } : null,
+          license: lic,
+          order: order ? formatOrder(state, order) : null,
+        });
+        return;
+      }
+
+      if (pathname === '/api/subscription/checkout' && method === 'POST') {
+        if (!currentUser.store_id) {
+          sendJson(response, 422, { message: 'آژانس برای این کاربر تعریف نشده است.' });
+          return;
+        }
+        const body = await readJsonBody(request);
+        const planCode = String(body.plan_code || '').trim().toLowerCase();
+        const plan = state.plans.find(p => p.code === planCode && p.is_active !== false);
+        if (!plan) {
+          sendJson(response, 422, { message: 'پلن انتخاب‌شده معتبر یا فعال نیست.', errors: { plan_code: ['پلن انتخاب‌شده معتبر یا فعال نیست.'] } });
+          return;
+        }
+        const cpRes = resolveCoupon(body.coupon_code);
+        if (cpRes?.error) {
+          sendJson(response, 422, { message: cpRes.error, errors: { coupon_code: [cpRes.error] } });
+          return;
+        }
+        const curLic = state.licenses.find(l => l.store_id === currentUser.store_id);
+        const seats = Math.max(1, Number(body.seats || curLic?.seats || 1));
+        const gateway = String(body.gateway || (state.zarinpalEnabled ? 'zarinpal' : 'manual'));
+        if (gateway === 'zarinpal' && !state.zarinpalEnabled) {
+          sendJson(response, 422, { message: 'درگاه آنلاین زرین‌پال هنوز فعال نشده است؛ از روش ثبت سفارش/پشتیبانی استفاده کنید.', errors: { gateway: ['درگاه آنلاین فعال نیست.'] } });
+          return;
+        }
+        const quote = computeQuote(state, plan, seats, body.months, cpRes?.coupon || null);
+        const formattedCurLic = formatLicense(state, curLic);
+        const orderType = !formattedCurLic || !formattedCurLic.is_valid
+          ? 'new'
+          : (plan.is_lifetime && !formattedCurLic.is_lifetime ? 'upgrade' : 'renewal');
+        const orderId = state.nextIds.order++;
+        const redirectUrl = gateway === 'zarinpal' ? `/api/billing/callback?order=${orderId}&Authority=A${String(orderId).padStart(10, '0')}&Status=OK` : null;
+        const instructions = gateway === 'manual'
+          ? `مبلغ ${quote.total.toLocaleString('en-US')} تومان — شناسه سفارش: #${orderId} (برای فعال‌سازی آنی، شماره پیگیری را به پشتیبانی کارن‌سافت اعلام کنید)`
+          : null;
+        const order = {
+          id: orderId,
+          store_id: currentUser.store_id,
+          user_id: currentUser.id,
+          plan: quote.plan_code,
+          plan_label: quote.plan_name,
+          tier: quote.tier,
+          type: orderType,
+          months: quote.months,
+          seats: quote.seats,
+          subtotal: quote.subtotal,
+          discount: quote.discount,
+          coupon_code: quote.coupon_code,
+          price_snapshot: quote,
+          is_lifetime: quote.is_lifetime,
+          amount: quote.total,
+          status: 'pending',
+          gateway,
+          reference_id: null,
+          instructions,
+          created_at: new Date().toISOString(),
+        };
+        state.orders.unshift(order);
+        state.payments.unshift({
+          id: state.nextIds.payment++,
+          order_id: order.id,
+          store_id: order.store_id,
+          gateway,
+          amount: order.amount,
+          status: 'pending',
+          reference_id: null,
+          created_at: order.created_at,
+        });
+        logAudit(currentUser, 'order_created', currentUser.store_id, { order_id: order.id, plan: order.plan, amount: order.amount });
+        sendJson(response, 201, {
+          order: formatOrder(state, order),
+          redirect_url: redirectUrl,
+          instructions,
+        });
+        return;
+      }
+
+      const invMatch = pathname.match(/^\/api\/subscription\/invoices\/([^/]+)$/);
+      if (invMatch && method === 'GET') {
+        const inv = state.invoices.find(i => i.number === invMatch[1] && i.store_id === currentUser.store_id);
+        if (!inv) { sendJson(response, 404, { message: 'فاکتور یافت نشد.' }); return; }
+        const st = state.stores.find(s => s.id === currentUser.store_id);
+        sendJson(response, 200, { invoice: { ...inv, is_voided: !!inv.voided_at, store: { name: st?.name || '' } } });
         return;
       }
 
@@ -451,27 +1017,76 @@ export function createDevServer() {
 
         if (pathname === '/api/manager/dashboard' && method === 'GET') {
           const formattedLics = state.licenses.map(l => formatLicense(state, l));
-          const active = formattedLics.filter(l => l.is_valid && !l.is_trial).length;
-          const trial = formattedLics.filter(l => l.is_valid && l.is_trial).length;
-          const exp7 = formattedLics.filter(l => l.is_valid && !l.is_lifetime && l.days_remaining <= 7).length;
-          const expired = formattedLics.filter(l => !l.is_valid).length;
-          const soon = formattedLics
-            .filter(l => l.is_valid && !l.is_lifetime && l.days_remaining <= 14)
-            .map(l => ({ store_id: l.store_id, store_name: l.store?.name || '', plan_name: l.plan_name, expires_at: l.expires_at, days_remaining: l.days_remaining }));
-          const byPlan = {};
-          for (const l of formattedLics.filter(x => x.is_valid)) byPlan[l.plan_name] = (byPlan[l.plan_name] || 0) + 1;
+          const activeList = formattedLics.filter(l => l.is_valid);
+          const subsActive = activeList.length;
+          const subsLifetime = activeList.filter(l => l.is_lifetime).length;
+          const subsTrial = activeList.filter(l => l.is_trial).length;
+          const exp7 = activeList.filter(l => !l.is_lifetime && l.days_remaining <= 7).length;
+          const subsExpired = formattedLics.filter(l => l.status === 'expired').length;
+          const subsSuspended = formattedLics.filter(l => l.status === 'suspended').length;
+          const paidOrders = state.orders.filter(o => o.status === 'paid');
+          const revenueTotal = paidOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
+          let mrr = 0;
+          for (const l of activeList.filter(x => !x.is_lifetime && !x.is_trial)) {
+            const p = state.plans.find(pl => pl.code === l.plan_code);
+            if (p) mrr += Math.round((p.total_price || p.base_monthly || 0) / Math.max(1, p.months_count || 1));
+          }
+          const soon = activeList
+            .filter(l => !l.is_lifetime && l.days_remaining <= 14)
+            .map(l => ({
+              license_id: l.id,
+              store_id: l.store_id,
+              store_name: l.store?.name || '',
+              email: l.email || '',
+              plan_code: l.plan_code,
+              plan_name: l.plan_name,
+              expires_at: l.expires_at,
+              days_remaining: l.days_remaining,
+            }));
+          const planBreakdown = state.plans.map(p => {
+            const activeForPlan = activeList.filter(l => l.plan_code === p.code);
+            const paidForPlan = paidOrders.filter(o => o.plan === p.code);
+            return {
+              plan_code: p.code,
+              plan_name: p.name,
+              total: activeForPlan.length,
+              seats: activeForPlan.reduce((s, l) => s + (l.seats || 1), 0),
+              orders: paidForPlan.length,
+              revenue: paidForPlan.reduce((s, o) => s + Number(o.amount || 0), 0),
+            };
+          });
           sendJson(response, 200, {
-            total_revenue_month_rial: 58000000,
-            total_revenue_year_rial: 348000000,
-            mrr_rial: active * 2900000,
-            active_subscriptions: active,
-            trial_subscriptions: trial,
-            expiring_7_days: exp7,
-            expired_subscriptions: expired,
-            pending_orders: state.orders.filter(o => o.status === 'pending').length,
+            kpis: {
+              stores_total: state.stores.filter(s => !s.is_archived).length,
+              stores_archived: state.stores.filter(s => s.is_archived).length,
+              users_active: state.users.filter(u => u.role === 'store' && u.is_active).length,
+              subs_active: subsActive,
+              subs_lifetime: subsLifetime,
+              subs_trial: subsTrial,
+              subs_expired: subsExpired,
+              subs_suspended: subsSuspended,
+              subs_expiring_7: exp7,
+              orders_pending: state.orders.filter(o => o.status === 'pending').length,
+              revenue_month: revenueTotal,
+              revenue_year: revenueTotal,
+              revenue_total: revenueTotal,
+              mrr,
+              currency: 'toman',
+            },
             expiring_soon: soon,
-            recent_orders: state.orders.slice(0, 5),
-            plan_breakdown: Object.entries(byPlan).map(([plan_name, total]) => ({ plan_name, total })),
+            plan_breakdown: planBreakdown,
+            recent_orders: state.orders.slice(0, 8).map(o => ({
+              id: o.id,
+              store_id: o.store_id,
+              store_name: state.stores.find(s => s.id === o.store_id)?.name || '',
+              plan: o.plan,
+              plan_name: o.plan_label || o.plan,
+              amount: o.amount,
+              status: o.status,
+              gateway: o.gateway,
+              reference_id: o.reference_id,
+              created_at: o.created_at,
+            })),
           });
           return;
         }
@@ -482,63 +1097,85 @@ export function createDevServer() {
           const list = state.stores
             .filter(s => status === 'all' ? true : status === 'archived' ? s.is_archived : !s.is_archived)
             .map(s => formatStore(state, s))
-            .filter(s => !q || [s.name, s.owner_name, s.phone, s.users?.[0]?.email].some(v => String(v || '').toLowerCase().includes(q)));
-          sendJson(response, 200, { data: list });
+            .filter(s => !q || [s.name, s.owner_name, s.phone, s.email].some(v => String(v || '').toLowerCase().includes(q)));
+          sendJson(response, 200, {
+            stores: list,
+            meta: { page: 1, per_page: 50, total: list.length, last_page: 1 },
+            totals: {
+              active: state.stores.filter(s => !s.is_archived).length,
+              archived: state.stores.filter(s => s.is_archived).length,
+            },
+          });
           return;
         }
 
         if (pathname === '/api/manager/stores' && method === 'POST') {
           const body = await readJsonBody(request);
           const email = String(body.email || '').trim().toLowerCase();
-          if (!body.name || !email || !body.password || String(body.password).length < 8) {
-            sendJson(response, 422, { message: 'نام آژانس، ایمیل معتبر و رمز عبور حداقل ۸ کاراکتری الزامی است.' });
+          if (!body.name || !email || !body.password || String(body.password).length < 6) {
+            sendJson(response, 422, { message: 'نام آژانس، ایمیل معتبر و رمز عبور حداقل ۶ کاراکتری الزامی است.' });
             return;
           }
           if (state.users.some(u => u.email.toLowerCase() === email)) {
             sendJson(response, 422, { message: 'این ایمیل قبلاً ثبت شده است.' });
             return;
           }
+          const nested = body.license && typeof body.license === 'object' ? body.license : {};
+          const requestedCode = String(nested.plan_code || body.plan_code || '').trim().toLowerCase();
+          const byName = body.plan_name ? state.plans.find(p => p.name === String(body.plan_name).trim()) : null;
+          let plan = state.plans.find(p => p.code === requestedCode) || byName || null;
+          const isLifetime = !!(nested.is_lifetime ?? body.is_lifetime ?? plan?.is_lifetime ?? false);
+          if (!plan) plan = state.plans.find(p => p.code === (isLifetime ? 'lifetime' : 'yearly')) || state.plans[0];
+          const days = Math.max(1, Number(nested.days ?? body.days ?? plan?.duration_days ?? 365));
+          const seats = Math.max(1, Number(nested.seats ?? body.seats ?? body.max_users ?? 3));
+          const isActive = nested.is_active !== false;
+          const expiresAt = isLifetime
+            ? null
+            : (nested.expires_at ? String(nested.expires_at) : new Date(Date.now() + days * 86400000).toISOString());
+
           const store = {
             id: state.nextIds.store++,
             name: String(body.name).trim(),
+            slug: `agency-${Date.now()}`,
             owner_name: String(body.owner_name || '').trim(),
             phone: String(body.phone || '').trim(),
             address: String(body.address || '').trim(),
             admin_note: String(body.admin_note || '').trim(),
             is_active: true,
             is_archived: false,
+            archived_at: null,
             created_at: new Date().toISOString(),
           };
           state.stores.unshift(store);
-          const isLifetime = !!body.is_lifetime;
-          const days = Math.max(1, Number(body.days) || 365);
           state.licenses.push({
             id: state.nextIds.license++,
             store_id: store.id,
-            plan_id: 2,
-            plan_code: 'pro',
-            plan_name: String(body.plan_name || 'آژانس حرفه‌ای'),
-            status: 'active',
-            is_active: true,
+            tier: plan?.tier || 'proplus',
+            plan_code: plan?.code || (isLifetime ? 'lifetime' : 'yearly'),
+            plan_name: plan?.name || (isLifetime ? 'مادام‌العمر' : 'یک‌ساله'),
+            status: isActive ? 'active' : 'suspended',
+            is_active: isActive,
             is_lifetime: isLifetime,
-            is_trial: false,
-            starts_at: new Date().toISOString(),
-            expires_at: isLifetime ? null : new Date(Date.now() + days * 86400000).toISOString(),
-            max_users: Math.max(1, Number(body.max_users) || 3),
-            notes: '',
+            is_trial: !!nested.is_trial,
+            starts_at: nested.starts_at || new Date().toISOString(),
+            expires_at: expiresAt,
+            seats,
+            max_users: seats,
+            notes: String(nested.notes || body.admin_note || (isLifetime ? 'اشتراک مادام‌العمر' : 'اشتراک فعال')),
           });
           state.users.push({
             id: state.nextIds.user++,
             store_id: store.id,
             name: String(body.user_name || body.owner_name || store.name).trim(),
             email,
+            phone: store.phone || null,
             password: String(body.password),
             role: 'store',
             is_active: true,
             created_at: new Date().toISOString(),
           });
-          logAudit(currentUser, 'store.create', store.id, { name: store.name });
-          sendJson(response, 201, { data: formatStore(state, store) });
+          logAudit(currentUser, 'store_created', store.id, { name: store.name, plan_code: plan?.code });
+          sendJson(response, 201, { store: formatStore(state, store) });
           return;
         }
 
@@ -560,42 +1197,66 @@ export function createDevServer() {
             if (u) {
               if (body.email) u.email = String(body.email).trim().toLowerCase();
               if (body.user_name) u.name = String(body.user_name).trim();
-              if (body.password && String(body.password).length >= 8) u.password = String(body.password);
+              if (body.phone !== undefined) u.phone = store.phone;
+              if (body.password && String(body.password).length >= 6) u.password = String(body.password);
             }
-            logAudit(currentUser, 'store.update', storeId);
-            sendJson(response, 200, { data: formatStore(state, store) });
+            logAudit(currentUser, 'store_updated', storeId);
+            sendJson(response, 200, { store: formatStore(state, store) });
             return;
           }
           if (!subAction && method === 'DELETE') {
-            state.stores = state.stores.filter(s => s.id !== storeId);
-            state.licenses = state.licenses.filter(l => l.store_id !== storeId);
-            state.users = state.users.filter(u => u.store_id !== storeId);
-            logAudit(currentUser, 'store.delete', storeId);
-            sendJson(response, 200, { ok: true });
+            const body = await readJsonBody(request);
+            if (body.mode === 'purge') {
+              if (!store.is_archived) {
+                sendJson(response, 422, { message: 'ابتدا آژانس را آرشیو کنید؛ حذف دائمی مستقیم مجاز نیست.' });
+                return;
+              }
+              if (String(body.confirm_name || '').trim() !== store.name) {
+                sendJson(response, 422, { message: 'نام واردشده با نام آژانس مطابقت ندارد.' });
+                return;
+              }
+              state.stores = state.stores.filter(s => s.id !== storeId);
+              state.licenses = state.licenses.filter(l => l.store_id !== storeId);
+              state.users = state.users.filter(u => u.store_id !== storeId);
+              logAudit(currentUser, 'store_purged', storeId);
+              sendJson(response, 200, { purged: true });
+              return;
+            }
+            store.is_archived = true;
+            store.archived_at = new Date().toISOString();
+            store.is_active = false;
+            logAudit(currentUser, 'store_archived', storeId);
+            sendJson(response, 200, { archived: true, store: formatStore(state, store) });
             return;
           }
           if (subAction === 'license' && method === 'PUT') {
             const body = await readJsonBody(request);
             let lic = state.licenses.find(l => l.store_id === storeId);
             if (!lic) { lic = { id: state.nextIds.license++, store_id: storeId, starts_at: new Date().toISOString() }; state.licenses.push(lic); }
-            lic.plan_name = String(body.plan_name || lic.plan_name || 'آژانس حرفه‌ای');
+            const plan = body.plan_code ? state.plans.find(p => p.code === body.plan_code) : null;
+            if (plan) { lic.plan_code = plan.code; lic.plan_name = plan.name; }
+            else if (body.plan_name) lic.plan_name = String(body.plan_name);
             lic.is_active = body.is_active !== false;
             lic.is_lifetime = !!body.is_lifetime;
             lic.is_trial = !!body.is_trial;
-            lic.max_users = Math.max(1, Number(body.max_users) || 3);
-            lic.notes = String(body.notes || '');
+            const seats = Math.max(1, Number(body.seats ?? body.max_users ?? lic.seats ?? 3));
+            lic.seats = seats;
+            lic.max_users = seats;
+            lic.notes = String(body.notes ?? lic.notes ?? '');
             if (lic.is_lifetime) {
+              lic.plan_code = lic.plan_code || 'lifetime';
               lic.expires_at = null;
               lic.status = lic.is_active ? 'active' : 'suspended';
             } else if (body.expires_at) {
               lic.expires_at = String(body.expires_at);
               lic.status = Date.parse(lic.expires_at) > Date.now() && lic.is_active ? 'active' : 'expired';
-            } else if (body.days !== undefined) {
-              lic.expires_at = new Date(Date.now() + Number(body.days) * 86400000).toISOString();
-              lic.status = Number(body.days) > 0 && lic.is_active ? 'active' : 'expired';
+            } else if (body.days !== undefined && body.days !== null) {
+              const days = Number(body.days);
+              lic.expires_at = days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : new Date(Date.now() - 60000).toISOString();
+              lic.status = days > 0 && lic.is_active ? 'active' : 'expired';
             }
-            logAudit(currentUser, 'license.update', storeId);
-            sendJson(response, 200, { data: formatStore(state, store) });
+            logAudit(currentUser, 'license_updated', storeId);
+            sendJson(response, 200, { store: formatStore(state, store) });
             return;
           }
           if (subAction === 'trial' && method === 'POST') {
@@ -603,120 +1264,270 @@ export function createDevServer() {
             const days = Math.max(1, Number(body.days) || 14);
             let lic = state.licenses.find(l => l.store_id === storeId);
             if (!lic) { lic = { id: state.nextIds.license++, store_id: storeId }; state.licenses.push(lic); }
-            Object.assign(lic, { plan_name: 'آزمایشی', status: 'active', is_active: true, is_lifetime: false, is_trial: true, starts_at: new Date().toISOString(), expires_at: new Date(Date.now() + days * 86400000).toISOString(), max_users: 3 });
-            logAudit(currentUser, 'license.trial', storeId);
-            sendJson(response, 200, { data: formatStore(state, store) });
+            Object.assign(lic, { plan_code: 'monthly', plan_name: 'آزمایشی', status: 'active', is_active: true, is_lifetime: false, is_trial: true, starts_at: new Date().toISOString(), expires_at: new Date(Date.now() + days * 86400000).toISOString(), seats: 3, max_users: 3 });
+            logAudit(currentUser, 'trial_granted', storeId);
+            sendJson(response, 200, { store: formatStore(state, store) });
             return;
           }
           if (subAction === 'archive' && method === 'POST') {
-            store.is_archived = true; store.is_active = false;
-            logAudit(currentUser, 'store.archive', storeId);
-            sendJson(response, 200, { data: formatStore(state, store) });
+            store.is_archived = true; store.archived_at = new Date().toISOString(); store.is_active = false;
+            logAudit(currentUser, 'store_archived', storeId);
+            sendJson(response, 200, { archived: true, store: formatStore(state, store) });
             return;
           }
           if (subAction === 'restore' && method === 'POST') {
-            store.is_archived = false; store.is_active = true;
-            logAudit(currentUser, 'store.restore', storeId);
-            sendJson(response, 200, { data: formatStore(state, store) });
+            store.is_archived = false; store.archived_at = null; store.is_active = true;
+            logAudit(currentUser, 'store_restored', storeId);
+            sendJson(response, 200, { store: formatStore(state, store) });
             return;
           }
         }
 
         if (pathname === '/api/manager/subscribers' && method === 'GET') {
-          const status = url.searchParams.get('status') || '';
-          const search = (url.searchParams.get('search') || '').trim().toLowerCase();
-          const rows = state.licenses
-            .map(l => formatLicense(state, l))
-            .filter(l => (!status || l.status === status) && (!search || String(l.store?.name || '').toLowerCase().includes(search)));
-          sendJson(response, 200, { data: rows });
+          const rawStatus = url.searchParams.get('status') || '';
+          const status = rawStatus === 'all' ? '' : rawStatus;
+          const q = (url.searchParams.get('q') || url.searchParams.get('search') || '').trim().toLowerCase();
+          const allRows = state.licenses.map(l => formatLicense(state, l));
+          const rows = allRows.filter(l =>
+            (!status || l.status === status)
+            && (!q || [l.store?.name, l.owner_name, l.phone, l.email].some(v => String(v || '').toLowerCase().includes(q))),
+          );
+          sendJson(response, 200, {
+            subscribers: rows,
+            meta: { page: 1, per_page: 50, total: rows.length, last_page: 1 },
+            stats: {
+              total: allRows.length,
+              active: allRows.filter(l => l.is_valid).length,
+              expired: allRows.filter(l => l.status === 'expired').length,
+              expiring_7: allRows.filter(l => l.is_valid && !l.is_lifetime && l.days_remaining <= 7).length,
+              suspended: allRows.filter(l => l.status === 'suspended').length,
+              pending_orders: state.orders.filter(o => o.status === 'pending').length,
+            },
+          });
           return;
         }
 
-        const subMatch = pathname.match(/^\/api\/manager\/subscribers\/(\d+)(?:\/(extend|status))?$/);
+        const subMatch = pathname.match(/^\/api\/manager\/subscribers\/(\d+)(?:\/(extend|status|seats))?$/);
         if (subMatch) {
-          const storeId = Number(subMatch[1]);
+          const key = Number(subMatch[1]);
           const act = subMatch[2] || '';
-          const store = state.stores.find(s => s.id === storeId);
-          const lic = state.licenses.find(l => l.store_id === storeId);
+          const lic = state.licenses.find(l => l.id === key) || state.licenses.find(l => l.store_id === key);
+          const store = lic ? state.stores.find(s => s.id === lic.store_id) : null;
           if (!store || !lic) { sendJson(response, 404, { message: 'اشتراک پیدا نشد.' }); return; }
           if (!act && method === 'GET') {
             sendJson(response, 200, {
-              store: formatStore(state, store),
-              license: formatLicense(state, lic),
-              history: state.history.filter(h => h.store_id === storeId),
-              invoices: state.invoices.filter(i => i.store_id === storeId),
+              subscriber: formatLicense(state, lic),
+              store: { id: store.id, name: store.name, phone: store.phone },
+              payments: state.orders.filter(o => o.store_id === store.id).map(o => formatOrder(state, o)),
+              attempts: state.payments.filter(p => p.store_id === store.id),
+              invoices: state.invoices.filter(i => i.store_id === store.id),
+              history: state.history.filter(h => h.store_id === store.id),
+              users: state.users.filter(u => u.store_id === store.id).map(u => ({ id: u.id, name: u.name, email: u.email, phone: u.phone, is_active: u.is_active })),
             });
             return;
           }
           if (act === 'extend' && method === 'POST') {
             const body = await readJsonBody(request);
-            const months = Math.max(1, Number(body.months) || 12);
-            const baseMs = lic.expires_at && Date.parse(lic.expires_at) > Date.now() ? Date.parse(lic.expires_at) : Date.now();
-            const prevStatus = formatLicense(state, lic).status;
-            lic.expires_at = new Date(baseMs + months * 30 * 86400000).toISOString();
-            lic.status = 'active'; lic.is_active = true; lic.is_trial = false; lic.is_lifetime = false;
-            if (body.plan_code) {
-              const p = state.plans.find(x => x.code === body.plan_code);
-              if (p) { lic.plan_code = p.code; lic.plan_name = p.name; }
+            if (!body.reason || String(body.reason).trim().length < 3) {
+              sendJson(response, 422, { message: 'دلیل تمدید الزامی است.', errors: { reason: ['دلیل تمدید الزامی است.'] } });
+              return;
             }
-            if (body.max_users) lic.max_users = Math.max(1, Number(body.max_users));
-            state.history.unshift({ id: state.nextIds.history++, store_id: storeId, event_type: 'extend', from_status: prevStatus, to_status: 'active', new_expires_at: lic.expires_at, reason: String(body.reason || ''), created_at: new Date().toISOString() });
-            logAudit(currentUser, 'subscription.extend', storeId, { months });
-            sendJson(response, 200, { license: formatLicense(state, lic) });
+            const months = Math.max(1, Number(body.months) || 1);
+            const plan = body.plan_code ? state.plans.find(x => x.code === body.plan_code) : null;
+            if (plan?.is_lifetime) {
+              lic.is_lifetime = true;
+              lic.expires_at = null;
+              lic.plan_code = plan.code;
+              lic.plan_name = plan.name;
+            } else {
+              const baseMs = (!lic.is_lifetime && lic.expires_at && Date.parse(lic.expires_at) > Date.now()) ? Date.parse(lic.expires_at) : Date.now();
+              const addDays = (plan && plan.duration_days && Number(plan.months_count) === months) ? Number(plan.duration_days) : months * 30;
+              lic.is_lifetime = false;
+              lic.expires_at = new Date(baseMs + addDays * 86400000).toISOString();
+              if (plan) { lic.plan_code = plan.code; lic.plan_name = plan.name; }
+            }
+            lic.status = 'active'; lic.is_active = true; lic.is_trial = false;
+            if (body.seats || body.max_users) {
+              const s = Math.max(1, Number(body.seats || body.max_users));
+              lic.seats = s; lic.max_users = s;
+            }
+            state.history.unshift({ id: state.nextIds.history++, store_id: store.id, license_id: lic.id, action: 'subscription_manual_extended', reason: String(body.reason), payload: { months, expires_at: lic.expires_at }, created_at: new Date().toISOString() });
+            logAudit(currentUser, 'subscription_manual_extended', store.id, { months });
+            sendJson(response, 200, { subscriber: formatLicense(state, lic) });
             return;
           }
           if (act === 'status' && method === 'POST') {
             const body = await readJsonBody(request);
-            const prevStatus = formatLicense(state, lic).status;
             lic.status = String(body.status || 'active');
             lic.is_active = lic.status === 'active';
-            state.history.unshift({ id: state.nextIds.history++, store_id: storeId, event_type: 'status', from_status: prevStatus, to_status: lic.status, new_expires_at: lic.expires_at, reason: String(body.reason || ''), created_at: new Date().toISOString() });
-            logAudit(currentUser, 'subscription.status', storeId, { status: lic.status });
-            sendJson(response, 200, { license: formatLicense(state, lic) });
+            state.history.unshift({ id: state.nextIds.history++, store_id: store.id, license_id: lic.id, action: 'subscription_status_changed', reason: String(body.reason || ''), payload: { to: lic.status }, created_at: new Date().toISOString() });
+            logAudit(currentUser, 'subscription_status_changed', store.id, { status: lic.status });
+            sendJson(response, 200, { subscriber: formatLicense(state, lic) });
             return;
           }
         }
 
         if (pathname === '/api/manager/plans' && method === 'GET') {
-          sendJson(response, 200, { plans: state.plans });
+          const formattedLics = state.licenses.map(l => formatLicense(state, l)).filter(l => l.is_valid);
+          const paidOrders = state.orders.filter(o => o.status === 'paid');
+          sendJson(response, 200, {
+            plans: state.plans.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(p => ({
+              ...serializePlan(state, p),
+              active_subscribers: formattedLics.filter(l => l.plan_code === p.code).length,
+              sales: {
+                orders: paidOrders.filter(o => o.plan === p.code).length,
+                revenue: paidOrders.filter(o => o.plan === p.code).reduce((s, o) => s + Number(o.amount || 0), 0),
+              },
+            })),
+          });
           return;
         }
         if (pathname === '/api/manager/plans' && method === 'POST') {
           const body = await readJsonBody(request);
-          const plan = { id: state.nextIds.plan++, code: String(body.code || 'custom').toLowerCase(), name: String(body.name || 'پلن جدید'), description: String(body.description || ''), monthly_price_rial: Number(body.monthly_price_rial) || 0, default_max_users: body.default_max_users ? Number(body.default_max_users) : null, is_active: true };
+          const isLifetime = !!body.is_lifetime;
+          const monthsCount = isLifetime ? 0 : Math.max(1, Number(body.months_count || 1));
+          const totalPrice = Number(body.total_price ?? body.base_monthly ?? 150000);
+          const plan = {
+            id: state.nextIds.plan++,
+            code: String(body.code || 'custom').toLowerCase(),
+            name: String(body.name || 'پلن جدید'),
+            tier: 'proplus',
+            description: String(body.description || ''),
+            duration_days: isLifetime ? null : Number(body.duration_days || monthsCount * 30),
+            months_count: monthsCount,
+            total_price: totalPrice,
+            base_monthly: isLifetime ? totalPrice : Math.round(totalPrice / monthsCount),
+            extra_user_monthly: Number(body.extra_user_monthly || 0),
+            min_seats: 1,
+            max_seats: Number(body.max_seats || 50),
+            is_lifetime: isLifetime,
+            badge: body.badge || null,
+            is_featured: !!body.is_featured,
+            features: Array.isArray(body.features) ? body.features : [],
+            is_active: true,
+            sort_order: Number(body.sort_order || 100),
+          };
           state.plans.push(plan);
-          sendJson(response, 201, { plan });
+          state.priceHistory.unshift({ id: state.nextIds.priceHistory++, plan_code: plan.code, base_monthly: totalPrice, extra_user_monthly: 0, note: 'ثبت اولیه تعرفه', changed_at: new Date().toISOString() });
+          sendJson(response, 201, { plan: serializePlan(state, plan) });
           return;
         }
-        const planMatch = pathname.match(/^\/api\/manager\/plans\/(\d+)(?:\/(toggle))?$/);
+        const planMatch = pathname.match(/^\/api\/manager\/plans\/([^/]+)(?:\/(toggle|prices))?$/);
         if (planMatch) {
-          const plan = state.plans.find(p => p.id === Number(planMatch[1]));
+          const key = planMatch[1].toLowerCase();
+          const sub = planMatch[2] || '';
+          const plan = state.plans.find(p => p.code === key) || (/^\d+$/.test(key) ? state.plans.find(p => p.id === Number(key)) : null);
           if (!plan) { sendJson(response, 404, { message: 'پلن پیدا نشد.' }); return; }
-          if (planMatch[2] === 'toggle' && method === 'PATCH') {
-            plan.is_active = !plan.is_active;
-            sendJson(response, 200, { plan });
+          if (sub === 'prices' && method === 'GET') {
+            sendJson(response, 200, {
+              history: state.priceHistory.filter(h => h.plan_code === plan.code).map(h => ({
+                price: h.base_monthly,
+                base_monthly: h.base_monthly,
+                extra_user_monthly: h.extra_user_monthly,
+                note: h.note,
+                changed_at: h.changed_at,
+              })),
+            });
             return;
           }
-          if (!planMatch[2] && method === 'PUT') {
+          if (sub === 'toggle' && method === 'PATCH') {
             const body = await readJsonBody(request);
-            Object.assign(plan, { name: String(body.name || plan.name), description: String(body.description ?? plan.description), monthly_price_rial: Number(body.monthly_price_rial ?? plan.monthly_price_rial), default_max_users: body.default_max_users ? Number(body.default_max_users) : null });
-            sendJson(response, 200, { plan });
+            plan.is_active = body.is_active !== undefined ? !!body.is_active : !plan.is_active;
+            sendJson(response, 200, { plan: serializePlan(state, plan) });
+            return;
+          }
+          if (!sub && method === 'PUT') {
+            const body = await readJsonBody(request);
+            const oldPrice = plan.total_price;
+            if (body.name !== undefined) plan.name = String(body.name);
+            if (body.description !== undefined) plan.description = String(body.description);
+            if (body.badge !== undefined) plan.badge = body.badge || null;
+            if (body.total_price !== undefined) {
+              plan.total_price = Number(body.total_price);
+              plan.base_monthly = plan.is_lifetime ? plan.total_price : Math.round(plan.total_price / Math.max(1, plan.months_count || 1));
+            } else if (body.base_monthly !== undefined) {
+              plan.base_monthly = Number(body.base_monthly);
+              plan.total_price = plan.is_lifetime ? plan.base_monthly : plan.base_monthly * Math.max(1, plan.months_count || 1);
+            }
+            if (oldPrice !== plan.total_price) {
+              state.priceHistory.unshift({
+                id: state.nextIds.priceHistory++,
+                plan_code: plan.code,
+                base_monthly: plan.total_price,
+                extra_user_monthly: plan.extra_user_monthly || 0,
+                note: String(body.price_note || body.note || 'ویرایش تعرفه توسط مدیر'),
+                changed_at: new Date().toISOString(),
+              });
+            }
+            logAudit(currentUser, 'plan_updated', null, { code: plan.code, total_price: plan.total_price });
+            sendJson(response, 200, { plan: serializePlan(state, plan) });
             return;
           }
         }
 
         if (pathname === '/api/manager/orders' && method === 'GET') {
           const st = url.searchParams.get('status') || '';
-          sendJson(response, 200, { data: state.orders.filter(o => !st || o.status === st) });
+          const q = (url.searchParams.get('q') || '').trim().toLowerCase();
+          const allFormatted = state.orders.map(o => formatOrder(state, o));
+          const filtered = allFormatted.filter(o =>
+            (!st || o.status === st)
+            && (!q || [o.store_name, o.reference_id, o.coupon_code, `#${o.id}`].some(v => String(v || '').toLowerCase().includes(q))),
+          );
+          const paidOrders = state.orders.filter(o => o.status === 'paid');
+          const pendingOrders = state.orders.filter(o => o.status === 'pending');
+          sendJson(response, 200, {
+            orders: filtered,
+            meta: { page: 1, per_page: 50, total: filtered.length, last_page: 1 },
+            totals: {
+              pending: pendingOrders.length,
+              pending_amount: pendingOrders.reduce((s, o) => s + Number(o.amount || 0), 0),
+              paid_this_month: paidOrders.length,
+              revenue_this_month: paidOrders.reduce((s, o) => s + Number(o.amount || 0), 0),
+            },
+          });
           return;
         }
+        const ordAct = pathname.match(/^\/api\/manager\/orders\/(\d+)\/(approve|reject|void)$/);
+        if (ordAct && method === 'POST') {
+          const order = state.orders.find(o => o.id === Number(ordAct[1]));
+          if (!order) { sendJson(response, 404, { message: 'سفارش یافت نشد.' }); return; }
+          const body = await readJsonBody(request);
+          if (ordAct[2] === 'approve') {
+            const ref = String(body.reference || body.payment_reference || '').trim();
+            if (!ref) {
+              sendJson(response, 422, { message: 'شماره پیگیری بانکی الزامی است.', errors: { reference: ['شماره پیگیری بانکی الزامی است.'] } });
+              return;
+            }
+            completeOrder(state, order, ref);
+            logAudit(currentUser, 'order_manually_approved', order.store_id, { order_id: order.id, reference: ref });
+            sendJson(response, 200, { order: formatOrder(state, order) });
+            return;
+          }
+          if (ordAct[2] === 'reject') {
+            order.status = 'canceled';
+            logAudit(currentUser, 'order_rejected', order.store_id, { order_id: order.id, reason: body.reason });
+            sendJson(response, 200, { order: formatOrder(state, order) });
+            return;
+          }
+          if (ordAct[2] === 'void') {
+            order.status = 'voided';
+            order.voided_at = new Date().toISOString();
+            order.void_reason = String(body.reason || '');
+            const inv = state.invoices.find(i => i.order_id === order.id);
+            if (inv) inv.voided_at = order.voided_at;
+            logAudit(currentUser, 'order_voided', order.store_id, { order_id: order.id, reason: order.void_reason });
+            sendJson(response, 200, { order: formatOrder(state, order) });
+            return;
+          }
+        }
+
         if (pathname === '/api/manager/coupons' && method === 'GET') {
           sendJson(response, 200, { coupons: state.coupons });
           return;
         }
         if (pathname === '/api/manager/coupons' && method === 'POST') {
           const body = await readJsonBody(request);
-          const coupon = { id: state.nextIds.coupon++, code: String(body.code || '').toUpperCase(), type: body.type || 'percent', value: Number(body.value) || 10, max_uses: body.max_uses ? Number(body.max_uses) : null, used_count: 0, is_active: true, expires_at: null };
+          const coupon = { id: state.nextIds.coupon++, code: String(body.code || '').trim().toUpperCase(), type: body.type || 'percent', value: Number(body.value) || 10, max_uses: body.max_uses ? Number(body.max_uses) : null, used_count: 0, is_active: true, ends_at: body.ends_at || null };
           state.coupons.unshift(coupon);
           sendJson(response, 201, { coupon });
           return;
@@ -728,22 +1539,49 @@ export function createDevServer() {
           return;
         }
         if (pathname === '/api/manager/managers' && method === 'GET') {
-          sendJson(response, 200, { data: state.users.filter(u => u.role === 'manager').map(u => formatUser(state, u)) });
+          sendJson(response, 200, {
+            managers: state.users.filter(u => u.role === 'manager').map(u => ({
+              ...formatUser(state, u),
+              is_self: u.id === currentUser.id,
+            })),
+          });
           return;
         }
         if (pathname === '/api/manager/managers' && method === 'POST') {
           const body = await readJsonBody(request);
           const m = { id: state.nextIds.user++, store_id: null, name: String(body.name || ''), email: String(body.email || '').toLowerCase(), password: String(body.password || 'admin12345'), role: 'manager', is_active: body.is_active !== false, created_at: new Date().toISOString() };
           state.users.push(m);
-          sendJson(response, 201, { data: formatUser(state, m) });
+          sendJson(response, 201, { manager: formatUser(state, m) });
           return;
+        }
+        const mgrItem = pathname.match(/^\/api\/manager\/managers\/(\d+)$/);
+        if (mgrItem) {
+          const targetMgr = state.users.find(u => u.id === Number(mgrItem[1]) && u.role === 'manager');
+          if (!targetMgr) { sendJson(response, 404, { message: 'مدیر یافت نشد.' }); return; }
+          if (method === 'PUT') {
+            const body = await readJsonBody(request);
+            if (body.name) targetMgr.name = String(body.name);
+            if (body.email) targetMgr.email = String(body.email).toLowerCase();
+            if (body.password) targetMgr.password = String(body.password);
+            if (body.is_active !== undefined && targetMgr.id !== currentUser.id) targetMgr.is_active = !!body.is_active;
+            sendJson(response, 200, { manager: formatUser(state, targetMgr) });
+            return;
+          }
+          if (method === 'DELETE') {
+            if (targetMgr.id === currentUser.id) {
+              sendJson(response, 422, { message: 'نمی‌توانید حساب خودتان را غیرفعال کنید.' });
+              return;
+            }
+            targetMgr.is_active = false;
+            sendJson(response, 200, { manager: formatUser(state, targetMgr) });
+            return;
+          }
         }
         if (pathname === '/api/manager/audit' && method === 'GET') {
           const act = url.searchParams.get('action') || '';
           const q = (url.searchParams.get('q') || '').toLowerCase();
-          sendJson(response, 200, {
-            data: state.audit.filter(a => (!act || a.action.includes(act)) && (!q || JSON.stringify(a).toLowerCase().includes(q))),
-          });
+          const events = state.audit.filter(a => (!act || a.action.includes(act)) && (!q || JSON.stringify(a).toLowerCase().includes(q)));
+          sendJson(response, 200, { events, meta: { page: 1, per_page: 50, total: events.length, last_page: 1 } });
           return;
         }
       }

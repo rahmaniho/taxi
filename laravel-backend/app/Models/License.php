@@ -113,4 +113,42 @@ class License extends Model
 
         return (int) max(0, now()->diffInDays($this->expires_at, false));
     }
+
+    public function planLabel(): string
+    {
+        if ($this->is_lifetime && ($this->plan_code === null || $this->plan_code === '' || $this->plan_code === 'lifetime')) {
+            return 'مادام‌العمر';
+        }
+
+        if ($this->is_trial && ($this->plan_code === null || $this->plan_code === '')) {
+            return 'آزمایشی';
+        }
+
+        $defaults = [
+            'monthly' => 'یک‌ماهه',
+            'quarterly' => 'سه‌ماهه',
+            'semiannual' => 'شش‌ماهه',
+            'yearly' => 'یک‌ساله',
+            'lifetime' => 'مادام‌العمر',
+            'basic' => 'پایه',
+            'pro' => 'حرفه‌ای',
+            'proplus' => 'حرفه‌ای پلاس',
+        ];
+
+        $code = (string) ($this->plan_code ?? '');
+        if ($code !== '') {
+            $planName = SubscriptionPlan::query()->where('code', $code)->value('name');
+            if (is_string($planName) && $planName !== '') {
+                return $planName;
+            }
+
+            if (isset($defaults[$code])) {
+                return $defaults[$code];
+            }
+
+            return $code;
+        }
+
+        return $this->is_lifetime ? 'مادام‌العمر' : 'اشتراک تاکسینو';
+    }
 }

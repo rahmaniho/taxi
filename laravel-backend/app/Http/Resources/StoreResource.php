@@ -16,6 +16,17 @@ class StoreResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $users = $this->relationLoaded('users')
+            ? $this->users->map(fn ($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone ?? null,
+                'is_active' => (bool) $user->is_active,
+                'last_login_at' => $user->last_login_at?->toIso8601String(),
+            ])->values()->all()
+            : [];
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -23,6 +34,8 @@ class StoreResource extends JsonResource
             'owner_name' => $this->owner_name,
             'phone' => $this->phone,
             'address' => $this->address,
+            'email' => $users[0]['email'] ?? null,
+            'users' => $users,
             'is_active' => (bool) $this->is_active,
             'archived_at' => $this->archived_at?->toIso8601String(),
             'is_archived' => $this->archived_at !== null,

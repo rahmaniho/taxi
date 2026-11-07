@@ -450,7 +450,7 @@ class CheckoutService
 
         $ranks = ['pro' => 2, 'proplus' => 3];
 
-        if (($ranks[$plan->tier] ?? 0) > ($ranks[$license->tier] ?? 0)) {
+        if (($plan->is_lifetime && ! $license->is_lifetime) || (($ranks[$plan->tier] ?? 0) > ($ranks[$license->tier] ?? 0))) {
             return Order::TYPE_UPGRADE;
         }
 
