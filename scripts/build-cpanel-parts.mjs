@@ -244,6 +244,7 @@ if (includeVendor) {
     ['deploy/laravel-app/root-router-flat.htaccess', 'root-router-flat.htaccess'],
     ['deploy/laravel-app/cpanel-doctor.php', 'cpanel-doctor.php'],
     ['deploy/laravel-app/where-am-i.php', 'where-am-i.php'],
+    ['deploy/laravel-app/fix-app-key.php', 'fix-app-key.php'],
   ];
   let bytes = 0;
   for (const [src, name] of rootFiles) {
@@ -257,7 +258,7 @@ if (includeVendor) {
     const zipName = 'taxi-cpanel-00-root-tools.zip';
     const zipPath = join(artifactsDir, zipName);
     rmSync(zipPath, { force: true });
-    const names = ['root-router.htaccess', 'root-router-flat.htaccess', 'cpanel-doctor.php', 'where-am-i.php']
+    const names = ['root-router.htaccess', 'root-router-flat.htaccess', 'cpanel-doctor.php', 'where-am-i.php', 'fix-app-key.php']
       .filter(n => existsSync(join(stage, n)));
     execFileSync('zip', ['-qj', zipPath, ...names], { cwd: stage, stdio: 'inherit' });
     if (existsSync(zipPath)) {

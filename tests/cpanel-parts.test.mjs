@@ -238,3 +238,37 @@ test('بستهٔ ۰۰ شامل هر چهار ابزار ریشه باشد', () =
     assert.ok(entries.includes(f), `${f} باید در بستهٔ ریشه باشد`);
   }
 });
+
+test('fix-app-key.php: ایمنی و درستی منطق .env', () => {
+  const f = join(root, 'deploy/laravel-app/fix-app-key.php');
+  assert.ok(existsSync(f), 'fix-app-key.php باید وجود داشته باشد');
+  const body = readFileSync(f, 'utf8');
+
+  assert.match(body, /^<\?php/, 'باید با تگ PHP شروع شود');
+  assert.match(body, /declare\(strict_types=1\)/, 'strict_types لازم است');
+
+  // ساخت کلید امن
+  assert.match(body, /random_bytes\(32\)/, 'باید کلید ۳۲ بایتی با random_bytes بسازد');
+  assert.match(body, /base64_encode/, 'باید به base64 تبدیل شود');
+
+  // محافظت
+  assert.match(body, /\.fix-key/, 'باید فایل کلید داشته باشد');
+  assert.match(body, /selfdestruct/, 'باید امکان حذف خودکار داشته باشد');
+  assert.match(body, /rename\(\$tmp, \$file\)/, 'نوشتن .env باید اتمیک باشد');
+
+  // پاک کردن کش
+  assert.match(body, /bootstrap\/cache\/\*\.php/, 'باید کش config را پاک کند');
+
+  // نباید رمزها را افشا کند
+  assert.match(body, /DB_PASSWORD.*TAXI_MANAGER_PASSWORD/s, 'باید رمزها را مخفی کند');
+  assert.match(body, /strlen\(\$v\)/, 'برای رمز فقط طول نمایش داده شود');
+});
+
+test('بستهٔ ۰۰ شامل fix-app-key.php باشد', () => {
+  const zip = join(artifactsDir, 'taxi-cpanel-00-root-tools.zip');
+  if (!existsSync(zip)) {
+    execFileSync('node', [join(root, 'scripts', 'build-cpanel-parts.mjs')], { cwd: root, stdio: 'pipe' });
+  }
+  const entries = execFileSync('unzip', ['-Z1', zip], { encoding: 'utf8' }).split('\n').filter(Boolean);
+  assert.ok(entries.includes('fix-app-key.php'), 'fix-app-key.php باید در بستهٔ ریشه باشد');
+});

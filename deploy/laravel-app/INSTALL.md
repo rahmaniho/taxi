@@ -521,6 +521,86 @@ TAXI_MANAGER_PASSWORD="یک_رمز_قوی_برای_مدیر_کل"
 
 ---
 
+> ⚠️ **اشتباه بسیار رایج:** گذاشتن `APP_KEY` در فایل `.env.production.example` هیچ اثری ندارد.
+> لاراول **فقط** فایل `.env` را می‌خواند. فایل `.example` فقط یک الگو برای کپی است.
+
+### 🚑 رفع خطای `Server Error` روی `/public/api/csrf`
+
+اگر `/public/up` جواب می‌دهد ولی `/public/api/csrf` خطای **500 / Server Error** می‌دهد و در `storage/logs/laravel.log` این را می‌بینید:
+
+```
+production.ERROR: No application encryption key has been specified.
+```
+
+یعنی **`APP_KEY` نیست یا در فایل اشتباه است**. سه راه دارد:
+
+#### راه A — ابزار خودکار `fix-app-key.php` (بدون Terminal، توصیه‌شده)
+
+۱. از بستهٔ `taxi-cpanel-00-root-tools.zip` فایل **`fix-app-key.php`** را بردارید.
+۲. آن را در **همان پوشه‌ای که `artisan` هست** آپلود کنید (یعنی `public_html/laravel-backend/`).
+۳. کنارش فایلی به نام `.fix-key` بسازید و داخلش یک عبارت دلخواه بگذارید (مثل `taxino2026`).
+۴. این آدرس را باز کنید (اگر در `public/` گذاشتید، مسیر را عوض کنید):
+   ```text
+   https://taxi.karen-soft.ir/public/fix-app-key.php?key=taxino2026
+   ```
+۵. سه دکمه را به ترتیب بزنید: **① ساخت .env** → **② ساخت APP_KEY** → تست کنید.
+۶. در پایان با دکمهٔ **🗑 حذف خودکار** همین ابزار و `.fix-key` را پاک کنید.
+
+این ابزار:
+- ریشهٔ لاراول را خودش پیدا می‌کند (`artisan` + `composer.json`)
+- اگر `.env` نیست، از `.env.production.example` می‌سازد
+- با `random_bytes(32)` یک `APP_KEY` واقعاً امن می‌سازد و **اتمیک** در `.env` می‌نویسد
+- کش `bootstrap/cache/*.php` را خودش پاک می‌کند
+- رمزهای `DB_PASSWORD` و `TAXI_MANAGER_PASSWORD` را **فقط به‌صورت طول** نمایش می‌دهد
+
+#### راه B — Terminal (راه رسمی)
+
+```bash
+cd ~/public_html/laravel-backend
+
+# ۱) اگر .env نیست، بساز
+[ -f .env ] || cp .env.production.example .env
+
+# ۲) کلید بساز
+php artisan key:generate --force
+
+# ۳) کش را پاک کن (مهم!)
+php artisan config:clear
+```
+
+#### راه C — دستی (اگر هیچ‌کدام نشد)
+
+۱. کلید بسازید (در مرورگر، F12 → Console):
+   ```js
+   'base64:' + btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
+   ```
+۲. در File Manager فایل **`.env`** (نه `.example`) را Edit کنید و کل خط `APP_KEY=` را با این عوض کنید:
+   ```dotenv
+   APP_KEY=base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=
+   ```
+   > ⚠️ بدون فاصله دور `=`، بدون کوتیشن، بدون کاراکتر اضافه.
+۳. **Save** → سپس فایل `bootstrap/cache/config.php` را **Delete** کنید (وگرنه مقدار قدیمی خوانده می‌شود).
+
+#### ✅ تست موفقیت
+
+```text
+https://taxi.karen-soft.ir/public/api/csrf
+```
+باید JSON بدهد:
+```json
+{"ok":true,"csrf_token":"..."}
+```
+
+اگر باز هم 500 داد، بررسی کنید:
+| مورد | چطور چک کنیم |
+|---|---|
+| نام فایل دقیقاً `.env` است؟ | نه `.env.txt` و نه `.env.production.example` |
+| `.env` در همان پوشهٔ `artisan` است؟ | بله |
+| مجوز فایل 644 است؟ | File Manager → Change Permissions |
+| کش پاک شده؟ | `bootstrap/cache/config.php` وجود نداشته باشد |
+
+---
+
 ### قدم نهایی ۱ — ساخت `.env` با `APP_KEY`
 
 **الف) در Terminal سی‌پنل:**
