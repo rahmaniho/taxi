@@ -40,8 +40,8 @@ it('activates subscription immediately when manager creates an agency and return
         'password' => 'secret1234',
     ])->assertOk();
 
-    expect($login->json('license.is_valid'))->toBeTrue()
-        ->and($login->json('license.plan_name'))->toBe('شش‌ماهه');
+    expect($login->json('user.store.license.is_valid'))->toBeTrue()
+        ->and($login->json('user.store.license.plan_name'))->toBe('شش‌ماهه');
 });
 
 it('lets manager edit official plan total_price in Toman without altering historical orders', function () {

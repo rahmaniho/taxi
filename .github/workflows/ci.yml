@@ -81,7 +81,7 @@ jobs:
           status=$?
           cat /tmp/pest.log
           if [ $status -ne 0 ]; then
-            grep -E "FAILED|Error|Exception|Tests:.*failed|ParseError" /tmp/pest.log | head -25 | sed 's/^/::error::/' || true
+            grep -E "FAILED|Failed asserting|⌦|Tests:|Error:|Exception" /tmp/pest.log | head -30 | sed 's/^/::error::/' || true
             exit 1
           fi
 
