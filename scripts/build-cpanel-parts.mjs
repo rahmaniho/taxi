@@ -198,17 +198,20 @@ if (includeVendor) {
     }
     packages.sort((a, b) => b.bytes - a.bytes);
 
+    // چیدمان حریصانه: بستهٔ سنگین‌تر از سقف به‌تنهایی در یک بسته می‌نشیند
+    // و بستهٔ اول همیشه حداقل یک پکیج واقعی دارد (نه فقط composer/ و autoload.php).
     const chunks = [];
-    let current = { entries: globals.map(name => `${prefix}/vendor/${name}`), bytes: 0 };
+    let current = { entries: globals.map(name => `${prefix}/vendor/${name}`), bytes: 0, packages: 0 };
     for (const pkg of packages) {
-      if (current.entries.length > 0 && current.bytes + pkg.bytes > limit) {
+      if (current.packages > 0 && current.bytes + pkg.bytes > limit) {
         chunks.push(current);
-        current = { entries: [], bytes: 0 };
+        current = { entries: [], bytes: 0, packages: 0 };
       }
       current.entries.push(pkg.rel);
       current.bytes += pkg.bytes;
+      current.packages += 1;
     }
-    if (current.entries.length > 0) chunks.push(current);
+    if (current.packages > 0) chunks.push(current);
 
     const width = Math.max(2, String(chunks.length).length);
     chunks.forEach((chunk, index) => {
