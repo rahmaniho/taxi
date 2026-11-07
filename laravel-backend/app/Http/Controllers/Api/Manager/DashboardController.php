@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 class DashboardController extends Controller
 {
-    public function show(): JsonResponse
+    public function index(): JsonResponse
     {
         $now = now();
         $monthStart = $now->copy()->startOfMonth();

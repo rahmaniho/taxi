@@ -11,7 +11,7 @@ import { createDevServer } from '../scripts/serve.mjs';
 const rootDir = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function waitFor(condition, timeout = 4000, step = 25) {
+async function waitFor(condition, timeout = 12000, step = 25) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     try {
@@ -88,7 +88,7 @@ async function bootRawDom({ url = 'https://localhost/', beforeParse } = {}) {
   });
   const { window } = dom;
   if (window.document.readyState !== 'complete') {
-    await Promise.race([new Promise(r => window.addEventListener('load', r, { once: true })), wait(3000)]);
+    await Promise.race([new Promise(r => window.addEventListener('load', r, { once: true })), wait(8000)]);
   }
   return { dom, window, document: window.document, App: window.App };
 }

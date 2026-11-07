@@ -485,7 +485,7 @@ class StoreController extends Controller
             'created_at' => now(),
         ]);
 
-        AuditLogger::record('license_updated', [
+        AuditLogger::record('admin_license_updated', [
             'store_id' => $store->id,
             'subject_type' => 'license',
             'subject_key' => $license->id,

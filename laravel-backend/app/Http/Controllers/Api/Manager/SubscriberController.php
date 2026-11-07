@@ -12,6 +12,7 @@ use App\Services\Billing\LicenseService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -265,11 +266,19 @@ class SubscriberController extends Controller
             'reason' => ['required', 'string', 'min:3', 'max:300'],
         ]);
 
+        $usage = $license->store->activeUserCount();
+
+        if ((int) $data['seats'] < $usage) {
+            throw ValidationException::withMessages([
+                'seats' => ["این فروشگاه {$usage} کاربر فعال دارد؛ سقف نمی‌تواند کمتر از آن باشد."],
+            ]);
+        }
+
         $updated = $this->licenses->setSeats(
             $license->store,
             (int) $data['seats'],
-            (string) $data['reason'],
             $request->user(),
+            (string) $data['reason'],
         );
 
         return response()->json(['subscriber' => $this->serialize($updated->load('store'))]);

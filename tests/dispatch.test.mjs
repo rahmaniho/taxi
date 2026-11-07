@@ -83,9 +83,13 @@ test('تخصیص هوشمند نوبت‌محور و کم‌سفرترین به�
 
 test('مرخصی/استراحت و شیفت: راننده در تخصیص پیشنهاد نمی‌شود', async t => {
   const { window, App, doc } = await boot(t);
+  // پنجرهٔ شیفتی که همیشه «الان» را در بر نمی‌گیرد (۲ تا ۳ ساعت بعد از اکنون) تا تست مستقل از ساعت اجرا باشد
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const hhmm = m => `${String(Math.floor(((m % 1440) + 1440) % 1440 / 60)).padStart(2, '0')}:${String((((m % 1440) + 1440) % 1440) % 60).padStart(2, '0')}`;
+  const shiftFrom = hhmm(nowMin + 120), shiftTo = hhmm(nowMin + 180);
   App.data.drivers = [
     { id: 'a1', name: 'در استراحت', phone: '', commission: 15, status: 'rest', vehicleId: '' },
-    { id: 'a2', name: 'خارج از شیفت', phone: '', commission: 15, status: 'available', shiftFrom: '08:00', shiftTo: '09:00', vehicleId: '' },
+    { id: 'a2', name: 'خارج از شیفت', phone: '', commission: 15, status: 'available', shiftFrom, shiftTo, vehicleId: '' },
     { id: 'a3', name: 'آماده', phone: '', commission: 15, status: 'available', vehicleId: '' },
   ];
   App.data.settings.dispatch.turnBased = true;
